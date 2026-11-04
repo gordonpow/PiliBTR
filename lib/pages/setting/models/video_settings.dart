@@ -4,6 +4,8 @@ import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/common/video/cdn_type.dart';
 import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:PiliPlus/pages/setting/widgets/btr_settings_dialog.dart';
+import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/pages/setting/widgets/ordered_multi_select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_output_type.dart';
@@ -80,6 +82,27 @@ List<SettingsModel> get videoSettings => [
     setKey: SettingBoxKey.disableAudioCDN,
     defaultVal: false,
     onChanged: (value) => VideoUtils.disableAudioCDN = value,
+  ),
+  NormalModel(
+    title: '线程撕裂者（多 CDN 加速）',
+    leading: const Icon(Icons.download_for_offline_outlined),
+    getSubtitle: () {
+      final parts = [
+        if (BtrConfig.playback) '播放',
+        if (BtrConfig.enable) '下载',
+      ];
+      if (parts.isEmpty) return '已关闭';
+      final threads = BtrConfig.autoThreads ? '自动' : '${BtrConfig.threads}';
+      return '加速：${parts.join('、')}，CDN：${BtrConfig.cdnMode.label}，'
+          '线程数：$threads';
+    },
+    onTap: (context, setState) async {
+      final res = await showDialog<bool>(
+        context: context,
+        builder: (context) => const BtrSettingsDialog(),
+      );
+      if (res == true) setState();
+    },
   ),
   NormalModel(
     title: '默认画质',

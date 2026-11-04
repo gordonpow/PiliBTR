@@ -29,6 +29,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
+import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -930,7 +931,15 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     };
 
     String video = dataSource.videoSource;
-    if (dataSource.audioSource case final audio? when (audio.isNotEmpty)) {
+    String? audioSource = dataSource.audioSource;
+    // BTR: fetch media from several CDN nodes in parallel via a local proxy.
+    if (dataSource is! FileSource && !isLive) {
+      video = await BtrProxy.wrap(video);
+      if (audioSource != null && audioSource.isNotEmpty) {
+        audioSource = await BtrProxy.wrap(audioSource);
+      }
+    }
+    if (audioSource case final audio? when (audio.isNotEmpty)) {
       if (onlyPlayAudio.value) {
         video = audio;
       } else {
