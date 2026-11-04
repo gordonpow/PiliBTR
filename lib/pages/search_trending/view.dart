@@ -92,7 +92,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                   title: Opacity(
                     opacity: scrollRatio,
                     child: Text(
-                      'bilibili热搜',
+                      'bilibili熱搜',
                       style: TextStyle(
                         color: flag ? null : Colors.white,
                       ),

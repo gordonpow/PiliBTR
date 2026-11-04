@@ -67,7 +67,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
       },
       () => SimpleScaffold(
         appBar: AppBar(
-          title: const Text('评论详情'),
+          title: const Text('評論詳情'),
           actions: [
             IconButton(
               tooltip: '前往',
@@ -162,9 +162,9 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Text(isDialogue ? '对话列表' : '评论详情'),
+                        Text(isDialogue ? '對話列表' : '評論詳情'),
                         IconButton(
-                          tooltip: '关闭',
+                          tooltip: '關閉',
                           icon: const Icon(Icons.close, size: 20),
                           onPressed: Get.back,
                         ),
@@ -253,7 +253,7 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
                 final count = controller.count.value;
                 return count != -1
                     ? Text(
-                        '相关回复共${NumUtils.numFormat(count)}条',
+                        '相關回復共${NumUtils.numFormat(count)}條',
                         style: const TextStyle(fontSize: 13),
                       )
                     : const SizedBox.shrink();
@@ -328,7 +328,7 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel>
       ),
       jumpToDialogue: () {
         if (!controller.setIndexById(replyItem.parent)) {
-          SmartDialog.showToast('评论可能已被删除');
+          SmartDialog.showToast('評論可能已被刪除');
         }
       },
       onCheckReply: controller.onCheckReply,

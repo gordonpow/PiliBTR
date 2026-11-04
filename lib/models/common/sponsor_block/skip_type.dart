@@ -1,11 +1,11 @@
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 
 enum SkipType implements EnumWithLabel {
-  alwaysSkip('总是跳过'),
-  skipOnce('跳过一次'),
-  skipManually('手动跳过'),
-  showOnly('仅显示'),
-  disable('禁用'),
+  alwaysSkip('總是跳過'),
+  skipOnce('跳過一次'),
+  skipManually('手動跳過'),
+  showOnly('僅顯示'),
+  disable('停用'),
   ;
 
   @override

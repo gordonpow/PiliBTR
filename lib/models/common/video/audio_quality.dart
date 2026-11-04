@@ -6,9 +6,9 @@ class AudioQuality extends BaseQuality {
 
   const AudioQuality(super.code, super.desc, {this.rank = 0});
 
-  static const AudioQuality hiRes = .new(30251, 'Hi-Res无损', rank: 60);
-  static const AudioQuality dolby_30255 = .new(30255, '杜比全景声', rank: 50);
-  static const AudioQuality dolby_30250 = .new(30250, '杜比全景声', rank: 50);
+  static const AudioQuality hiRes = .new(30251, 'Hi-Res無損', rank: 60);
+  static const AudioQuality dolby_30255 = .new(30255, '杜比全景聲', rank: 50);
+  static const AudioQuality dolby_30250 = .new(30250, '杜比全景聲', rank: 50);
   static const AudioQuality k192 = .new(30280, '192K', rank: 40);
   static const AudioQuality k132 = .new(30232, '132K', rank: 30);
   static const AudioQuality k64 = .new(30216, '64K', rank: 20);

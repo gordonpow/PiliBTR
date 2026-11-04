@@ -551,7 +551,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     child: Obx(() {
       if (_liveRoomController.onlineCount.value case final onlineCount?) {
         return Text(
-          '高能观众($onlineCount)',
+          '高能觀眾($onlineCount)',
           style: const TextStyle(fontSize: 12, color: Colors.white),
         );
       }
@@ -668,7 +668,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                   mainAxisSize: .min,
                   children: [
                     Icon(Icons.copy, size: 19),
-                    Text('复制链接'),
+                    Text('複製連結'),
                   ],
                 ),
               ),
@@ -680,7 +680,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                     mainAxisSize: .min,
                     children: [
                       Icon(Icons.share, size: 19),
-                      Text('分享直播间'),
+                      Text('分享直播間'),
                     ],
                   ),
                 ),
@@ -691,7 +691,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                   mainAxisSize: .min,
                   children: [
                     Icon(Icons.open_in_browser, size: 19),
-                    Text('浏览器打开'),
+                    Text('瀏覽器開啟'),
                   ],
                 ),
               ),
@@ -723,7 +723,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                     mainAxisSize: .min,
                     children: [
                       Icon(Icons.forward_to_inbox, size: 19),
-                      Text('分享至消息'),
+                      Text('分享至訊息'),
                     ],
                   ),
                 ),
@@ -865,7 +865,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                   },
                 ),
                 const Expanded(
-                  child: Text('发送弹幕', style: TextStyle(color: baseWhite)),
+                  child: Text('傳送彈幕', style: TextStyle(color: baseWhite)),
                 ),
                 Builder(
                   builder: (context) {

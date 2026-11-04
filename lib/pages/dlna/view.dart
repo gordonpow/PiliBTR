@@ -65,7 +65,7 @@ class _DLNAPageState extends State<DLNAPage> {
         }
       }
     } catch (_) {
-      _searchError = '搜索设备失败，请检查网络后重试';
+      _searchError = '搜尋裝置失敗，請檢查網路後重試';
     } finally {
       _timer?.cancel();
       _timer = null;
@@ -96,7 +96,7 @@ class _DLNAPageState extends State<DLNAPage> {
         title: const Text('投屏'),
         actions: [
           IconButton(
-            tooltip: '搜索',
+            tooltip: '搜尋',
             onPressed: _onSearch,
             icon: const Icon(Icons.refresh),
           ),
@@ -118,9 +118,9 @@ class _DLNAPageState extends State<DLNAPage> {
         final permanentlyDenied = status.isPermanentlyDenied;
         return HttpError(
           errMsg: permanentlyDenied
-              ? '局域网权限未授权，请在系统设置中允许附近的设备，返回后点击搜索'
-              : '需要局域网权限才能搜索投屏设备',
-          btnText: permanentlyDenied ? '前往设置' : '授予权限',
+              ? '區域網許可權未授權，請在系統設定中允許附近的裝置，返回後點選搜尋'
+              : '需要區域網許可權才能搜尋投屏裝置',
+          btnText: permanentlyDenied ? '前往設定' : '授予許可權',
           onReload: permanentlyDenied
               ? () {
                   openAppSettings();
@@ -129,7 +129,7 @@ class _DLNAPageState extends State<DLNAPage> {
         );
       }
       return HttpError(
-        errMsg: _searchError ?? '没有设备',
+        errMsg: _searchError ?? '沒有裝置',
         onReload: _onSearch,
       );
     }

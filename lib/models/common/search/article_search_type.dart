@@ -1,9 +1,9 @@
 enum ArticleOrderType {
-  totalrank('综合排序'),
-  pubdate('最新发布'),
-  click('最多点击'),
-  attention('最多喜欢'),
-  scores('最多评论'),
+  totalrank('綜合排序'),
+  pubdate('最新發布'),
+  click('最多點選'),
+  attention('最多喜歡'),
+  scores('最多評論'),
   ;
 
   String get order => name;
@@ -12,15 +12,15 @@ enum ArticleOrderType {
 }
 
 enum ArticleZoneType {
-  all('全部分区', 0),
-  douga('动画', 2),
-  game('游戏', 1),
-  cinephile('影视', 28),
+  all('全部分割槽', 0),
+  douga('動畫', 2),
+  game('遊戲', 1),
+  cinephile('影視', 28),
   life('生活', 3),
-  interest('兴趣', 29),
-  novel('轻小说', 16),
+  interest('興趣', 29),
+  novel('輕小說', 16),
   tech('科技', 17),
-  note('笔记', 41),
+  note('筆記', 41),
   ;
 
   final String label;

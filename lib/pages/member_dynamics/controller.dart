@@ -54,7 +54,7 @@ class MemberDynamicsController
       loadingState
         ..value.data!.removeWhere((item) => item.idStr == dynamicId)
         ..refresh();
-      SmartDialog.showToast('删除成功');
+      SmartDialog.showToast('刪除成功');
     } else {
       res.toast();
     }
@@ -71,17 +71,17 @@ class MemberDynamicsController
         ..moduleAuthor?.isTop = false;
       if (isTop) {
         loadingState.refresh();
-        SmartDialog.showToast('取消置顶成功');
+        SmartDialog.showToast('取消置頂成功');
       } else {
         final item = list.firstWhere((item) => item.idStr == dynamicId);
         item.modules
-          ..moduleTag = ModuleTag(text: '置顶')
+          ..moduleTag = ModuleTag(text: '置頂')
           ..moduleAuthor?.isTop = true;
         list
           ..remove(item)
           ..insert(0, item);
         loadingState.refresh();
-        SmartDialog.showToast('置顶成功');
+        SmartDialog.showToast('置頂成功');
       }
     } else {
       res.toast();

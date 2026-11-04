@@ -103,7 +103,7 @@ class MemberShopItem extends StatelessWidget {
                   ),
                   if (item.itemSourceName?.isNotEmpty == true)
                     Text(
-                      '来自${item.itemSourceName}',
+                      '來自${item.itemSourceName}',
                       style: TextStyle(
                         fontSize: 11,
                         color: colorScheme.freeColor,

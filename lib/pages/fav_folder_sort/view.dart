@@ -30,7 +30,7 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('收藏夹排序'),
+        title: const Text('收藏夾排序'),
         actions: [
           TextButton(
             onPressed: () async {
@@ -58,7 +58,7 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
 
   void onReorderItem(int oldIndex, int newIndex) {
     if (oldIndex == 0 || newIndex == 0) {
-      SmartDialog.showToast('默认收藏夹不支持排序');
+      SmartDialog.showToast('預設收藏夾不支援排序');
       return;
     }
 
@@ -86,7 +86,7 @@ class _FavFolderSortPageState extends State<FavFolderSortPage>
             heroTag: key,
             item: item,
             onLongPress: index == 0
-                ? () => SmartDialog.showToast('默认收藏夹不支持排序')
+                ? () => SmartDialog.showToast('預設收藏夾不支援排序')
                 : null,
           ),
         );

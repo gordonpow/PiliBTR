@@ -40,22 +40,22 @@ import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
 List<SettingsModel> get extraSettings => [
   if (PlatformUtils.isDesktop) ...[
     SwitchModel(
-      title: '退出时最小化',
+      title: '退出時最小化',
       leading: const Icon(Icons.exit_to_app),
       setKey: SettingBoxKey.minimizeOnExit,
       defaultVal: true,
       onChanged: (value) => WindowController.instance.minimizeOnExit = value,
     ),
     NormalModel(
-      title: '缓存路径',
+      title: '快取路徑',
       getSubtitle: () => downloadPath,
       leading: const Icon(Icons.storage),
       onTap: _showDownPathDialog,
     ),
   ] else if (Platform.isAndroid)
     SwitchModel(
-      title: '允许三方APP访问私有存储',
-      subtitle: '允许三方APP（例如MT管理器）通过访问外部存储的方式访问私有存储下的文件',
+      title: '允許三方APP訪問私有儲存',
+      subtitle: '允許三方APP（例如MT管理器）通過訪問外部儲存的方式訪問私有儲存下的檔案',
       leading: const Icon(Icons.storage),
       setKey: SettingBoxKey.enableDocProvider,
       defaultVal: Pref.enableDocProvider,
@@ -64,7 +64,7 @@ List<SettingsModel> get extraSettings => [
   SplitModel(
     normalModel: const NormalModel.split(
       title: '空降助手',
-      subtitle: '点击配置',
+      subtitle: '點選配置',
       leading: Icon(CustomIcons.shield_play_arrow),
     ),
     switchModel: SwitchModel.split(
@@ -74,7 +74,7 @@ List<SettingsModel> get extraSettings => [
     ),
   ),
   PopupModel<SkipType>(
-    title: '番剧片头/片尾跳过类型',
+    title: '番劇片頭/片尾跳過型別',
     leading: const Icon(MdiIcons.debugStepOver),
     value: () => Pref.pgcSkipType,
     items: SkipType.values,
@@ -83,83 +83,83 @@ List<SettingsModel> get extraSettings => [
         .whenComplete(setState),
   ),
   const SwitchModel(
-    title: '禁用 SSL 证书验证',
-    subtitle: '谨慎开启，禁用容易受到中间人攻击',
+    title: '停用 SSL 證書驗證',
+    subtitle: '謹慎開啟，停用容易受到中間人攻擊',
     leading: Icon(Icons.security),
     needReboot: true,
     setKey: SettingBoxKey.badCertificateCallback,
   ),
   const SwitchModel(
-    title: '使用外部浏览器打开链接',
+    title: '使用外部瀏覽器開啟連結',
     leading: Icon(Icons.open_in_browser),
     setKey: SettingBoxKey.openInBrowser,
     defaultVal: false,
   ),
   NormalModel(
-    title: '横向滑动阈值',
-    getSubtitle: () => '当前:「${Pref.touchSlopH}」，系统默认值: $deviceTouchSlop',
+    title: '橫向滑動閾值',
+    getSubtitle: () => '當前:「${Pref.touchSlopH}」，系統預設值: $deviceTouchSlop',
     onTap: _showTouchSlopDialog,
     leading: const Icon(Icons.pan_tool_alt_outlined),
   ),
   NormalModel(
-    title: '刷新指示器高度',
+    title: '重新整理指示器高度',
     leading: const Icon(Icons.height),
     getSubtitle: () =>
-        '当前指示器高度: ${Pref.refreshDisplacement}, 刷新滑动距离: $refreshDragExtent',
+        '當前指示器高度: ${Pref.refreshDisplacement}, 重新整理滑動距離: $refreshDragExtent',
     onTap: _showRefreshDialog,
   ),
   const SwitchModel(
-    title: '显示热门推荐',
-    subtitle: '热门页面显示每周必看等推荐内容入口',
+    title: '顯示熱門推薦',
+    subtitle: '熱門頁面顯示每週必看等推薦內容入口',
     leading: Icon(Icons.local_fire_department_outlined),
     setKey: SettingBoxKey.showHotRcmd,
     defaultVal: false,
     needReboot: true,
   ),
   const SwitchModel(
-    title: '搜索建议',
+    title: '搜尋建議',
     leading: Icon(Icons.search),
     setKey: SettingBoxKey.searchSuggestion,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '记录搜索历史',
+    title: '記錄搜尋歷史',
     leading: Icon(Icons.history),
     setKey: SettingBoxKey.recordSearchHistory,
     defaultVal: true,
   ),
   SwitchModel(
-    title: '预览 Live Photo',
-    subtitle: '开启则以视频形式预览 Live Photo，否则预览静态图片',
+    title: '預覽 Live Photo',
+    subtitle: '開啟則以影片形式預覽 Live Photo，否則預覽靜態圖片',
     leading: const Icon(Icons.image_outlined),
     setKey: SettingBoxKey.enableLivePhoto,
     defaultVal: true,
     onChanged: (value) => ImageModel.enableLivePhoto = value,
   ),
   SwitchModel(
-    title: '侧滑关闭二级页面',
+    title: '側滑關閉二級頁面',
     leading: const Icon(CustomIcons.touch_app_rotate_270),
     setKey: SettingBoxKey.slideDismissReplyPage,
     defaultVal: Platform.isIOS,
     onChanged: (value) => CommonSlideMixin.slideDismissReplyPage = value,
   ),
   const SwitchModel(
-    title: '展示追番时间表',
+    title: '展示追番時間表',
     leading: Icon(MdiIcons.chartTimelineVariantShimmer),
     setKey: SettingBoxKey.showPgcTimeline,
     defaultVal: true,
     needReboot: true,
   ),
   SwitchModel(
-    title: '静默下载图片',
-    subtitle: '不显示下载 Loading 弹窗',
+    title: '靜默下載圖片',
+    subtitle: '不顯示下載 Loading 彈窗',
     leading: const Icon(Icons.download_for_offline_outlined),
     setKey: SettingBoxKey.silentDownImg,
     defaultVal: false,
     onChanged: (value) => ImageUtils.silentDownImg = value,
   ),
   SwitchModel(
-    title: '长按/右键显示图片菜单',
+    title: '長按/右鍵顯示圖片選單',
     leading: const Icon(Icons.menu),
     setKey: SettingBoxKey.enableImgMenu,
     defaultVal: false,
@@ -172,8 +172,8 @@ List<SettingsModel> get extraSettings => [
       feedBack();
     },
     leading: const Icon(Icons.vibration_outlined),
-    title: '震动反馈',
-    subtitle: '请确定手机设置中已开启震动反馈',
+    title: '震動反饋',
+    subtitle: '請確定手機設定中已開啟震動反饋',
   ),
   const SwitchModel(
     title: '大家都在搜',
@@ -183,15 +183,15 @@ List<SettingsModel> get extraSettings => [
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '搜索发现',
-    subtitle: '是否展示「搜索发现」',
+    title: '搜尋發現',
+    subtitle: '是否展示「搜尋發現」',
     leading: Icon(Icons.search_outlined),
     setKey: SettingBoxKey.enableSearchRcmd,
     defaultVal: true,
   ),
   SwitchModel(
-    title: '搜索默认词',
-    subtitle: '是否展示搜索框默认词',
+    title: '搜尋預設詞',
+    subtitle: '是否展示搜尋框預設詞',
     leading: const Icon(Icons.whatshot_outlined),
     setKey: SettingBoxKey.enableSearchWord,
     defaultVal: false,
@@ -208,49 +208,49 @@ List<SettingsModel> get extraSettings => [
   ),
   const SwitchModel(
     title: '快速收藏',
-    subtitle: '点击设置默认收藏夹\n点按收藏至默认，长按选择文件夹',
+    subtitle: '點選設定預設收藏夾\n點按收藏至預設，長按選擇資料夾',
     leading: Icon(Icons.bookmark_add_outlined),
     setKey: SettingBoxKey.enableQuickFav,
     onTap: _showFavDialog,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '启用AI总结',
-    subtitle: '视频详情页开启AI总结',
+    title: '啟用AI總結',
+    subtitle: '影片詳情頁開啟AI總結',
     leading: Icon(Icons.engineering_outlined),
     setKey: SettingBoxKey.enableAi,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '消息页禁用"收到的赞"功能',
-    subtitle: '禁止打开入口，降低网络社交依赖',
+    title: '訊息頁停用"收到的贊"功能',
+    subtitle: '禁止開啟入口，降低網路社交依賴',
     leading: Icon(Icons.beach_access_outlined),
     setKey: SettingBoxKey.disableLikeMsg,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '启用HTTP/2',
+    title: '啟用HTTP/2',
     leading: Icon(Icons.swap_horizontal_circle_outlined),
     setKey: SettingBoxKey.enableHttp2,
     defaultVal: false,
     needReboot: true,
   ),
   const NormalModel(
-    title: '连接重试次数',
-    subtitle: '为0时禁用',
+    title: '連線重試次數',
+    subtitle: '為0時停用',
     leading: Icon(Icons.repeat),
     onTap: _showReplyCountDialog,
   ),
   const NormalModel(
-    title: '连接重试间隔',
-    subtitle: '实际间隔 = 间隔 * 第x次重试',
+    title: '連線重試間隔',
+    subtitle: '實際間隔 = 間隔 * 第x次重試',
     leading: Icon(Icons.more_time_outlined),
     onTap: _showReplyDelayDialog,
   ),
   const SplitModel(
     normalModel: NormalModel.split(
-      title: '设置代理',
-      subtitle: '设置代理 host:port',
+      title: '設定代理',
+      subtitle: '設定代理 host:port',
       leading: Icon(Icons.airplane_ticket_outlined),
     ),
     switchModel: SwitchModel.split(
@@ -260,14 +260,14 @@ List<SettingsModel> get extraSettings => [
     ),
   ),
   NormalModel(
-    title: '最大缓存大小',
-    getSubtitle: () => '当前最大缓存大小: 「${Pref.maxCacheSize.formatSize}」',
+    title: '最大快取大小',
+    getSubtitle: () => '當前最大快取大小: 「${Pref.maxCacheSize.formatSize}」',
     leading: const Icon(Icons.delete_outlined),
     onTap: _showCacheDialog,
   ),
   SwitchModel(
-    title: '检查更新',
-    subtitle: '每次启动时检查是否需要更新',
+    title: '檢查更新',
+    subtitle: '每次啟動時檢查是否需要更新',
     leading: const Icon(Icons.system_update_alt),
     setKey: SettingBoxKey.autoUpdate,
     defaultVal: true,
@@ -291,14 +291,14 @@ void _showDownPathDialog(BuildContext context, VoidCallback setState) {
             Get.back();
             PathUtils.openDir(downloadPath);
           },
-          child: const Text('打开'),
+          child: const Text('開啟'),
         ),
         DialogOption(
           onPressed: () {
             Get.back();
             Utils.copyText(downloadPath);
           },
-          child: const Text('复制', style: TextStyle(fontSize: 14)),
+          child: const Text('複製', style: TextStyle(fontSize: 14)),
         ),
         DialogOption(
           onPressed: () {
@@ -326,7 +326,7 @@ void _showDownPathDialog(BuildContext context, VoidCallback setState) {
             Get.find<DownloadService>().initDownloadList();
             GStorage.setting.put(SettingBoxKey.downloadPath, path);
           },
-          child: const Text('设置新路径', style: TextStyle(fontSize: 14)),
+          child: const Text('設定新路徑', style: TextStyle(fontSize: 14)),
         ),
       ],
     ),
@@ -338,7 +338,7 @@ void _showTouchSlopDialog(BuildContext context, VoidCallback setState) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('横向滑动阈值'),
+      title: const Text('橫向滑動閾值'),
       content: TextFormField(
         autofocus: true,
         initialValue: initialValue,
@@ -366,7 +366,7 @@ void _showTouchSlopDialog(BuildContext context, VoidCallback setState) {
               SmartDialog.showToast(e.toString());
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),
@@ -380,7 +380,7 @@ Future<void> _showRefreshDialog(
   final res = await showDialog<double>(
     context: context,
     builder: (context) => SliderDialog(
-      title: const Text('刷新指示器高度'),
+      title: const Text('重新整理指示器高度'),
       min: 10.0,
       max: 100.0,
       divisions: 9,
@@ -420,14 +420,14 @@ Future<void> _showFavDialog(BuildContext context) async {
         context: context,
         builder: (context) => AlertDialog(
           clipBehavior: Clip.hardEdge,
-          title: const Text('选择默认收藏夹'),
+          title: const Text('選擇預設收藏夾'),
           contentPadding: const EdgeInsets.only(top: 5, bottom: 18),
           content: SingleChildScrollView(
             child: RadioGroup(
               onChanged: (value) {
                 Get.back();
                 GStorage.setting.put(SettingBoxKey.quickFavId, value);
-                SmartDialog.showToast('设置成功');
+                SmartDialog.showToast('設定成功');
               },
               groupValue: quickFavId,
               child: Column(
@@ -459,7 +459,7 @@ Future<void> _showReplyCountDialog(
   final res = await showDialog<double>(
     context: context,
     builder: (context) => SliderDialog(
-      title: const Text('连接重试次数'),
+      title: const Text('連線重試次數'),
       min: 0,
       max: 8,
       divisions: 8,
@@ -470,7 +470,7 @@ Future<void> _showReplyCountDialog(
   if (res != null) {
     await GStorage.setting.put(SettingBoxKey.retryCount, res.toInt());
     setState();
-    SmartDialog.showToast('重启生效');
+    SmartDialog.showToast('重啟生效');
   }
 }
 
@@ -481,7 +481,7 @@ Future<void> _showReplyDelayDialog(
   final res = await showDialog<double>(
     context: context,
     builder: (context) => SliderDialog(
-      title: const Text('连接重试间隔'),
+      title: const Text('連線重試間隔'),
       min: 0,
       max: 1000,
       divisions: 10,
@@ -493,7 +493,7 @@ Future<void> _showReplyDelayDialog(
   if (res != null) {
     await GStorage.setting.put(SettingBoxKey.retryDelay, res.toInt());
     setState();
-    SmartDialog.showToast('重启生效');
+    SmartDialog.showToast('重啟生效');
   }
 }
 
@@ -504,7 +504,7 @@ void _showProxyDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('设置代理'),
+      title: const Text('設定代理'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -513,7 +513,7 @@ void _showProxyDialog(BuildContext context) {
             initialValue: systemProxyHost,
             decoration: const InputDecoration(
               isDense: true,
-              labelText: '请输入Host，使用 . 分割',
+              labelText: '請輸入Host，使用 . 分割',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(6)),
               ),
@@ -526,7 +526,7 @@ void _showProxyDialog(BuildContext context) {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               isDense: true,
-              labelText: '请输入Port',
+              labelText: '請輸入Port',
               border: OutlineInputBorder(borderRadius: .all(.circular(6))),
             ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -554,7 +554,7 @@ void _showProxyDialog(BuildContext context) {
               systemProxyPort,
             );
           },
-          child: const Text('确认'),
+          child: const Text('確認'),
         ),
       ],
     ),
@@ -566,7 +566,7 @@ void _showCacheDialog(BuildContext context, VoidCallback setState) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('最大缓存大小'),
+      title: const Text('最大快取大小'),
       content: TextField(
         maxLength: 6,
         autofocus: true,
@@ -597,7 +597,7 @@ void _showCacheDialog(BuildContext context, VoidCallback setState) {
               SmartDialog.showToast(e.toString());
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),

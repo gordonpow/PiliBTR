@@ -315,7 +315,7 @@ Widget module(
         padding: floor == 1
             ? const EdgeInsets.symmetric(horizontal: 12)
             : EdgeInsets.zero,
-        child: Text('暂未支持的类型: \n${item.idStr}\n${item.type}'),
+        child: Text('暫未支援的型別: \n${item.idStr}\n${item.type}'),
       );
   }
 }

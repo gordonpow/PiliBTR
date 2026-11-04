@@ -152,7 +152,7 @@ class _SubDetailPageState extends State<SubDetailPage>
             style: theme.textTheme.titleMedium,
           ),
           Text(
-            '共${info.mediaCount}条视频',
+            '共${info.mediaCount}條影片',
             style: theme.textTheme.labelMedium,
           ),
         ],
@@ -201,7 +201,7 @@ class _SubDetailPageState extends State<SubDetailPage>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text('共${info.mediaCount}条视频', style: style),
+                    Text('共${info.mediaCount}條影片', style: style),
                     const SizedBox(height: 4),
                     Text(
                       '${NumUtils.numFormat(info.viewCount ?? info.cntInfo?.play)}次播放',

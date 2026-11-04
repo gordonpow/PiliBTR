@@ -157,10 +157,10 @@ class _HistoryPageState extends State<HistoryPage>
   }
 
   AppBar get _buildAppBar => AppBar(
-    title: const Text('观看记录'),
+    title: const Text('觀看記錄'),
     actions: [
       IconButton(
-        tooltip: '搜索',
+        tooltip: '搜尋',
         onPressed: () => Get.toNamed('/historySearch'),
         icon: const Icon(Icons.search_outlined),
       ),
@@ -170,8 +170,8 @@ class _HistoryPageState extends State<HistoryPage>
             onTap: () => _historyController.baseCtr.onPauseHistory(context),
             child: Text(
               !_historyController.baseCtr.pauseStatus.value
-                  ? '暂停观看记录'
-                  : '恢复观看记录',
+                  ? '暫停觀看記錄'
+                  : '恢復觀看記錄',
             ),
           ),
           PopupMenuItem(
@@ -192,11 +192,11 @@ class _HistoryPageState extends State<HistoryPage>
                 }
               },
             ),
-            child: const Text('清空观看记录'),
+            child: const Text('清空觀看記錄'),
           ),
           PopupMenuItem(
             onTap: currCtr().onDelViewedHistory,
-            child: const Text('删除已看记录'),
+            child: const Text('刪除已看記錄'),
           ),
         ],
       ),
@@ -261,7 +261,7 @@ class _HistoryPageState extends State<HistoryPage>
                           color: theme.onSecondaryContainer,
                         ),
                       ),
-                      const TextSpan(text: ' 历史记录功能已关闭'),
+                      const TextSpan(text: ' 歷史記錄功能已關閉'),
                     ],
                   ),
                 ),
@@ -275,7 +275,7 @@ class _HistoryPageState extends State<HistoryPage>
                     horizontal: 10,
                   ),
                   child: Text(
-                    '点击开启',
+                    '點選開啟',
                     strutStyle: const StrutStyle(height: 1, leading: 0),
                     style: TextStyle(height: 1, color: theme.primary),
                   ),

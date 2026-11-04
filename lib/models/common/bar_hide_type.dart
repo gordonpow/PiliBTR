@@ -1,7 +1,7 @@
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 
 enum BarHideType with EnumWithLabel {
-  instant('即时'),
+  instant('即時'),
   sync('同步'),
   ;
 

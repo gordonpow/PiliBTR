@@ -820,8 +820,8 @@ class ReserveBtn {
   ReserveBtn.fromJson(Map<String, dynamic> json) {
     status = safeToInt(json['status']);
     type = safeToInt(json['type']);
-    checkText = json['check']?['text'] ?? '已预约';
-    uncheckText = json['uncheck']?['text'] ?? '预约';
+    checkText = json['check']?['text'] ?? '已預約';
+    uncheckText = json['uncheck']?['text'] ?? '預約';
     disable = safeToInt(json['uncheck']?['disable']);
     jumpText = json['jump_style']?['text'];
     jumpUrl = json['jump_url'];

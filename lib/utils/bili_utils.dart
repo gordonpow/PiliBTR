@@ -13,7 +13,7 @@ abstract final class BiliUtils {
     if (attr == null) {
       return '';
     }
-    return isPublicFav(attr) ? '公开' : '私密';
+    return isPublicFav(attr) ? '公開' : '私密';
   }
 
   static bool isPublicFav(int attr) {
@@ -55,14 +55,14 @@ abstract final class BiliUtils {
   };
 
   static String? pgcType2Label(int? pgcType) => switch (pgcType) {
-    -1 => '课程',
-    1 => '番剧',
-    2 => '电影',
-    3 => '纪录片',
-    4 => '国创',
-    5 => '电视剧',
-    6 => '漫画',
-    7 => '综艺',
+    -1 => '課程',
+    1 => '番劇',
+    2 => '電影',
+    3 => '紀錄片',
+    4 => '國創',
+    5 => '電視劇',
+    6 => '漫畫',
+    7 => '綜藝',
     _ => null,
   };
 

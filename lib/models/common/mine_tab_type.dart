@@ -2,9 +2,9 @@ import 'package:PiliPlus/models/common/enum_with_label.dart';
 
 enum MineTabType implements EnumWithLabel {
   favorite('我的收藏'),
-  history('观看记录'),
-  later('稍后再看'),
-  sub('我的订阅');
+  history('觀看記錄'),
+  later('稍後再看'),
+  sub('我的訂閱');
 
   static const Set<MineTabType> kDefault = {.favorite};
 

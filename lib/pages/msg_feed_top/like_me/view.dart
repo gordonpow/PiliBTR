@@ -36,7 +36,7 @@ class _LikeMePageState extends State<LikeMePage> {
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('收到的赞'),
+        title: const Text('收到的贊'),
         actions: [
           IconButton(
             onPressed: () => Get.to(
@@ -113,7 +113,7 @@ class _LikeMePageState extends State<LikeMePage> {
                     ),
                   ],
                   if (total.isNotEmpty) ...[
-                    _buildHeader(theme, '累计'),
+                    _buildHeader(theme, '累計'),
                     SliverList.separated(
                       itemBuilder: (context, index) {
                         if (index == total.length - 1) {
@@ -212,12 +212,12 @@ class _LikeMePageState extends State<LikeMePage> {
                 Get.back();
                 showConfirmDialog(
                   context: context,
-                  title: const Text('删除'),
-                  content: const Text('该条通知删除后，当有新点赞时会重新出现在列表，是否继续？'),
+                  title: const Text('刪除'),
+                  content: const Text('該條通知刪除後，當有新點贊時會重新出現在列表，是否繼續？'),
                   onConfirm: () => onRemove(item.id),
                 );
               },
-              child: const Text('删除', style: TextStyle(fontSize: 14)),
+              child: const Text('刪除', style: TextStyle(fontSize: 14)),
             ),
             DialogOption(
               onPressed: () {
@@ -226,7 +226,7 @@ class _LikeMePageState extends State<LikeMePage> {
                   showConfirmDialog(
                     context: context,
                     title: const Text('不再通知'),
-                    content: const Text('这条内容的点赞将不再通知，但仍可在列表内查看，是否继续？'),
+                    content: const Text('這條內容的點贊將不再通知，但仍可在列表內檢視，是否繼續？'),
                     onConfirm: () =>
                         _likeMeController.onSetNotice(item, isNotice),
                   );
@@ -287,7 +287,7 @@ class _LikeMePageState extends State<LikeMePage> {
                 ),
               ),
             TextSpan(
-              text: ' 赞了我的${item.item?.business}',
+              text: ' 讚了我的${item.item?.business}',
               style: theme.textTheme.titleSmall!.copyWith(
                 height: 1.5,
                 color: theme.colorScheme.onSurfaceVariant,

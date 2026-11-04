@@ -64,7 +64,7 @@ class FollowController extends GetxController with GetTickerProviderStateMixin {
     final res = await MemberHttp.followUpTags();
     if (res case Success(:final response)) {
       tabs
-        ..assign(MemberTagItemModel(name: '全部关注'))
+        ..assign(MemberTagItemModel(name: '全部關注'))
         ..addAll(response);
       onInitTab();
       followState.value = Success(tabs.hashCode);
@@ -115,7 +115,7 @@ class FollowController extends GetxController with GetTickerProviderStateMixin {
       tabs.removeAt(index);
       onInitTab();
       followState.refresh();
-      SmartDialog.showToast('删除成功');
+      SmartDialog.showToast('刪除成功');
     } else {
       res.toast();
     }

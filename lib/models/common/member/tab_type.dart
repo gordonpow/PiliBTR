@@ -1,13 +1,13 @@
 import 'package:PiliPlus/utils/storage_pref.dart';
 
 enum MemberTabType {
-  def('默认'),
-  home('主页'),
-  dynamic('动态'),
+  def('預設'),
+  home('主頁'),
+  dynamic('動態'),
   contribute('投稿'),
   favorite('收藏'),
-  bangumi('番剧'),
-  cheese('课堂'),
+  bangumi('番劇'),
+  cheese('課堂'),
   shop('小店'),
   ;
 

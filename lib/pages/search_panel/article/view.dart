@@ -61,7 +61,7 @@ class _SearchArticlePanelState
             const Spacer(),
             Obx(
               () => Text(
-                '分区: ${controller.articleZoneType!.value.label}',
+                '分割槽: ${controller.articleZoneType!.value.label}',
                 maxLines: 1,
                 style: TextStyle(color: colorScheme.outline),
               ),
@@ -71,7 +71,7 @@ class _SearchArticlePanelState
               width: 32,
               height: 32,
               child: IconButton(
-                tooltip: '筛选',
+                tooltip: '篩選',
                 style: const ButtonStyle(
                   padding: WidgetStatePropertyAll(EdgeInsets.zero),
                 ),

@@ -35,7 +35,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
   Widget build(BuildContext context) {
     return fabAnimWrapper(
       child: SimpleScaffold(
-        appBar: AppBar(title: const Text('比赛详情')),
+        appBar: AppBar(title: const Text('比賽詳情')),
         body: ViewSafeArea(
           child: refreshIndicator(
             onRefresh: controller.onRefresh,
@@ -78,7 +78,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
     Get.to(
       SimpleScaffold(
         appBar: AppBar(
-          title: const Text('评论详情'),
+          title: const Text('評論詳情'),
           shape: Border(
             bottom: BorderSide(
               color: theme.colorScheme.outline.withValues(alpha: 0.1),

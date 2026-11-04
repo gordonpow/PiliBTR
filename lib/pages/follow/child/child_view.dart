@@ -161,7 +161,7 @@ class _FollowChildPageState extends State<FollowChildPage>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '我们的共同关注',
+                            '我們的共同關注',
                             style: TextStyle(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -190,7 +190,7 @@ class _FollowChildPageState extends State<FollowChildPage>
                         bottom: 6,
                       ),
                       child: Text(
-                        '全部关注',
+                        '全部關注',
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                         ),

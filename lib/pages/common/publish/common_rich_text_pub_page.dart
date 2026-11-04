@@ -239,7 +239,7 @@ abstract class CommonRichTextPubPageState<T extends CommonRichTextPubPage>
       if (pickedFiles.isNotEmpty) {
         for (int i = 0; i < pickedFiles.length; i++) {
           if (imageList.length == limit) {
-            SmartDialog.showToast('最多选择$limit张图片');
+            SmartDialog.showToast('最多選擇$limit張圖片');
             break;
           } else {
             imageList.add(FilePicModel(path: pickedFiles[i].path));
@@ -469,7 +469,7 @@ abstract class CommonRichTextPubPageState<T extends CommonRichTextPubPage>
     () {
       final isEmoji = panelType.value == PanelType.emoji;
       return ToolbarIconButton(
-        tooltip: isEmoji ? '输入' : '表情',
+        tooltip: isEmoji ? '輸入' : '表情',
         onPressed: () => updatePanelType(isEmoji ? .keyboard : .emoji),
         icon: isEmoji
             ? const Icon(Icons.keyboard, size: 22)
@@ -490,7 +490,7 @@ abstract class CommonRichTextPubPageState<T extends CommonRichTextPubPage>
     () {
       final isMore = panelType.value == PanelType.more;
       return ToolbarIconButton(
-        tooltip: isMore ? '输入' : '更多',
+        tooltip: isMore ? '輸入' : '更多',
         onPressed: () => updatePanelType(isMore ? .keyboard : .more),
         icon: isMore
             ? const Icon(Icons.keyboard, size: 22)
@@ -505,7 +505,7 @@ abstract class CommonRichTextPubPageState<T extends CommonRichTextPubPage>
     feedBack();
     List<Map<String, dynamic>>? pictures;
     if (imageList.isNotEmpty) {
-      SmartDialog.showLoading(msg: '正在上传图片...');
+      SmartDialog.showLoading(msg: '正在上傳圖片...');
       final cancelToken = CancelToken();
       try {
         pictures = await Future.wait<Map<String, dynamic>>(

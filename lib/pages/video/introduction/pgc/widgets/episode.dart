@@ -151,8 +151,8 @@ class _EpisodePanelState extends State<EpisodePanel> {
                       widget.showEpisodes(type: .pgc, episodeType: .episode),
                   child: Text(
                     _newEp?.desc?.contains('连载') == true
-                        ? '连载中，更新至${Utils.isStringNumeric(_newEp!.title!) ? '第${_newEp!.title}话' : '${_newEp!.title}'}'
-                        : _newEp?.desc ?? '查看全部',
+                        ? '連載中，更新至${Utils.isStringNumeric(_newEp!.title!) ? '第${_newEp!.title}話' : '${_newEp!.title}'}'
+                        : _newEp?.desc ?? '檢視全部',
                     style: const TextStyle(fontSize: 13),
                   ),
                 ),
@@ -193,7 +193,7 @@ class _EpisodePanelState extends State<EpisodePanel> {
           onTap: () {
             if (isCurr) return;
             if (item.badge == '会员' && !_isVip) {
-              SmartDialog.showToast('需要大会员');
+              SmartDialog.showToast('需要大會員');
             }
             widget.onChangeEpisode(item, episodeType: .episode);
           },
@@ -225,7 +225,7 @@ class _EpisodePanelState extends State<EpisodePanel> {
                                 ),
                               ),
                             TextSpan(
-                              text: item.title ?? '第${index + 1}话',
+                              text: item.title ?? '第${index + 1}話',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: color,
@@ -241,7 +241,7 @@ class _EpisodePanelState extends State<EpisodePanel> {
                         SvgPicture.asset(
                           Assets.vipIcon,
                           height: 16,
-                          semanticsLabel: "大会员",
+                          semanticsLabel: "大會員",
                         )
                       else
                         Text(
@@ -250,7 +250,7 @@ class _EpisodePanelState extends State<EpisodePanel> {
                             fontSize: 11,
                             color: switch (item.badge) {
                               '限免' => colorScheme.freeColor,
-                              '预告' => colorScheme.onSurfaceVariant,
+                              '預告' => colorScheme.onSurfaceVariant,
                               _ => colorScheme.primary,
                             },
                           ),

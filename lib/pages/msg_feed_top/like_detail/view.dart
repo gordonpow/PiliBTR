@@ -32,7 +32,7 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('点赞详情')),
+      appBar: AppBar(title: const Text('點贊詳情')),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
         child: CustomScrollView(
@@ -136,7 +136,7 @@ class _LikeDetailPageState extends State<LikeDetailPage> {
               ),
             ),
             TextSpan(
-              text: " 赞了我",
+              text: " 讚了我",
               style: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurfaceVariant,

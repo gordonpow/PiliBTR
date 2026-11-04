@@ -48,7 +48,7 @@ class _ViewPointsPageState extends State<ViewPointsPage>
         child: Row(
           children: [
             const SizedBox(width: 16),
-            const Expanded(child: Text('分段信息', style: TextStyle(fontSize: 16))),
+            const Expanded(child: Text('分段資訊', style: TextStyle(fontSize: 16))),
             Obx(
               () => Transform.scale(
                 alignment: Alignment.centerLeft,
@@ -63,7 +63,7 @@ class _ViewPointsPageState extends State<ViewPointsPage>
               context: context,
               size: 30,
               icon: const Icon(Icons.clear),
-              tooltip: '关闭',
+              tooltip: '關閉',
               onPressed: Get.back,
             ),
             const SizedBox(width: 16),

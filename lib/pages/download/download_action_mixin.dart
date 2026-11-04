@@ -15,7 +15,7 @@ bool checkUpdateCount(int count) {
     case 0:
       return true;
     case > kMaxUpdateCount:
-      SmartDialog.showToast('数量超过$kMaxUpdateCount');
+      SmartDialog.showToast('數量超過$kMaxUpdateCount');
       return true;
   }
   return false;
@@ -27,7 +27,7 @@ void toastUpdateResult(bool dismiss, bool isSuccess) {
   } else if (isSuccess) {
     SmartDialog.showToast('更新成功');
   } else {
-    SmartDialog.showToast('更新失败');
+    SmartDialog.showToast('更新失敗');
   }
   SmartDialog.dismiss();
 }
@@ -118,7 +118,7 @@ mixin BaseDownloadActionMixin<
       items: [
         PopupMenuItem(
           onTap: _onUpdateDm,
-          child: const Text('更新弹幕'),
+          child: const Text('更新彈幕'),
         ),
         PopupMenuItem(
           onTap: _onUpdateSeg,

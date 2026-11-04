@@ -40,7 +40,7 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
         'C=Object.assign({gt:"$gt",challenge:"$challenge",offline:false,new_captcha:true,product:"bind",width:"100%",https:true,protocol:"https://"},d.data);T()'
         '};'
         'G=()=>{S=1;T()};'
-        'E=()=>{document.getElementById("E").textContent="验证码加载失败";R("error","geetest script load failed")}';
+        'E=()=>{document.getElementById("E").textContent="驗證碼載入失敗";R("error","geetest script load failed")}';
 
     return '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width"></head>'
         '<style>#E{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:red}</style>'
@@ -59,7 +59,7 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
 
     if (Platform.isLinux) {
       return AlertDialog(
-        title: const Text('验证码'),
+        title: const Text('驗證碼'),
         content: SizedBox(
           width: 300,
           height: 400,
@@ -157,7 +157,7 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
           child: IconButton(
             icon: const Icon(Icons.close),
             onPressed: Get.back,
-            tooltip: '关闭',
+            tooltip: '關閉',
           ),
         ),
       ],

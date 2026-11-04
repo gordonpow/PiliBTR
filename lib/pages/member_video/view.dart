@@ -186,7 +186,7 @@ class _MemberVideoState extends State<MemberVideo>
                           _jumpToIndex(locatedIndex);
                         }
                       },
-                      label: const Text('定位至上次观看'),
+                      label: const Text('定位至上次觀看'),
                     ),
                   ),
                 )
@@ -264,7 +264,7 @@ class _MemberVideoState extends State<MemberVideo>
     final count = _controller.count;
     if (count != null) {
       return Text(
-        '共$count视频',
+        '共$count影片',
         style: const TextStyle(fontSize: 13),
       );
     }

@@ -623,7 +623,7 @@ class OpusContent extends StatelessWidget {
                           PBadge(
                             top: 6,
                             right: 6,
-                            text: liveState ? '直播中' : '直播结束',
+                            text: liveState ? '直播中' : '直播結束',
                             type: liveState ? .primary : .gray,
                           ),
                         ],
@@ -687,7 +687,7 @@ class OpusContent extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${opus.authorName} · ${opus.statView ?? 0}阅读',
+                              '${opus.authorName} · ${opus.statView ?? 0}閱讀',
                               maxLines: 1,
                               overflow: .ellipsis,
                               style: TextStyle(
@@ -730,7 +730,7 @@ class OpusContent extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${vote.joinNum}人参与',
+                              '${vote.joinNum}人參與',
                               maxLines: 1,
                               overflow: .ellipsis,
                               style: TextStyle(
@@ -1087,7 +1087,7 @@ class OpusContent extends StatelessWidget {
                               overflow: .ellipsis,
                             ),
                             Text(
-                              '${NumUtils.numFormat(info.joinNum)}人参与',
+                              '${NumUtils.numFormat(info.joinNum)}人參與',
                               maxLines: 1,
                               overflow: .ellipsis,
                               style: TextStyle(
@@ -1231,7 +1231,7 @@ class OpusContent extends StatelessWidget {
               }
 
               return Text(
-                '不支持的类型 (${element.paraType})',
+                '不支援的型別 (${element.paraType})',
                 style: const TextStyle(
                   fontWeight: .bold,
                   color: Colors.red,
@@ -1240,7 +1240,7 @@ class OpusContent extends StatelessWidget {
           }
         } catch (e, s) {
           return Text(
-            '错误的类型 $e${kDebugMode ? '\n$s' : ''}',
+            '錯誤的型別 $e${kDebugMode ? '\n$s' : ''}',
             style: const TextStyle(
               fontWeight: .bold,
               color: Colors.red,

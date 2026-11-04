@@ -69,8 +69,8 @@ class _SavePanelState extends State<SavePanel> {
 
   // item
   Object get _item => widget.item;
-  late String viewType = '查看';
-  late String itemType = '内容';
+  late String viewType = '檢視';
+  late String itemType = '內容';
 
   //reply
   String? cover;
@@ -109,7 +109,7 @@ class _SavePanelState extends State<SavePanel> {
   }
 
   void _parseReply(ReplyInfo reply) {
-    itemType = '评论';
+    itemType = '評論';
     final currentRoute = Get.currentRoute;
     late final hasRoot = reply.hasRoot();
 
@@ -231,25 +231,25 @@ class _SavePanelState extends State<SavePanel> {
     try {
       switch (item.type) {
         case 'DYNAMIC_TYPE_AV':
-          viewType = '观看';
-          itemType = '视频';
+          viewType = '觀看';
+          itemType = '影片';
           uri = 'bilibili://video/${item.basic!.commentIdStr}';
           break;
 
         case 'DYNAMIC_TYPE_ARTICLE':
-          itemType = '专栏';
+          itemType = '專欄';
           uri = 'bilibili://following/detail/${item.idStr}';
           break;
 
         case 'DYNAMIC_TYPE_LIVE_RCMD':
-          viewType = '观看';
+          viewType = '觀看';
           itemType = '直播';
           final roomId = item.modules.moduleDynamic!.major!.liveRcmd!.roomId;
           uri = 'bilibili://live/$roomId';
           break;
 
         case 'DYNAMIC_TYPE_UGC_SEASON':
-          viewType = '观看';
+          viewType = '觀看';
           itemType = '合集';
           final aid = item.modules.moduleDynamic!.major!.ugcSeason!.aid;
           uri = 'bilibili://video/$aid';
@@ -257,16 +257,16 @@ class _SavePanelState extends State<SavePanel> {
 
         case 'DYNAMIC_TYPE_PGC':
         case 'DYNAMIC_TYPE_PGC_UNION':
-          viewType = '观看';
+          viewType = '觀看';
           itemType =
-              item.modules.moduleDynamic?.major?.pgc?.badge?.text ?? '番剧';
+              item.modules.moduleDynamic?.major?.pgc?.badge?.text ?? '番劇';
           final epid = item.modules.moduleDynamic!.major!.pgc!.epid;
           uri = 'bilibili://pgc/season/ep/$epid';
           break;
 
         // https://www.bilibili.com/medialist/detail/ml12345678
         case 'DYNAMIC_TYPE_MEDIALIST':
-          itemType = '收藏夹';
+          itemType = '收藏夾';
           final mediaId = item.modules.moduleDynamic!.major!.medialist!.id;
           uri = 'bilibili://medialist/detail/$mediaId';
           break;
@@ -280,7 +280,7 @@ class _SavePanelState extends State<SavePanel> {
         // 图文动态查看
         // case 'DYNAMIC_TYPE_DRAW':
         default:
-          itemType = '动态';
+          itemType = '動態';
           uri = 'bilibili://following/detail/${item.idStr}';
           break;
       }
@@ -462,7 +462,7 @@ class _SavePanelState extends State<SavePanel> {
                                                   ),
                                                 ),
                                               Text(
-                                                '识别二维码，$viewType$itemType',
+                                                '識別二維碼，$viewType$itemType',
                                                 textAlign: .end,
                                                 style: TextStyle(
                                                   color: colorScheme
@@ -550,7 +550,7 @@ class _SavePanelState extends State<SavePanel> {
                 children: [
                   iconButton(
                     size: 42,
-                    tooltip: '关闭',
+                    tooltip: '關閉',
                     icon: const Icon(Icons.clear),
                     onPressed: Get.back,
                     bgColor: colorScheme.onInverseSurface,
@@ -558,7 +558,7 @@ class _SavePanelState extends State<SavePanel> {
                   ),
                   iconButton(
                     size: 42,
-                    tooltip: showBottom ? '隐藏' : '显示',
+                    tooltip: showBottom ? '隱藏' : '顯示',
                     context: context,
                     icon: showBottom
                         ? const Icon(Icons.visibility_off)
@@ -577,7 +577,7 @@ class _SavePanelState extends State<SavePanel> {
                     ),
                   iconButton(
                     size: 42,
-                    tooltip: '保存',
+                    tooltip: '儲存',
                     context: context,
                     icon: const Icon(Icons.save_alt),
                     onPressed: _onSaveOrSharePic,

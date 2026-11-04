@@ -4,14 +4,14 @@ class LiveQuality extends BaseQuality {
   const LiveQuality(super.code, super.desc);
 
   static const LiveQuality dolby = .new(30000, '杜比');
-  static const LiveQuality origin4K = .new(25000, '4K 原画');
+  static const LiveQuality origin4K = .new(25000, '4K 原畫');
   static const LiveQuality super4K = .new(20000, '4K');
   static const LiveQuality super2K = .new(15000, '2K');
-  static const LiveQuality origin = .new(10000, '原画');
-  static const LiveQuality bluRay = .new(400, '蓝光');
+  static const LiveQuality origin = .new(10000, '原畫');
+  static const LiveQuality bluRay = .new(400, '藍光');
   static const LiveQuality superHD = .new(250, '超清');
-  static const LiveQuality smooth = .new(150, '高清');
-  static const LiveQuality flunt = .new(80, '流畅');
+  static const LiveQuality smooth = .new(150, '高畫質');
+  static const LiveQuality flunt = .new(80, '流暢');
 
   static const List<LiveQuality> values = [
     dolby,

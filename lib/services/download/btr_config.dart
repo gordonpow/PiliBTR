@@ -6,9 +6,9 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 
 enum BtrCdnMode {
-  mainland('大陆'),
+  mainland('大陸'),
   overseas('海外'),
-  custom('自定义'),
+  custom('自定義'),
   ;
 
   final String label;

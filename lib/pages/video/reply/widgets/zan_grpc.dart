@@ -34,7 +34,7 @@ class ZanButtonGrpc extends StatelessWidget {
     );
     // SmartDialog.dismiss();
     if (res.isSuccess) {
-      SmartDialog.showToast(isDislike ? '取消踩' : '点踩成功');
+      SmartDialog.showToast(isDislike ? '取消踩' : '點踩成功');
       if (isDislike) {
         replyItem.replyControl.action = $fixnum.Int64.ZERO;
       } else {
@@ -67,7 +67,7 @@ class ZanButtonGrpc extends StatelessWidget {
       action: action,
     );
     if (res.isSuccess) {
-      SmartDialog.showToast(isLike ? '取消赞' : '点赞成功');
+      SmartDialog.showToast(isLike ? '取消贊' : '點贊成功');
       if (isLike) {
         replyItem
           ..like -= $fixnum.Int64.ONE
@@ -86,7 +86,7 @@ class ZanButtonGrpc extends StatelessWidget {
   }
 
   static void _toastNotLogin() {
-    SmartDialog.showToast('账号未登录');
+    SmartDialog.showToast('賬號未登入');
   }
 
   @override
@@ -141,7 +141,7 @@ class ZanButtonGrpc extends StatelessWidget {
                   : FontAwesomeIcons.thumbsDown,
               size: 16,
               color: isDislike ? primary : outline,
-              semanticLabel: isDislike ? '已踩' : '点踩',
+              semanticLabel: isDislike ? '已踩' : '點踩',
             ),
           ),
         ),
@@ -161,7 +161,7 @@ class ZanButtonGrpc extends StatelessWidget {
                       : FontAwesomeIcons.thumbsUp,
                   size: 16,
                   color: isLike ? primary : outline,
-                  semanticLabel: isLike ? '已赞' : '点赞',
+                  semanticLabel: isLike ? '已贊' : '點贊',
                 ),
                 Text(
                   NumUtils.numFormat(replyItem.like.toInt()),

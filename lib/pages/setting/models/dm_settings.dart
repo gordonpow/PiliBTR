@@ -15,23 +15,23 @@ import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
 
 List<SettingsModel> get dmSettings => [
   const SwitchModel(
-    title: '弹幕开关',
-    subtitle: '是否展示弹幕',
+    title: '彈幕開關',
+    subtitle: '是否展示彈幕',
     leading: Icon(CustomIcons.dm_settings),
     setKey: SettingBoxKey.enableShowDanmaku,
     defaultVal: true,
   ),
   if (PlatformUtils.isMobile)
     const SwitchModel(
-      title: '启用点击弹幕',
-      subtitle: '点击弹幕悬停，支持点赞、复制、举报操作',
+      title: '啟用點選彈幕',
+      subtitle: '點選彈幕懸停，支援點贊、複製、舉報操作',
       leading: Icon(Icons.touch_app_outlined),
       setKey: SettingBoxKey.enableTapDm,
       defaultVal: true,
     ),
   NormalModel(
-    title: '弹幕行高',
-    subtitle: '默认1.6',
+    title: '彈幕行高',
+    subtitle: '預設1.6',
     leading: const Icon(CustomIcons.dm_settings),
     getTrailing: (theme) => Text(
       Pref.danmakuLineHeight.toString(),
@@ -40,14 +40,14 @@ List<SettingsModel> get dmSettings => [
     onTap: _showDmHeightDialog,
   ),
   const SwitchModel(
-    title: '显示会员彩色弹幕',
+    title: '顯示會員彩色彈幕',
     leading: Icon(MdiIcons.gradientHorizontal),
     setKey: SettingBoxKey.showVipDanmaku,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '合并弹幕',
-    subtitle: '合并一段时间内获取到的相同弹幕',
+    title: '合併彈幕',
+    subtitle: '合併一段時間內獲取到的相同彈幕',
     leading: Icon(Icons.merge),
     setKey: SettingBoxKey.mergeDanmaku,
     defaultVal: false,
@@ -59,7 +59,7 @@ void _showDmHeightDialog(BuildContext context, VoidCallback setState) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('弹幕行高'),
+      title: const Text('彈幕行高'),
       content: TextFormField(
         autofocus: true,
         initialValue: danmakuLineHeight,
@@ -89,7 +89,7 @@ void _showDmHeightDialog(BuildContext context, VoidCallback setState) {
               SmartDialog.showToast(e.toString());
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),

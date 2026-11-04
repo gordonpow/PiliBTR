@@ -59,7 +59,7 @@ Future<void> importFromClipBoard<T>(
       json = jsonDecode(text);
       formatText = Utils.jsonEncoder.convert(json);
     } catch (e) {
-      SmartDialog.showToast('解析json失败：$e');
+      SmartDialog.showToast('解析json失敗：$e');
       return;
     }
     bool? executeImport;
@@ -85,7 +85,7 @@ Future<void> importFromClipBoard<T>(
             result.render(renderer);
           }
           return AlertDialog(
-            title: Text('是否导入如下$title？'),
+            title: Text('是否匯入如下$title？'),
             content: SingleChildScrollView(
               child: Text.rich(renderer.span!),
             ),
@@ -96,7 +96,7 @@ Future<void> importFromClipBoard<T>(
               ),
               TextButton(
                 onPressed: () => Get.back(result: true),
-                child: const Text('确定'),
+                child: const Text('確定'),
               ),
             ],
           );
@@ -108,13 +108,13 @@ Future<void> importFromClipBoard<T>(
     if (executeImport ?? false) {
       try {
         await onImport(json);
-        SmartDialog.showToast('导入成功');
+        SmartDialog.showToast('匯入成功');
       } catch (e) {
-        SmartDialog.showToast('导入失败：$e');
+        SmartDialog.showToast('匯入失敗：$e');
       }
     }
   } else {
-    SmartDialog.showToast('剪贴板无数据');
+    SmartDialog.showToast('剪貼簿無資料');
     return;
   }
 }
@@ -132,14 +132,14 @@ Future<void> importFromLocalFile<T>({
     try {
       json = jsonDecode(data);
     } catch (e) {
-      SmartDialog.showToast('解析json失败：$e');
+      SmartDialog.showToast('解析json失敗：$e');
       return;
     }
     try {
       await onImport(json);
-      SmartDialog.showToast('导入成功');
+      SmartDialog.showToast('匯入成功');
     } catch (e) {
-      SmartDialog.showToast('导入失败：$e');
+      SmartDialog.showToast('匯入失敗：$e');
     }
   }
 }
@@ -156,7 +156,7 @@ void importFromInput<T>(
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text('输入$title'),
+      title: Text('輸入$title'),
       constraints: Style.dialogFixedConstraints,
       content: TextFormField(
         key: key,
@@ -173,7 +173,7 @@ void importFromInput<T>(
             json = jsonDecode(value!) as T;
             return null;
           } catch (e) {
-            return '解析json失败：$e';
+            return '解析json失敗：$e';
           }
         },
       ),
@@ -193,16 +193,16 @@ void importFromInput<T>(
               try {
                 await onImport(json);
                 Get.back();
-                SmartDialog.showToast('导入成功');
+                SmartDialog.showToast('匯入成功');
                 return;
               } catch (e) {
-                forceErrorText = '导入失败：$e';
+                forceErrorText = '匯入失敗：$e';
               }
               key.currentState?.validate();
               forceErrorText = null;
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),
@@ -219,7 +219,7 @@ Future<void> _exportAllDataToArchive() async {
       bytes: Uint8List(0),
     );
     if (path == null) {
-      SmartDialog.showToast("取消保存");
+      SmartDialog.showToast("取消儲存");
       return;
     }
     try {
@@ -227,7 +227,7 @@ Future<void> _exportAllDataToArchive() async {
       ConfigArchive.export(out);
       await out.close();
     } catch (e) {
-      SmartDialog.showToast('导出失败：$e');
+      SmartDialog.showToast('匯出失敗：$e');
       File.fromUri(path).tryDel();
       return;
     }
@@ -237,7 +237,7 @@ Future<void> _exportAllDataToArchive() async {
       ConfigArchive.export(out);
     } catch (e) {
       out.closeSync();
-      SmartDialog.showToast('导出失败：$e');
+      SmartDialog.showToast('匯出失敗：$e');
       return;
     }
     final path = await FilePicker.saveFile(
@@ -246,7 +246,7 @@ Future<void> _exportAllDataToArchive() async {
     );
     out.closeSync();
     if (path == null) {
-      SmartDialog.showToast("取消保存");
+      SmartDialog.showToast("取消儲存");
     }
   }
 }
@@ -262,7 +262,7 @@ Future<void> _importAllDataFromArchive(BuildContext context) async {
   try {
     bytes = await result.readAsBytes();
   } catch (e) {
-    SmartDialog.showToast('导入失败：$e');
+    SmartDialog.showToast('匯入失敗：$e');
     return;
   }
 
@@ -278,15 +278,15 @@ Future<void> _importAllDataFromArchive(BuildContext context) async {
     ),
     TextButton(
       onPressed: () => Get.back(result: true),
-      child: const Text('继续'),
+      child: const Text('繼續'),
     ),
   ];
 
   final res = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('导入所有数据？'),
-      content: const Text('将用压缩包内的设置、账号信息、历史评论、搜索记录、黑名单、自定义字体覆盖当前数据，此操作不可撤销。'),
+      title: const Text('匯入所有資料？'),
+      content: const Text('將用壓縮包內的設定、賬號資訊、歷史評論、搜尋記錄、黑名單、自定義字型覆蓋當前資料，此操作不可撤銷。'),
       actions: actions,
     ),
   );
@@ -310,10 +310,10 @@ Future<void> _importAllDataFromArchive(BuildContext context) async {
       },
     );
     if (res != null) {
-      SmartDialog.showToast(res.isEmpty ? '导入成功' : '导入成功，但$res');
+      SmartDialog.showToast(res.isEmpty ? '匯入成功' : '匯入成功，但$res');
     }
   } catch (e) {
-    SmartDialog.showToast('导入失败：$e');
+    SmartDialog.showToast('匯入失敗：$e');
   }
 }
 
@@ -325,17 +325,17 @@ Future<void> showDataImportExportDialog(BuildContext context) {
       const style = TextStyle(fontSize: 15);
       return SimpleDialog(
         clipBehavior: .hardEdge,
-        title: const Text('导入/导出所有数据'),
+        title: const Text('匯入/匯出所有資料'),
         children: [
           DialogOption(
-            child: const Text('导出到压缩包', style: style),
+            child: const Text('匯出到壓縮包', style: style),
             onPressed: () {
               Get.back();
               _exportAllDataToArchive();
             },
           ),
           DialogOption(
-            child: const Text('从压缩包导入', style: style),
+            child: const Text('從壓縮包匯入', style: style),
             onPressed: () {
               Get.back();
               _importAllDataFromArchive(pageContext);
@@ -359,17 +359,17 @@ Future<void> showImportExportDialog<T>(
     const style = TextStyle(fontSize: 15);
     return SimpleDialog(
       clipBehavior: .hardEdge,
-      title: Text('导入/导出$title'),
+      title: Text('匯入/匯出$title'),
       children: [
         DialogOption(
-          child: const Text('导出至剪贴板', style: style),
+          child: const Text('匯出至剪貼簿', style: style),
           onPressed: () {
             Get.back();
             exportToClipBoard(onExport: onExport);
           },
         ),
         DialogOption(
-          child: const Text('导出文件至本地', style: style),
+          child: const Text('匯出檔案至本地', style: style),
           onPressed: () {
             Get.back();
             exportToLocalFile(onExport: onExport, localFileName: localFileName);
@@ -380,14 +380,14 @@ Future<void> showImportExportDialog<T>(
           color: ColorScheme.of(context).outline.withValues(alpha: 0.1),
         ),
         DialogOption(
-          child: const Text('输入', style: style),
+          child: const Text('輸入', style: style),
           onPressed: () {
             Get.back();
             importFromInput<T>(context, title: title, onImport: onImport);
           },
         ),
         DialogOption(
-          child: const Text('从剪贴板导入', style: style),
+          child: const Text('從剪貼簿匯入', style: style),
           onPressed: () {
             Get.back();
             importFromClipBoard<T>(
@@ -399,7 +399,7 @@ Future<void> showImportExportDialog<T>(
           },
         ),
         DialogOption(
-          child: const Text('从本地文件导入', style: style),
+          child: const Text('從本地檔案匯入', style: style),
           onPressed: () {
             Get.back();
             importFromLocalFile<T>(onImport: onImport);

@@ -174,7 +174,7 @@ class _MemberPageState extends State<MemberPage> {
 
   Widget _reserveBtn(List<ReservationCardItem> list, ColorScheme theme) {
     return IconButton(
-      tooltip: '预约',
+      tooltip: '預約',
       onPressed: () => _showReserveList(list),
       icon: ReserveButton(
         count: list.length,
@@ -250,7 +250,7 @@ class _MemberPageState extends State<MemberPage> {
                         ),
                       ),
                       child: Text(
-                        '${e.isFollow ? '已' : ''}预约',
+                        '${e.isFollow ? '已' : ''}預約',
                         style: const TextStyle(fontSize: 13),
                       ),
                     );
@@ -260,7 +260,7 @@ class _MemberPageState extends State<MemberPage> {
                         mainAxisSize: .min,
                         children: [
                           iconButton(
-                            tooltip: '预约动态',
+                            tooltip: '預約動態',
                             size: 32,
                             iconSize: 20,
                             iconColor: scheme.outline,
@@ -288,7 +288,7 @@ class _MemberPageState extends State<MemberPage> {
                               TextSpan(
                                 text:
                                     '${e.descText1 == null ? '' : '${e.descText1}  '}'
-                                    '${NumUtils.numFormat(e.total)}人预约',
+                                    '${NumUtils.numFormat(e.total)}人預約',
                               ),
                               if (e.lotteryPrizeInfo case final lottery?) ...[
                                 const TextSpan(text: '\n'),
@@ -338,7 +338,7 @@ class _MemberPageState extends State<MemberPage> {
     if (_userController.reserves?.isNotEmpty ?? false)
       _reserveBtn(_userController.reserves!, theme),
     IconButton(
-      tooltip: '搜索',
+      tooltip: '搜尋',
       onPressed: () => Get.toNamed(
         '/memberSearch?mid=$_mid&uname=${_userController.username}',
       ),
@@ -356,7 +356,7 @@ class _MemberPageState extends State<MemberPage> {
                 const Icon(Icons.block, size: 19),
                 const SizedBox(width: 10),
                 Text(
-                  _userController.relation.value != 128 ? '加入黑名单' : '移除黑名单',
+                  _userController.relation.value != 128 ? '加入黑名單' : '移除黑名單',
                 ),
               ],
             ),
@@ -370,7 +370,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(Icons.remove_circle_outline_outlined, size: 19),
                   SizedBox(width: 10),
-                  Text('移除粉丝'),
+                  Text('移除粉絲'),
                 ],
               ),
             ),
@@ -383,7 +383,7 @@ class _MemberPageState extends State<MemberPage> {
               const Icon(Icons.share_outlined, size: 19),
               const SizedBox(width: 10),
               Text(
-                _userController.account.mid != _mid ? '分享UP主' : '分享我的主页',
+                _userController.account.mid != _mid ? '分享UP主' : '分享我的主頁',
               ),
             ],
           ),
@@ -396,7 +396,7 @@ class _MemberPageState extends State<MemberPage> {
               children: [
                 Icon(Icons.add_box_outlined, size: 19),
                 SizedBox(width: 10),
-                Text('添加至桌面'),
+                Text('新增至桌面'),
               ],
             ),
           ),
@@ -440,7 +440,7 @@ class _MemberPageState extends State<MemberPage> {
               children: [
                 Icon(Icons.extension_outlined, size: 19),
                 SizedBox(width: 10),
-                Text('网页投稿'),
+                Text('網頁投稿'),
               ],
             ),
           ),
@@ -462,7 +462,7 @@ class _MemberPageState extends State<MemberPage> {
                   children: [
                     Icon(Icons.upcoming_outlined, size: 19),
                     SizedBox(width: 10),
-                    Text('大会员经验'),
+                    Text('大會員經驗'),
                   ],
                 ),
               ),
@@ -473,7 +473,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(Icons.devices, size: 18),
                   SizedBox(width: 10),
-                  Text('登录设备'),
+                  Text('登入裝置'),
                 ],
               ),
             ),
@@ -487,7 +487,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(Icons.login, size: 18),
                   SizedBox(width: 10),
-                  Text('登录记录'),
+                  Text('登入記錄'),
                 ],
               ),
             ),
@@ -501,7 +501,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(FontAwesomeIcons.b, size: 16),
                   SizedBox(width: 10),
-                  Text('硬币记录'),
+                  Text('硬幣記錄'),
                 ],
               ),
             ),
@@ -515,7 +515,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(Icons.linear_scale, size: 18),
                   SizedBox(width: 10),
-                  Text('经验记录'),
+                  Text('經驗記錄'),
                 ],
               ),
             ),
@@ -526,7 +526,7 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   Icon(Icons.settings_outlined, size: 19),
                   SizedBox(width: 10),
-                  Text('空间设置'),
+                  Text('空間設定'),
                 ],
               ),
             ),
@@ -539,7 +539,7 @@ class _MemberPageState extends State<MemberPage> {
                   children: [
                     Icon(Icons.more_time_outlined, size: 19),
                     SizedBox(width: 10),
-                    Text('关注时间'),
+                    Text('關注時間'),
                   ],
                 ),
               ),
@@ -560,7 +560,7 @@ class _MemberPageState extends State<MemberPage> {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    '举报',
+                    '舉報',
                     style: TextStyle(color: theme.error),
                   ),
                 ],
@@ -620,7 +620,7 @@ class _MemberPageState extends State<MemberPage> {
             TextButton(
               onPressed: Get.back,
               child: Text(
-                '关闭',
+                '關閉',
                 style: TextStyle(color: ColorScheme.of(context).outline),
               ),
             ),
@@ -637,7 +637,7 @@ class _MemberPageState extends State<MemberPage> {
     if (res case Success(:final response)) {
       if (response.mtime == null) return;
       _cacheFollowTime =
-          '关注时间: ${DateFormatUtils.longFormatDs.format(
+          '關注時間: ${DateFormatUtils.longFormatDs.format(
             DateTime.fromMillisecondsSinceEpoch(response.mtime! * 1000),
           )}';
       onShow();

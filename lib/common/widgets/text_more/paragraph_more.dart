@@ -52,7 +52,7 @@ class RenderParagraphMore extends RenderParagraph {
 
   TextSpan _moreTextSpan([TextStyle? style]) => TextSpan(
     style: (style ?? text.style!).copyWith(color: _primary),
-    text: '查看更多',
+    text: '檢視更多',
     recognizer: _tapGestureRecognizer,
   );
   TextPainter? _morePainter;

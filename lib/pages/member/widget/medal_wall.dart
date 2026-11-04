@@ -19,7 +19,7 @@ class MedalWall extends StatelessWidget {
     final colorScheme = ColorScheme.of(context);
     return AlertDialog(
       clipBehavior: .hardEdge,
-      title: const Text('粉丝勋章墙'),
+      title: const Text('粉絲勳章牆'),
       contentPadding: const .symmetric(vertical: 16),
       constraints: const BoxConstraints.tightFor(width: 380),
       content: CustomScrollView(
@@ -49,7 +49,7 @@ class MedalWall extends StatelessWidget {
                   style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   TextSpan(
                     children: [
-                      const TextSpan(text: '共拥有 '),
+                      const TextSpan(text: '共擁有 '),
                       TextSpan(
                         text: response.count.toString(),
                         style: TextStyle(
@@ -57,7 +57,7 @@ class MedalWall extends StatelessWidget {
                           color: colorScheme.primary,
                         ),
                       ),
-                      const TextSpan(text: ' 枚粉丝勋章'),
+                      const TextSpan(text: ' 枚粉絲勳章'),
                     ],
                   ),
                 ),

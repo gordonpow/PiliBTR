@@ -74,7 +74,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                       },
                     ),
                     icon: const Icon(Icons.add),
-                    tooltip: '新建收藏夹',
+                    tooltip: '新建收藏夾',
                   )
                 : const SizedBox.shrink(),
           ),
@@ -84,7 +84,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                     onPressed: () {
                       if (_favController.loadingState.value.isSuccess) {
                         if (!_favController.isEnd) {
-                          SmartDialog.showToast('加载全部收藏夹再排序');
+                          SmartDialog.showToast('載入全部收藏夾再排序');
                           return;
                         }
                         Get.to(
@@ -93,7 +93,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                       }
                     },
                     icon: const Icon(Icons.sort),
-                    tooltip: '收藏夹排序',
+                    tooltip: '收藏夾排序',
                   )
                 : const SizedBox.shrink(),
           ),
@@ -120,7 +120,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
                       }
                     },
                     icon: const Icon(Icons.search_outlined),
-                    tooltip: '搜索',
+                    tooltip: '搜尋',
                   )
                 : const SizedBox.shrink(),
           ),

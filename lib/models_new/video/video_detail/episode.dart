@@ -20,7 +20,7 @@ class BaseEpisodeItem {
   String? cover;
 
   PBadgeType get badgeType => switch (badge) {
-    '预告' => .gray,
+    '預告' => .gray,
     '限免' => .free,
     _ => .primary,
   };

@@ -46,7 +46,7 @@ class PgcIntroController extends CommonIntroController {
 
   late final String pgcType = pgcItem.type == 1 || pgcItem.type == 4
       ? '追番'
-      : '追剧';
+      : '追劇';
 
   late final bool isPgc;
   late PgcInfoModel pgcItem;
@@ -128,13 +128,13 @@ class PgcIntroController extends CommonIntroController {
   @override
   Future<void> actionLikeVideo() async {
     if (!isLogin) {
-      SmartDialog.showToast('账号未登录');
+      SmartDialog.showToast('賬號未登入');
       return;
     }
     final newVal = !hasLike.value;
     final result = await VideoHttp.likeVideo(bvid: bvid, type: newVal);
     if (result case Success(:final response)) {
-      SmartDialog.showToast(newVal ? response : '取消赞');
+      SmartDialog.showToast(newVal ? response : '取消贊');
       pgcItem.stat?.like += newVal ? 1 : -1;
       hasLike.value = newVal;
     } else {
@@ -157,14 +157,14 @@ class PgcIntroController extends CommonIntroController {
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
         children: [
           DialogOption(
-            child: const Text('复制链接', style: TextStyle(fontSize: 14)),
+            child: const Text('複製連結', style: TextStyle(fontSize: 14)),
             onPressed: () {
               Get.back();
               Utils.copyText(videoUrl);
             },
           ),
           DialogOption(
-            child: const Text('其它app打开', style: TextStyle(fontSize: 14)),
+            child: const Text('其它app開啟', style: TextStyle(fontSize: 14)),
             onPressed: () {
               Get.back();
               PiliAndroidHelper.openUrl(videoUrl);
@@ -172,7 +172,7 @@ class PgcIntroController extends CommonIntroController {
           ),
           if (PlatformUtils.isMobile)
             DialogOption(
-              child: const Text('分享视频', style: TextStyle(fontSize: 14)),
+              child: const Text('分享影片', style: TextStyle(fontSize: 14)),
               onPressed: () {
                 final item = findEpisode(cid.value);
                 Get.back();
@@ -184,7 +184,7 @@ class PgcIntroController extends CommonIntroController {
             ),
           if (isLogin)
             DialogOption(
-              child: const Text('分享至动态', style: TextStyle(fontSize: 14)),
+              child: const Text('分享至動態', style: TextStyle(fontSize: 14)),
               onPressed: () {
                 Get.back();
                 final item = findEpisode(cid.value);
@@ -225,7 +225,7 @@ class PgcIntroController extends CommonIntroController {
           if (isLogin)
             DialogOption(
               child: const Text(
-                '分享至消息',
+                '分享至訊息',
                 style: TextStyle(fontSize: 14),
               ),
               onPressed: () {
@@ -416,12 +416,12 @@ class PgcIntroController extends CommonIntroController {
   Future<void> actionTriple() async {
     feedBack();
     if (!isLogin) {
-      SmartDialog.showToast('账号未登录');
+      SmartDialog.showToast('賬號未登入');
       return;
     }
     if (hasLike.value && hasCoin && hasFav.value) {
       // 已点赞、投币、收藏
-      SmartDialog.showToast('已三连');
+      SmartDialog.showToast('已三連');
       return;
     }
     final result = await VideoHttp.pgcTriple(epId: epId, seasonId: seasonId);
@@ -441,9 +441,9 @@ class PgcIntroController extends CommonIntroController {
         hasFav.value = true;
       }
       if (!hasCoin) {
-        SmartDialog.showToast('投币失败');
+        SmartDialog.showToast('投幣失敗');
       } else {
-        SmartDialog.showToast('三连成功');
+        SmartDialog.showToast('三連成功');
       }
     } else {
       result.toast();
@@ -544,7 +544,7 @@ class PgcIntroController extends CommonIntroController {
           _onGetPgcInfo();
           return true;
         } else {
-          SmartDialog.showToast('剧集为空');
+          SmartDialog.showToast('劇集為空');
         }
       } else {
         res.toast();

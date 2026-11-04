@@ -431,7 +431,7 @@ abstract final class PiliScheme {
           default:
             if (!selfHandle) {
               // if (kDebugMode) debugPrint('$uri');
-              SmartDialog.showToast('未知路径:$uri，请截图反馈给开发者');
+              SmartDialog.showToast('未知路徑:$uri，請截圖反饋給開發者');
             }
             return false;
         }
@@ -455,7 +455,7 @@ abstract final class PiliScheme {
         }
         if (!selfHandle) {
           // if (kDebugMode) debugPrint('$uri');
-          SmartDialog.showToast('未知路径:$uri，请截图反馈给开发者');
+          SmartDialog.showToast('未知路徑:$uri，請截圖反饋給開發者');
         }
         return false;
     }
@@ -943,7 +943,7 @@ abstract final class PiliScheme {
       aid ??= IdUtils.bv2av(bvid!);
       bvid ??= IdUtils.av2bv(aid);
       if (showDialog) {
-        SmartDialog.showLoading<dynamic>(msg: '获取中...');
+        SmartDialog.showLoading<dynamic>(msg: '獲取中...');
       }
       final res = await SearchHttp.ab2cWithDimension(
         bvid: bvid,
@@ -969,7 +969,7 @@ abstract final class PiliScheme {
       }
     } catch (e) {
       SmartDialog.dismiss();
-      SmartDialog.showToast('video获取失败: $e');
+      SmartDialog.showToast('video獲取失敗: $e');
     }
   }
 }

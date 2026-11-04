@@ -221,7 +221,7 @@ class ArticleController extends CommonDynController
         ..status = !isLike
         ..count = (like.count ?? 0) + (isLike ? -1 : 1);
       stats.refresh();
-      SmartDialog.showToast(!isLike ? '点赞成功' : '取消赞');
+      SmartDialog.showToast(!isLike ? '點贊成功' : '取消贊');
     } else {
       res.toast();
     }

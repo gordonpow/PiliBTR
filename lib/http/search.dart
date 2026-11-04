@@ -97,7 +97,7 @@ abstract final class SearchHttp {
         final vVoucher = dataData['v_voucher'];
         if (vVoucher != null) {
           // RequestUtils.validate(vVoucher, onSuccess);
-          return const Error('触发风控');
+          return const Error('觸發風控');
         }
         try {
           return Success(
@@ -117,7 +117,7 @@ abstract final class SearchHttp {
         return Error(resData['message'], code: resData['code']);
       }
     } else {
-      return const Error('服务器错误');
+      return const Error('伺服器錯誤');
     }
   }
 

@@ -29,7 +29,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
   List<({int id, String title, Icon icon})> sheetMenu = [
     (
       id: 1,
-      title: '设置为默认倍速',
+      title: '設定為預設倍速',
       icon: const Icon(
         Icons.speed,
         size: 21,
@@ -37,7 +37,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
     ),
     (
       id: 2,
-      title: '设置为默认长按倍速',
+      title: '設定為預設長按倍速',
       icon: const Icon(
         Icons.speed_sharp,
         size: 21,
@@ -45,7 +45,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
     ),
     (
       id: -1,
-      title: '删除该项',
+      title: '刪除該項',
       icon: const Icon(
         Icons.delete_outline,
         size: 21,
@@ -61,7 +61,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('添加倍速'),
+        title: const Text('新增倍速'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -71,7 +71,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
               initialValue: initialValue,
               keyboardType: const .numberWithOptions(decimal: true),
               decoration: const InputDecoration(
-                labelText: '自定义倍速',
+                labelText: '自定義倍速',
                 border: OutlineInputBorder(borderRadius: .all(.circular(6))),
               ),
               onChanged: (value) => initialValue = value,
@@ -92,7 +92,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
               try {
                 final val = double.parse(initialValue);
                 if (speedList.contains(val)) {
-                  SmartDialog.showToast('该倍速已存在');
+                  SmartDialog.showToast('該倍速已存在');
                 } else {
                   Get.back();
                   speedList
@@ -105,7 +105,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
                 SmartDialog.showToast(e.toString());
               }
             },
-            child: const Text('确认'),
+            child: const Text('確認'),
           ),
         ],
       ),
@@ -170,7 +170,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
         playSpeedDefault,
         longPressSpeedDefault,
       ].contains(speed)) {
-        SmartDialog.showToast('不支持删除默认倍速');
+        SmartDialog.showToast('不支援刪除預設倍速');
         return;
       }
       speedList.removeAt(index);
@@ -184,7 +184,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('倍速设置'),
+        title: const Text('倍速設定'),
         actions: [
           TextButton(
             onPressed: () async {
@@ -211,17 +211,17 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
                 bottom: 0,
               ),
               child: Text(
-                '点击下方按钮设置默认（长按）倍速',
+                '點選下方按鈕設定預設（長按）倍速',
                 style: TextStyle(color: theme.colorScheme.outline),
               ),
             ),
             ListTile(
-              title: const Text('默认倍速'),
+              title: const Text('預設倍速'),
               subtitle: Text(playSpeedDefault.toString()),
             ),
             SetSwitchItem(
-              title: '动态长按倍速',
-              subtitle: '根据默认倍速长按时自动双倍',
+              title: '動態長按倍速',
+              subtitle: '根據預設倍速長按時自動雙倍',
               setKey: SettingBoxKey.enableAutoLongPressSpeed,
               defaultVal: enableAutoLongPressSpeed,
               onChanged: (val) =>
@@ -229,7 +229,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
             ),
             if (!enableAutoLongPressSpeed)
               ListTile(
-                title: const Text('默认长按倍速'),
+                title: const Text('預設長按倍速'),
                 subtitle: Text(longPressSpeedDefault.toString()),
               ),
             Padding(
@@ -248,7 +248,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
                   const SizedBox(width: 12),
                   TextButton(
                     onPressed: onAddSpeed,
-                    child: const Text('添加'),
+                    child: const Text('新增'),
                   ),
                 ],
               ),

@@ -30,7 +30,7 @@ abstract final class Update {
       );
       if (res.data is Map || res.data.isEmpty) {
         if (!isAuto) {
-          SmartDialog.showToast('检查更新失败，GitHub接口未返回数据，请检查网络');
+          SmartDialog.showToast('檢查更新失敗，GitHub介面未返回資料，請檢查網路');
         }
         return;
       }
@@ -51,7 +51,7 @@ abstract final class Update {
               child: Text(text),
             );
             return AlertDialog(
-              title: const Text('🎉 发现新版本 '),
+              title: const Text('🎉 發現新版本 '),
               content: SizedBox(
                 height: 280,
                 child: SingleChildScrollView(
@@ -69,7 +69,7 @@ abstract final class Update {
                           '${Constants.sourceCodeUrl}/commits/main',
                         ),
                         child: Text(
-                          "点此查看完整更新(即commit)内容",
+                          "點此檢視完整更新(即commit)內容",
                           style: TextStyle(color: colorScheme.primary),
                         ),
                       ),

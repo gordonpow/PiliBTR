@@ -15,8 +15,8 @@ import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
 List<SettingsModel> get dynSettings => [
   SplitModel(
     normalModel: const NormalModel.split(
-      title: '检查未读动态',
-      subtitle: '点击设置检查周期(min)',
+      title: '檢查未讀動態',
+      subtitle: '點選設定檢查週期(min)',
       leading: Icon(Icons.notifications_none),
     ),
     switchModel: SwitchModel.split(
@@ -27,14 +27,14 @@ List<SettingsModel> get dynSettings => [
     ),
   ),
   SwitchModel(
-    title: '显示动态警告/争议信息',
+    title: '顯示動態警告/爭議資訊',
     leading: const Icon(Icons.warning_amber_rounded),
     setKey: SettingBoxKey.showDynDispute,
     defaultVal: false,
     onChanged: (val) => ItemModulesModel.showDynDispute = val,
   ),
   getBanWordModel(
-    title: '动态关键词过滤',
+    title: '動態關鍵詞過濾',
     key: SettingBoxKey.banWordForDyn,
     onChanged: (value) {
       DynamicsDataModel.banWordForDyn = value;
@@ -42,27 +42,27 @@ List<SettingsModel> get dynSettings => [
     },
   ),
   const SwitchModel(
-    title: '发布/转发动态反诈',
-    subtitle: '发布/转发动态后检查动态是否可见',
+    title: '釋出/轉發動態反詐',
+    subtitle: '釋出/轉發動態後檢查動態是否可見',
     leading: Icon(CustomIcons.shield_published),
     setKey: SettingBoxKey.enableCreateDynAntifraud,
     defaultVal: false,
   ),
   SwitchModel(
-    title: '屏蔽带货动态',
+    title: '遮蔽帶貨動態',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),
     setKey: SettingBoxKey.antiGoodsDyn,
     defaultVal: false,
     onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
   const SwitchModel(
-    title: '动态/专栏详情页展示底部操作栏',
+    title: '動態/專欄詳情頁展示底部操作欄',
     leading: Icon(Icons.more_horiz),
     setKey: SettingBoxKey.showDynActionBar,
     defaultVal: true,
   ),
   PopupModel(
-    title: '动态展示',
+    title: '動態展示',
     leading: const Icon(Icons.dynamic_feed_rounded),
     value: () => Pref.defaultDynamicType,
     items: DynamicsTabType.values.take(4),
@@ -71,8 +71,8 @@ List<SettingsModel> get dynSettings => [
         .whenComplete(setState),
   ),
   SwitchModel(
-    title: '显示动态互动内容',
-    subtitle: '开启后则在动态卡片底部显示互动内容（如关注的人点赞、热评等）',
+    title: '顯示動態互動內容',
+    subtitle: '開啟後則在動態卡片底部顯示互動內容（如關注的人點贊、熱評等）',
     leading: const Icon(Icons.quickreply_outlined),
     setKey: SettingBoxKey.showDynInteraction,
     defaultVal: true,
@@ -85,7 +85,7 @@ void _showDynDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('检查周期'),
+      title: const Text('檢查週期'),
       content: TextFormField(
         autofocus: true,
         initialValue: dynamicPeriod,
@@ -113,7 +113,7 @@ void _showDynDialog(BuildContext context) {
               SmartDialog.showToast(e.toString());
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),

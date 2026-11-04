@@ -150,7 +150,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
     }
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('App字体设置'),
+        title: const Text('App字型設定'),
         actions: [
           TextButton(
             onPressed: () => setState(() {
@@ -162,7 +162,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
           ),
           TextButton(
             onPressed: _saveFontSetting,
-            child: const Text('确定'),
+            child: const Text('確定'),
           ),
           const SizedBox(width: 12),
         ],
@@ -180,11 +180,11 @@ class _FontSettingPageState extends State<FontSettingPage> {
                   'ABCDEFGHIJKLMNOPQRSTUVWXYZ\n'
                   '1234567890.:,;\'"(!?)+-*/=\n'
                   '${Platform.isWindows
-                      ? "中国智造，惠及全球"
+                      ? "中國智造，惠及全球"
                       : Platform.isMacOS || Platform.isIOS
-                      ? "汉体书写信息技术标准相容"
-                      : "我能吞下玻璃而不伤身体"}\n\n'
-                  '注：部分字体可能无法应用',
+                      ? "漢體書寫資訊科技標準相容"
+                      : "我能吞下玻璃而不傷身體"}\n\n'
+                  '注：部分字型可能無法應用',
                   style: TextStyle(
                     fontFamily: _selectedFont ?? '',
                     fontWeight: .values[_selectedWeight],
@@ -213,14 +213,14 @@ class _FontSettingPageState extends State<FontSettingPage> {
                       child: Row(
                         children: [
                           const Text(
-                            '字体：',
+                            '字型：',
                             style: TextStyle(fontWeight: .bold, fontSize: 15),
                           ),
                           Expanded(
                             child: Text(
                               _appFont.isCustom
                                   ? _selectedFont!.split('/').last
-                                  : _selectedFont ?? '默认',
+                                  : _selectedFont ?? '預設',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontFamily: _selectedFont ?? '',
@@ -232,7 +232,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
                             child: iconButton(
                               size: 32,
                               iconSize: 20,
-                              tooltip: '导入',
+                              tooltip: '匯入',
                               context: context,
                               onPressed: () async {
                                 SmartDialog.showLoading();
@@ -266,7 +266,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
                               minTileHeight: _tileHeight,
                               tileColor: _tileColor(null),
                               onTap: () => _onFontChanged(null),
-                              title: const Text('默认'),
+                              title: const Text('預設'),
                             ),
                           ),
                           if (FontUtils.isCustom)
@@ -345,7 +345,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
                   _buildItem(
                     Row(
                       children: [
-                        const Text('字号：', style: TextStyle(fontWeight: .bold)),
+                        const Text('字號：', style: TextStyle(fontWeight: .bold)),
                         const SizedBox(
                           width: 40,
                           child: Text('小', style: TextStyle(fontSize: 11.9)),
@@ -359,7 +359,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
                             divisions: 15,
                             secondaryTrackValue: 1,
                             label: _selectedScale == 1.0
-                                ? '默认'
+                                ? '預設'
                                 : _selectedScale.toStringAsFixed(2),
                             onChanged: (value) => setState(
                               () => _selectedScale = value.toPrecision(2),

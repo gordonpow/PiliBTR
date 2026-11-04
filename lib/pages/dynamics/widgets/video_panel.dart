@@ -65,7 +65,7 @@ Widget videoSeasonWidget(
                   bottom: null,
                   left: null,
                   type: switch (badge) {
-                    '充电专属' => PBadgeType.error,
+                    '充電專屬' => PBadgeType.error,
                     _ => PBadgeType.primary,
                   },
                 ),
@@ -109,7 +109,7 @@ Widget videoSeasonWidget(
                         if (video.stat case final stat?) ...[
                           Text('${NumUtils.numFormat(stat.play)}播放'),
                           const SizedBox(width: 6),
-                          Text('${NumUtils.numFormat(stat.danmu)}弹幕'),
+                          Text('${NumUtils.numFormat(stat.danmu)}彈幕'),
                         ],
                         const Spacer(),
                         const PlayIcon(size: 50),

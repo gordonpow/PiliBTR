@@ -63,7 +63,7 @@ class CollectionSection extends StatelessWidget {
                     padding: const .symmetric(vertical: 12),
                     child: Center(
                       child: Text(
-                        '${collection.expand ? '收起' : '展开'}全部文集',
+                        '${collection.expand ? '收起' : '展開'}全部文集',
                         style: TextStyle(fontSize: 13, color: outline),
                       ),
                     ),

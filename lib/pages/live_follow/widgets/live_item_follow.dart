@@ -121,7 +121,7 @@ class LiveCardVFollow extends StatelessWidget {
           ),
           if (liveItem.textSmall case final textSmall?)
             Text(
-              '$textSmall围观',
+              '$textSmall圍觀',
               style: const TextStyle(fontSize: 11, color: Colors.white),
             ),
         ],

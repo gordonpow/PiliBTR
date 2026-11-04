@@ -51,7 +51,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
   Future<void> _onChanged([bool? val]) async {
     val ??= !ctr.dynamicColor.value;
     if (val && !await MyApp.initPlatformState()) {
-      SmartDialog.showToast('设备可能不支持动态取色');
+      SmartDialog.showToast('裝置可能不支援動態取色');
       if (kReleaseMode) {
         return;
       }
@@ -80,7 +80,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
       context,
     ).copyWith(top: 0, bottom: 0);
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('选择应用主题')),
+      appBar: AppBar(title: const Text('選擇應用主題')),
       body: ListView(
         padding: .only(
           bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
@@ -91,7 +91,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
               final result = await showDialog<ThemeType>(
                 context: context,
                 builder: (context) => SelectDialog<ThemeType>(
-                  title: '主题模式',
+                  title: '主題模式',
                   value: ctr.themeType.value,
                   values: ThemeType.values.map((e) => (e, e.label)).toList(),
                 ),
@@ -106,10 +106,10 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
               }
             },
             leading: const Icon(Icons.flashlight_on_outlined),
-            title: Text('主题模式', style: titleStyle),
+            title: Text('主題模式', style: titleStyle),
             subtitle: Obx(
               () => Text(
-                '当前模式：${ctr.themeType.value.label}',
+                '當前模式：${ctr.themeType.value.label}',
                 style: subTitleStyle,
               ),
             ),
@@ -118,7 +118,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
             () => PopupListTile<FlexSchemeVariant>(
               enabled: !ctr.dynamicColor.value,
               leading: const Icon(Icons.palette_outlined),
-              title: const Text('调色板风格'),
+              title: const Text('調色盤風格'),
               value: () =>
                   (_dynamicSchemeVariant, _dynamicSchemeVariant.variantName),
               itemBuilder: (_) => FlexSchemeVariant.values
@@ -137,7 +137,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
           if (!Platform.isIOS)
             Obx(
               () => ListTile(
-                title: const Text('动态取色'),
+                title: const Text('動態取色'),
                 leading: ExcludeFocus(
                   child: Checkbox(
                     value: ctr.dynamicColor.value,
@@ -236,7 +236,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
                       selected: isCurr,
                     ),
                     Text(
-                      '自定义',
+                      '自定義',
                       style: TextStyle(
                         fontSize: 12,
                         color: isCurr

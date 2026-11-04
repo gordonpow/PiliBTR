@@ -101,7 +101,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                         children: [
                           const SizedBox(width: 16),
                           Text(
-                            '追番时间表',
+                            '追番時間表',
                             style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(width: 16),
@@ -231,7 +231,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            '推荐',
+            '推薦',
             style: theme.textTheme.titleMedium,
           ),
           moreTextButton(
@@ -242,10 +242,10 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
               } else {
                 List<String> titles = const [
                   '全部',
-                  '电影',
-                  '电视剧',
-                  '纪录片',
-                  '综艺',
+                  '電影',
+                  '電視劇',
+                  '紀錄片',
+                  '綜藝',
                 ];
                 List<int> types = const [102, 2, 5, 3, 7];
                 Get.to(
@@ -357,13 +357,13 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
       children: [
         Obx(
           () => Text(
-            '最近${widget.tabType == HomeTabType.bangumi ? '追番' : '追剧'}${controller.followCount.value == -1 ? '' : ' ${controller.followCount.value}'}',
+            '最近${widget.tabType == HomeTabType.bangumi ? '追番' : '追劇'}${controller.followCount.value == -1 ? '' : ' ${controller.followCount.value}'}',
             style: theme.textTheme.titleMedium,
           ),
         ),
         const Spacer(),
         IconButton(
-          tooltip: '刷新',
+          tooltip: '重新整理',
           onPressed: () => controller
             ..followPage = 1
             ..followEnd = false
@@ -378,7 +378,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
               ? Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: moreTextButton(
-                    text: '查看全部',
+                    text: '檢視全部',
                     onTap: () => Get.toNamed(
                       '/fav',
                       arguments: widget.tabType == HomeTabType.bangumi
@@ -421,7 +421,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
               )
             : Center(
                 child: Text(
-                  '还没有${widget.tabType == HomeTabType.bangumi ? '追番' : '追剧'}',
+                  '還沒有${widget.tabType == HomeTabType.bangumi ? '追番' : '追劇'}',
                 ),
               ),
       Error(:final errMsg) => Container(

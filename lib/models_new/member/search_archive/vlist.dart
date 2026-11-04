@@ -17,9 +17,9 @@ class VListItemModel extends HorizontalVideoModel {
     owner = VListOwner.fromJson(json);
     if (json['is_lesson_video'] == 1) {
       isPugv = true;
-      badge = '课堂';
+      badge = '課堂';
     } else if (json['is_charging_arc'] == true) {
-      badge = '充电专属';
+      badge = '充電專屬';
     } else if (json['is_union_video'] == 1) {
       badge = '合作';
     }

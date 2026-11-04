@@ -174,7 +174,7 @@ class _LaterPageState extends State<LaterPage>
               mid: ctr.mid,
             );
           },
-          child: Text('复制', style: textStyle),
+          child: Text('複製', style: textStyle),
         ),
         TextButton(
           style: btnStyle,
@@ -188,14 +188,14 @@ class _LaterPageState extends State<LaterPage>
               mid: ctr.mid,
             );
           },
-          child: Text('移动', style: textStyle),
+          child: Text('移動', style: textStyle),
         ),
       ],
       child: AppBar(
-        title: const Text('稍后再看'),
+        title: const Text('稍後再看'),
         actions: [
           IconButton(
-            tooltip: '搜索',
+            tooltip: '搜尋',
             onPressed: () {
               final mid = Accounts.main.mid;
               Get.toNamed(
@@ -204,7 +204,7 @@ class _LaterPageState extends State<LaterPage>
                   'type': 0,
                   'mediaId': mid,
                   'mid': mid,
-                  'title': '稍后再看',
+                  'title': '稍後再看',
                   'count': _baseCtr.counts[LaterViewType.all.index],
                 },
               );
@@ -233,7 +233,7 @@ class _LaterPageState extends State<LaterPage>
                     ),
                     TextSpan(
                       children: [
-                        TextSpan(text: value ? '最早添加' : '最近添加'),
+                        TextSpan(text: value ? '最早新增' : '最近新增'),
                         WidgetSpan(
                           alignment: .middle,
                           child: Icon(
@@ -250,11 +250,11 @@ class _LaterPageState extends State<LaterPage>
                 itemBuilder: (_) => [
                   const PopupMenuItem(
                     value: false,
-                    child: Text('最近添加'),
+                    child: Text('最近新增'),
                   ),
                   const PopupMenuItem(
                     value: true,
-                    child: Text('最早添加'),
+                    child: Text('最早新增'),
                   ),
                 ],
               );

@@ -75,7 +75,7 @@ class _MultiSelectDialogState<T> extends State<MultiSelectDialog<T>> {
         ),
         TextButton(
           onPressed: () => Get.back(result: _tempValues),
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     );

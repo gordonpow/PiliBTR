@@ -66,7 +66,7 @@ class _MainReplyPageState extends State<MainReplyPage>
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('查看评论')),
+      appBar: AppBar(title: const Text('檢視評論')),
       body: fabAnimWrapper(
         child: refreshIndicator(
           onRefresh: controller.onRefresh,
@@ -104,7 +104,7 @@ class _MainReplyPageState extends State<MainReplyPage>
                 );
               } catch (_) {}
             },
-            tooltip: '评论',
+            tooltip: '評論',
             child: const Icon(Icons.reply),
           ),
         ),
@@ -169,7 +169,7 @@ class _MainReplyPageState extends State<MainReplyPage>
               () {
                 final count = controller.count.value;
                 return Text(
-                  '${count == -1 ? 0 : NumUtils.numFormat(count)}条回复',
+                  '${count == -1 ? 0 : NumUtils.numFormat(count)}條回覆',
                 );
               },
             ),
@@ -202,7 +202,7 @@ class _MainReplyPageState extends State<MainReplyPage>
     Get.to(
       SimpleScaffold(
         appBar: AppBar(
-          title: const Text('评论详情'),
+          title: const Text('評論詳情'),
           shape: Border(
             bottom: BorderSide(
               color: colorScheme.outline.withValues(alpha: 0.1),

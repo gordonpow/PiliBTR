@@ -36,7 +36,7 @@ class _FollowSamePageState extends FollowTypePageState<FollowSamePage> {
     title: Obx(
       () {
         final name = controller.name.value;
-        return Text('${name == null ? '' : '我与$name的'}共同关注');
+        return Text('${name == null ? '' : '我與$name的'}共同關注');
       },
     ),
   );

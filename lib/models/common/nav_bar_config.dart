@@ -7,13 +7,13 @@ import 'package:material_ui/material_ui.dart';
 
 enum NavigationBarType implements EnumWithLabel {
   home(
-    '首页',
+    '首頁',
     Icon(Icons.home_outlined),
     Icon(Icons.home),
     HomePage(),
   ),
   dynamics(
-    '动态',
+    '動態',
     Icon(CustomIcons.motion_photos_on_outlined),
     Icon(CustomIcons.motion_photos_on),
     DynamicsPage(),

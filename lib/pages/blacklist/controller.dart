@@ -23,7 +23,7 @@ class BlackListController
     if (Accounts.main.isLogin) {
       queryData();
     } else {
-      loadingState.value = const Error('账号未登录');
+      loadingState.value = const Error('賬號未登入');
     }
   }
 
@@ -43,7 +43,7 @@ class BlackListController
   Future<bool> onRemove(BuildContext context, int index, name, mid) async {
     final confirm = await showConfirmDialog(
       context: context,
-      title: Text('确定将 $name 移出黑名单？'),
+      title: Text('確定將 $name 移出黑名單？'),
     );
     if (confirm) {
       final result = await VideoHttp.relationMod(mid: mid, act: 6, reSrc: 11);

@@ -208,7 +208,7 @@ class SearchVideoItemModel extends HorizontalVideoModel {
     stat = SearchStat.fromJson(json);
     switch (json['type']) {
       case 'ketang':
-        badge = '课堂';
+        badge = '課堂';
         isPugv = true;
       case 'live_room':
         badge = '直播';

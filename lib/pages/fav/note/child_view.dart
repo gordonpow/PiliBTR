@@ -105,7 +105,7 @@ class _FavNoteChildPageState extends State<FavNoteChildPage>
                       bottom: 14,
                       right: 12,
                     ),
-                    child: Text('全选'),
+                    child: Text('全選'),
                   ),
                 ),
                 const Spacer(),
@@ -118,12 +118,12 @@ class _FavNoteChildPageState extends State<FavNoteChildPage>
                     if (_favNoteController.checkedCount != 0) {
                       showConfirmDialog(
                         context: context,
-                        title: const Text('确定删除已选中的笔记吗？'),
+                        title: const Text('確定刪除已選中的筆記嗎？'),
                         onConfirm: _favNoteController.onRemove,
                       );
                     }
                   },
-                  child: const Text('删除'),
+                  child: const Text('刪除'),
                 ),
                 const SizedBox(width: 16),
               ],

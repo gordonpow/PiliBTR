@@ -413,7 +413,7 @@ class _PayCoinsPageState extends State<PayCoinsPage>
                 const SizedBox(height: 10),
                 Center(
                   child: Text(
-                    '${_coins != null ? '硬币余额：${max(0.0, _coins.toDouble().toPrecision(1))}' : ''}${widget.hasCoin ? '${_coins != null ? '，' : ''}已投1枚硬币' : ''}',
+                    '${_coins != null ? '硬幣餘額：${max(0.0, _coins.toDouble().toPrecision(1))}' : ''}${widget.hasCoin ? '${_coins != null ? '，' : ''}已投1枚硬幣' : ''}',
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
@@ -444,7 +444,7 @@ class _PayCoinsPageState extends State<PayCoinsPage>
                           ),
                         ),
                         const Text(
-                          ' 同时点赞',
+                          ' 同時點贊',
                           style: TextStyle(color: Colors.white),
                         ),
                       ],

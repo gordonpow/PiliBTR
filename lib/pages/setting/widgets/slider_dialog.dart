@@ -65,7 +65,7 @@ class _SliderDialogState extends State<SliderDialog> {
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _tempValue),
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     );

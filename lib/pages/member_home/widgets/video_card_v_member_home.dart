@@ -129,7 +129,7 @@ class VideoCardVMemberHome extends StatelessWidget {
                         )
                       else if (videoItem.isSteins == true)
                         const PBadge(
-                          text: '互动',
+                          text: '互動',
                           top: 6,
                           right: 6,
                         ),

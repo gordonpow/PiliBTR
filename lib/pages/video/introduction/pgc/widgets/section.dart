@@ -237,7 +237,7 @@ class _SectionPanelState extends State<SectionPanel> {
           return;
         }
         if (item.badge == '会员' && !_isVip) {
-          SmartDialog.showToast('需要大会员');
+          SmartDialog.showToast('需要大會員');
         }
         widget.onChangeEpisode(item, episodeType: .section);
       },

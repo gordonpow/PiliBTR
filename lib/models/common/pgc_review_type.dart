@@ -1,8 +1,8 @@
 import 'package:PiliPlus/http/api.dart';
 
 enum PgcReviewType {
-  long(label: '长评', api: Api.pgcReviewL),
-  short(label: '短评', api: Api.pgcReviewS),
+  long(label: '長評', api: Api.pgcReviewL),
+  short(label: '短評', api: Api.pgcReviewS),
   ;
 
   final String label;
@@ -14,7 +14,7 @@ enum PgcReviewType {
 }
 
 enum PgcReviewSortType {
-  def('默认', 0),
+  def('預設', 0),
   latest('最新', 1),
   ;
 

@@ -124,7 +124,7 @@ abstract final class FontUtils {
       _ => true,
     }) {
       // TODO: ios/macos CTFontManagerCopyAvailableFontFamilyNames
-      SmartDialog.showToast('加载系统字体失败');
+      SmartDialog.showToast('載入系統字型失敗');
     }
     return _fonts;
   }
@@ -171,19 +171,19 @@ abstract final class FontUtils {
     try {
       fc = FontConfig(DynamicLibrary.open('libfontconfig.so.1'));
     } catch (e) {
-      if (kDebugMode) debugPrint('无法加载 Fontconfig 库: $e');
+      if (kDebugMode) debugPrint('無法載入 Fontconfig 庫: $e');
       return false;
     }
 
     final config = fc.FcInitLoadConfigAndFonts();
     if (config == nullptr) {
-      if (kDebugMode) debugPrint('Fontconfig 初始化失败');
+      if (kDebugMode) debugPrint('Fontconfig 初始化失敗');
       return false;
     }
 
     final fontSet = fc.FcConfigGetFonts(config, FcSetName.FcSetSystem);
     if (fontSet == nullptr) {
-      if (kDebugMode) debugPrint('无法获取系统字体集');
+      if (kDebugMode) debugPrint('無法獲取系統字型集');
       fc.FcConfigDestroy(config);
       return false;
     }

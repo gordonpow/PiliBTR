@@ -32,15 +32,15 @@ List<SettingsModel> get playSettings => [
   NormalModel(
     onTap: (context, setState) => Get.toNamed('/playSpeedSet'),
     leading: const Icon(Icons.speed_outlined),
-    title: '倍速设置',
-    subtitle: '设置视频播放速度',
+    title: '倍速設定',
+    subtitle: '設定影片播放速度',
   ),
   if (kDebugMode || Platform.isAndroid)
     NormalModel(
       onTap: _showAngleDegreesDialog,
       leading: const Icon(MdiIcons.angleAcute),
-      title: '倾斜角度阈值',
-      getSubtitle: () => '当前:「${Pref.angleDegrees}°」',
+      title: '傾斜角度閾值',
+      getSubtitle: () => '當前:「${Pref.angleDegrees}°」',
     ),
   if (kDebugMode || Platform.isAndroid)
     NormalModel(
@@ -55,166 +55,166 @@ List<SettingsModel> get playSettings => [
           fallback = '';
         } else {
           fallback =
-              '，无参数时:「${AudioNormalization.getTitleFromConfig(fallback)}」';
+              '，無引數時:「${AudioNormalization.getTitleFromConfig(fallback)}」';
         }
-        return '当前:「$audioNormalization」$fallback';
+        return '當前:「$audioNormalization」$fallback';
       },
       onTap: audioNormalization,
     ),
   NormalModel(
-    title: '超分辨率',
+    title: '超解析度',
     leading: const Icon(Icons.stay_current_landscape_outlined),
     getSubtitle: () =>
-        '当前:「${Pref.superResolutionType.label}」\n默认设置对番剧生效, 其他视频默认关闭\n超分辨率需要启用硬件解码, 若启用硬件解码后仍然不生效, 尝试切换硬件解码器为 auto-copy',
+        '當前:「${Pref.superResolutionType.label}」\n預設設定對番劇生效, 其他影片預設關閉\n超解析度需要啟用硬體解碼, 若啟用硬體解碼後仍然不生效, 嘗試切換硬體解碼器為 auto-copy',
     onTap: _showSuperResolutionDialog,
   ),
   const SwitchModel(
-    title: '自动播放',
-    subtitle: '进入详情页自动播放',
+    title: '自動播放',
+    subtitle: '進入詳情頁自動播放',
     leading: Icon(Icons.motion_photos_auto_outlined),
     setKey: SettingBoxKey.autoPlayEnable,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '全屏显示锁定按钮',
+    title: '全屏顯示鎖定按鈕',
     leading: Icon(Icons.lock_outline),
     setKey: SettingBoxKey.showFsLockBtn,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '全屏显示截图按钮',
+    title: '全屏顯示截圖按鈕',
     leading: Icon(Icons.photo_camera_outlined),
     setKey: SettingBoxKey.showFsScreenshotBtn,
     defaultVal: true,
   ),
   SwitchModel(
-    title: '全屏显示电池电量',
+    title: '全屏顯示電池電量',
     leading: const Icon(Icons.battery_3_bar),
     setKey: SettingBoxKey.showBatteryLevel,
     defaultVal: PlatformUtils.isMobile,
   ),
   const SwitchModel(
-    title: '双击快退/快进',
-    subtitle: '左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放',
+    title: '雙擊快退/快進',
+    subtitle: '左側雙擊快退/右側雙擊快進，關閉則雙擊均為暫停/播放',
     leading: Icon(Icons.touch_app_outlined),
     setKey: SettingBoxKey.enableQuickDouble,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '左右侧滑动调节亮度/音量',
+    title: '左右側滑動調節亮度/音量',
     leading: Icon(MdiIcons.tuneVerticalVariant),
     setKey: SettingBoxKey.enableSlideVolumeBrightness,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '滚轮调节音量',
+    title: '滾輪調節音量',
     leading: Icon(Icons.mouse_outlined),
     setKey: SettingBoxKey.enableScrollVolume,
     defaultVal: true,
   ),
   if (Platform.isAndroid)
     const SwitchModel(
-      title: '调节系统亮度',
+      title: '調節系統亮度',
       leading: Icon(Icons.brightness_6_outlined),
       setKey: SettingBoxKey.setSystemBrightness,
       defaultVal: false,
     ),
   const SwitchModel(
-    title: '中间滑动进入/退出全屏',
+    title: '中間滑動進入/退出全屏',
     leading: Icon(MdiIcons.panVertical),
     setKey: SettingBoxKey.enableSlideFS,
     defaultVal: true,
   ),
   const SwitchModel(
     title: '提前初始化播放器',
-    subtitle: '相对减少手动播放加载时间',
+    subtitle: '相對減少手動播放載入時間',
     leading: Icon(Icons.play_circle_outlined),
     setKey: SettingBoxKey.preInitPlayer,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '滑动跳转预览视频缩略图',
+    title: '滑動跳轉預覽影片縮圖',
     leading: Icon(Icons.preview_outlined),
     setKey: SettingBoxKey.showSeekPreview,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '显示高能进度条',
-    subtitle: '高能进度条反应了在时域上，单位时间内弹幕发送量的变化趋势',
+    title: '顯示高能進度條',
+    subtitle: '高能進度條反應了在時域上，單位時間內彈幕傳送量的變化趨勢',
     leading: Icon(Icons.show_chart),
     setKey: SettingBoxKey.showDmChart,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '启用双指缩小视频',
+    title: '啟用雙指縮小影片',
     leading: Icon(Icons.pinch),
     setKey: SettingBoxKey.enableShrinkVideoSize,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '启用拖拽字幕调整底部边距',
+    title: '啟用拖拽字幕調整底部邊距',
     leading: Icon(MdiIcons.dragVariant),
     setKey: SettingBoxKey.enableDragSubtitle,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '视频页显示相关视频',
+    title: '影片頁顯示相關影片',
     leading: Icon(MdiIcons.motionPlayOutline),
     setKey: SettingBoxKey.showRelatedVideo,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '默认展开视频简介',
+    title: '預設展開影片簡介',
     leading: Icon(Icons.expand_more),
     setKey: SettingBoxKey.alwaysExpandIntroPanel,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '横屏自动展开视频简介',
+    title: '橫屏自動展開影片簡介',
     leading: Icon(Icons.expand_more),
     setKey: SettingBoxKey.expandIntroPanelH,
     defaultVal: false,
   ),
   SwitchModel(
-    title: '横屏分P/合集列表显示在Tab栏',
+    title: '橫屏分P/合集列表顯示在Tab欄',
     leading: const Icon(Icons.format_list_numbered_rtl_sharp),
     setKey: SettingBoxKey.horizontalSeasonPanel,
     defaultVal: Pref.horizontalScreen,
   ),
   SwitchModel(
-    title: '横屏播放页在侧栏打开UP主页',
+    title: '橫屏播放頁在側欄開啟UP主頁',
     leading: const Icon(Icons.account_circle_outlined),
     setKey: SettingBoxKey.horizontalMemberPage,
     defaultVal: Pref.horizontalScreen,
   ),
   SwitchModel(
-    title: '横屏在侧栏打开图片预览',
+    title: '橫屏在側欄開啟圖片預覽',
     leading: const Icon(Icons.photo_outlined),
     setKey: SettingBoxKey.horizontalPreview,
     defaultVal: false,
     onChanged: (value) => ImageGridView.horizontalPreview = value,
   ),
   const SwitchModel(
-    title: '显示视频警告/争议信息',
+    title: '顯示影片警告/爭議資訊',
     leading: Icon(Icons.warning_amber_rounded),
     setKey: SettingBoxKey.showArgueMsg,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '显示视频分段信息',
+    title: '顯示影片分段資訊',
     leading: Icon(CustomIcons.view_headline_rotate_90),
     setKey: SettingBoxKey.showViewPoints,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '显示继续播放分P提示',
+    title: '顯示繼續播放分P提示',
     leading: Icon(Icons.local_parking),
     setKey: SettingBoxKey.continuePlayingPart,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '分P/合集：倒序播放从首集开始播放',
-    subtitle: '开启则自动切换为倒序首集，否则保持当前集',
+    title: '分P/合集：倒序播放從首集開始播放',
+    subtitle: '開啟則自動切換為倒序首集，否則保持當前集',
     leading: Icon(MdiIcons.sort),
     setKey: SettingBoxKey.reverseFromFirst,
     defaultVal: true,
@@ -223,18 +223,18 @@ List<SettingsModel> get playSettings => [
     NormalModel(
       title: '播放器音量',
       leading: const Icon(Icons.volume_up),
-      getSubtitle: () => '当前:「${Pref.playerVolume.toStringAsFixed(0)}%」',
+      getSubtitle: () => '當前:「${Pref.playerVolume.toStringAsFixed(0)}%」',
       onTap: showPlayerVolumeDialog,
     )
   else
     NormalModel(
       title: '最高音量',
       leading: const Icon(Icons.volume_up),
-      getSubtitle: () => '当前:「${(Pref.maxVolume * 100).toStringAsFixed(0)}%」',
+      getSubtitle: () => '當前:「${(Pref.maxVolume * 100).toStringAsFixed(0)}%」',
       onTap: _showMaxVolumeDialog,
     ),
   getVideoFilterSelectModel(
-    title: '双击快进/快退时长',
+    title: '雙擊快進/快退時長',
     suffix: 's',
     key: SettingBoxKey.fastForBackwardDuration,
     values: [5, 10, 15],
@@ -242,14 +242,14 @@ List<SettingsModel> get playSettings => [
     isFilter: false,
   ),
   const SwitchModel(
-    title: '滑动快进/快退使用相对时长',
+    title: '滑動快進/快退使用相對時長',
     leading: Icon(Icons.swap_horiz_outlined),
     setKey: SettingBoxKey.useRelativeSlide,
     defaultVal: false,
   ),
   getVideoFilterSelectModel(
-    title: '滑动快进/快退时长',
-    subtitle: '从播放器一端滑到另一端的快进/快退时长',
+    title: '滑動快進/快退時長',
+    subtitle: '從播放器一端滑到另一端的快進/快退時長',
     suffix: Pref.useRelativeSlide ? '%' : 's',
     key: SettingBoxKey.sliderDuration,
     values: [25, 50, 90, 100],
@@ -257,27 +257,27 @@ List<SettingsModel> get playSettings => [
     isFilter: false,
   ),
   NormalModel(
-    title: '自动启用字幕',
+    title: '自動啟用字幕',
     leading: const Icon(Icons.closed_caption_outlined),
-    getSubtitle: () => '当前选择偏好：${Pref.subtitlePreferenceV2.desc}',
+    getSubtitle: () => '當前選擇偏好：${Pref.subtitlePreferenceV2.desc}',
     onTap: _showSubtitleDialog,
   ),
   if (PlatformUtils.isDesktop)
     SwitchModel(
-      title: '最小化时暂停/还原时播放',
+      title: '最小化時暫停/還原時播放',
       leading: const Icon(Icons.pause_circle_outline),
       setKey: SettingBoxKey.pauseOnMinimize,
       defaultVal: false,
       onChanged: (value) => WindowController.instance.pauseOnMinimize = value,
     ),
   const SwitchModel(
-    title: '启用键盘控制',
+    title: '啟用鍵盤控制',
     leading: Icon(Icons.keyboard_alt_outlined),
     setKey: SettingBoxKey.keyboardControl,
     defaultVal: true,
   ),
   PopupModel(
-    title: 'SuperChat (醒目留言) 显示类型',
+    title: 'SuperChat (醒目留言) 顯示型別',
     leading: const Icon(Icons.live_tv),
     value: () => Pref.superChatType,
     items: SuperChatType.values,
@@ -286,43 +286,43 @@ List<SettingsModel> get playSettings => [
         .whenComplete(setState),
   ),
   NormalModel(
-    title: '全屏 SuperChat 设置',
-    subtitle: '全屏 SuperChat (醒目留言) 大小、不透明度、缩放设置',
+    title: '全屏 SuperChat 設定',
+    subtitle: '全屏 SuperChat (醒目留言) 大小、不透明度、縮放設定',
     leading: const Icon(Icons.open_in_full),
     onTap: (_, _) => Get.to(const FullScreenSc()),
   ),
   const SwitchModel(
-    title: '竖屏扩大展示',
-    subtitle: '小屏竖屏视频宽高比由16:9扩大至1:1（不支持收起）；横屏适配时，扩大至9:16',
+    title: '豎屏擴大展示',
+    subtitle: '小屏豎屏影片寬高比由16:9擴大至1:1（不支援收起）；橫屏適配時，擴大至9:16',
     leading: Icon(Icons.expand_outlined),
     setKey: SettingBoxKey.enableVerticalExpand,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '自动全屏',
-    subtitle: '视频开始播放时进入全屏',
+    title: '自動全屏',
+    subtitle: '影片開始播放時進入全屏',
     leading: Icon(Icons.fullscreen_outlined),
     setKey: SettingBoxKey.enableAutoEnter,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '自动退出全屏',
-    subtitle: '视频结束播放时退出全屏',
+    title: '自動退出全屏',
+    subtitle: '影片結束播放時退出全屏',
     leading: Icon(Icons.fullscreen_exit_outlined),
     setKey: SettingBoxKey.enableAutoExit,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '延长播放控件显示时间',
-    subtitle: '开启后延长至30秒，便于屏幕阅读器滑动切换控件焦点',
+    title: '延長播放控制元件顯示時間',
+    subtitle: '開啟後延長至30秒，便於螢幕閱讀器滑動切換控制元件焦點',
     leading: Icon(Icons.timer_outlined),
     setKey: SettingBoxKey.enableLongShowControl,
     defaultVal: false,
   ),
   if (PlatformUtils.isMobile)
     const SwitchModel(
-      title: '后台播放',
-      subtitle: '进入后台时继续播放',
+      title: '後臺播放',
+      subtitle: '進入後臺時繼續播放',
       leading: Icon(Icons.motion_photos_pause_outlined),
       setKey: SettingBoxKey.continuePlayInBackground,
       defaultVal: false,
@@ -330,15 +330,15 @@ List<SettingsModel> get playSettings => [
   if ((Platform.isAndroid && PiliAndroidHelper.isPipAvailable) ||
       (Platform.isIOS && IOSPipHelper.isAvailable))
     SwitchModel(
-      title: '后台画中画',
-      subtitle: '进入后台时以小窗形式（PiP）播放',
+      title: '後臺畫中畫',
+      subtitle: '進入後臺時以小窗形式（PiP）播放',
       leading: const Icon(Icons.picture_in_picture_outlined),
       setKey: SettingBoxKey.autoPiP,
       defaultVal: false,
       onChanged: Platform.isAndroid
           ? (val) {
               if (val && !videoPlayerServiceHandler!.enableBackgroundPlay) {
-                SmartDialog.showToast('建议开启后台音频服务');
+                SmartDialog.showToast('建議開啟後臺音訊服務');
               }
             }
           : null,
@@ -346,40 +346,40 @@ List<SettingsModel> get playSettings => [
   // PiP on iOS only shows the video frames, without danmaku.
   if (Platform.isAndroid)
     const SwitchModel(
-      title: '画中画不加载弹幕',
-      subtitle: '当弹幕开关开启时，小窗屏蔽弹幕以获得较好的体验',
+      title: '畫中畫不載入彈幕',
+      subtitle: '當彈幕開關開啟時，小窗遮蔽彈幕以獲得較好的體驗',
       leading: Icon(CustomIcons.dm_off),
       setKey: SettingBoxKey.pipNoDanmaku,
       defaultVal: false,
     ),
   const SwitchModel(
-    title: '全屏手势反向',
-    subtitle: '默认播放器中部向上滑动进入全屏，向下退出\n开启后向下全屏，向上退出',
+    title: '全屏手勢反向',
+    subtitle: '預設播放器中部向上滑動進入全屏，向下退出\n開啟後向下全屏，向上退出',
     leading: Icon(Icons.swap_vert),
     setKey: SettingBoxKey.fullScreenGestureReverse,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '全屏展示点赞/投币/收藏等操作按钮',
+    title: '全屏展示點贊/投幣/收藏等操作按鈕',
     leading: Icon(MdiIcons.dotsHorizontalCircleOutline),
     setKey: SettingBoxKey.showFSActionItem,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '观看人数',
-    subtitle: '展示同时在看人数',
+    title: '觀看人數',
+    subtitle: '展示同時在看人數',
     leading: Icon(Icons.people_outlined),
     setKey: SettingBoxKey.enableOnlineTotal,
     defaultVal: false,
   ),
   NormalModel(
-    title: '默认全屏方向',
+    title: '預設全屏方向',
     leading: const Icon(Icons.open_with_outlined),
-    getSubtitle: () => '当前全屏方向：${Pref.fullScreenMode.desc}',
+    getSubtitle: () => '當前全屏方向：${Pref.fullScreenMode.desc}',
     onTap: _showFullScreenModeDialog,
   ),
   PopupModel(
-    title: '底部进度条展示',
+    title: '底部進度條展示',
     leading: const Icon(Icons.border_bottom_outlined),
     value: () => Pref.btmProgressBehavior,
     items: BtmProgressBehavior.values,
@@ -389,8 +389,8 @@ List<SettingsModel> get playSettings => [
   ),
   if (PlatformUtils.isMobile)
     SwitchModel(
-      title: '后台音频服务',
-      subtitle: '避免画中画没有播放暂停功能',
+      title: '後臺音訊服務',
+      subtitle: '避免畫中畫沒有播放暫停功能',
       leading: const Icon(Icons.volume_up_outlined),
       setKey: SettingBoxKey.enableBackgroundPlay,
       defaultVal: true,
@@ -398,7 +398,7 @@ List<SettingsModel> get playSettings => [
           videoPlayerServiceHandler!.enableBackgroundPlay = value,
     ),
   PopupModel(
-    title: '播放顺序',
+    title: '播放順序',
     leading: const Icon(Icons.repeat),
     value: () => Pref.playRepeat,
     items: PlayRepeat.values,
@@ -407,8 +407,8 @@ List<SettingsModel> get playSettings => [
         .whenComplete(setState),
   ),
   const SwitchModel(
-    title: '播放器设置仅对当前生效',
-    subtitle: '弹幕、字幕及部分设置中没有的设置除外',
+    title: '播放器設定僅對當前生效',
+    subtitle: '彈幕、字幕及部分設定中沒有的設定除外',
     leading: Icon(Icons.video_settings_outlined),
     setKey: SettingBoxKey.tempPlayerConf,
     defaultVal: false,
@@ -422,7 +422,7 @@ Future<void> _showSubtitleDialog(
   final res = await showDialog<SubtitlePrefType>(
     context: context,
     builder: (context) => SelectDialog<SubtitlePrefType>(
-      title: '字幕选择偏好',
+      title: '字幕選擇偏好',
       value: Pref.subtitlePreferenceV2,
       values: SubtitlePrefType.values.map((e) => (e, e.desc)).toList(),
     ),
@@ -443,7 +443,7 @@ Future<void> _showFullScreenModeDialog(
   final res = await showDialog<FullScreenMode>(
     context: context,
     builder: (context) => SelectDialog<FullScreenMode>(
-      title: '默认全屏方向',
+      title: '預設全屏方向',
       value: Pref.fullScreenMode,
       values: FullScreenMode.values.map((e) => (e, e.desc)).toList(),
     ),
@@ -461,7 +461,7 @@ Future<void> _showAngleDegreesDialog(
   final res = await showDialog<double>(
     context: context,
     builder: (context) => SliderDialog(
-      title: const Text('倾斜角度阈值'),
+      title: const Text('傾斜角度閾值'),
       min: 10.0,
       max: 90.0,
       divisions: 90,
@@ -547,7 +547,7 @@ Future<void> _showSuperResolutionDialog(
   final res = await showDialog<SuperResolutionType>(
     context: context,
     builder: (context) => SelectDialog<SuperResolutionType>(
-      title: '超分辨率',
+      title: '超解析度',
       value: Pref.superResolutionType,
       values: SuperResolutionType.values.map((e) => (e, e.label)).toList(),
     ),
@@ -583,7 +583,7 @@ Future<void> audioNormalization(
         '3',
       };
       return SelectDialog<String>(
-        title: fallback ? '服务器无loudnorm配置时使用' : '音量均衡',
+        title: fallback ? '伺服器無loudnorm配置時使用' : '音量均衡',
         toggleable: true,
         value: audioNormalization,
         values: values
@@ -609,12 +609,12 @@ Future<void> audioNormalization(
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('自定义参数'),
+          title: const Text('自定義引數'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             spacing: 16,
             children: [
-              const Text('等同于 --lavfi-complex="[aid1] 参数 [ao]"'),
+              const Text('等同於 --lavfi-complex="[aid1] 引數 [ao]"'),
               TextField(
                 autofocus: true,
                 onChanged: (value) => param = value,
@@ -639,7 +639,7 @@ Future<void> audioNormalization(
                 }
                 setState();
               },
-              child: const Text('确定'),
+              child: const Text('確定'),
             ),
           ],
         ),

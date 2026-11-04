@@ -36,7 +36,7 @@ class DynMentionItem extends StatelessWidget {
         subtitle: item.fans == null
             ? null
             : Text(
-                '${NumUtils.numFormat(item.fans)}粉丝',
+                '${NumUtils.numFormat(item.fans)}粉絲',
                 style: TextStyle(color: ColorScheme.of(context).outline),
               ),
         trailing: onCheck == null

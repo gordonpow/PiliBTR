@@ -159,20 +159,20 @@ class ImageGridView extends StatelessWidget {
         PopupMenuItem(
           height: 42,
           onTap: () => ImageUtils.downloadImg([item.url]),
-          child: const Text('保存图片', style: TextStyle(fontSize: 14)),
+          child: const Text('儲存圖片', style: TextStyle(fontSize: 14)),
         ),
         if (PlatformUtils.isDesktop)
           PopupMenuItem(
             height: 42,
             onTap: () => PageUtils.launchURL(item.url),
-            child: const Text('网页打开', style: TextStyle(fontSize: 14)),
+            child: const Text('網頁開啟', style: TextStyle(fontSize: 14)),
           ),
         if (picArr.length > 1)
           PopupMenuItem(
             height: 42,
             onTap: () =>
                 ImageUtils.downloadImg(picArr.map((item) => item.url).toList()),
-            child: const Text('保存全部', style: TextStyle(fontSize: 14)),
+            child: const Text('儲存全部', style: TextStyle(fontSize: 14)),
           ),
         if (item.isLivePhoto)
           PopupMenuItem(
@@ -184,7 +184,7 @@ class ImageGridView extends StatelessWidget {
               height: item.height.toInt(),
             ),
             child: Text(
-              '保存${Platform.isIOS ? '实况' : '视频'}',
+              '儲存${Platform.isIOS ? '實況' : '影片'}',
               style: const TextStyle(fontSize: 14),
             ),
           ),
@@ -247,14 +247,14 @@ class ImageGridView extends StatelessWidget {
                 if (item.isLivePhoto)
                   const PBadge(text: 'Live', right: 8, bottom: 8, type: .gray)
                 else if (item.isLongPic)
-                  const PBadge(text: '长图', right: 8, bottom: 8),
+                  const PBadge(text: '長圖', right: 8, bottom: 8),
               ],
             );
             if (!item.isLongPic) {
               child = Hero(tag: '${item.url}$hashCode', child: child);
             }
             child = Semantics(
-              label: '图片，第 ${index + 1} 张，共 ${picArr.length} 张',
+              label: '圖片，第 ${index + 1} 張，共 ${picArr.length} 張',
               button: true,
               onTap: onTap,
               child: child,

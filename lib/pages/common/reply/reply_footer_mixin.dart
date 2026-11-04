@@ -54,7 +54,7 @@ mixin ReplyFooterMixin<T extends StatefulWidget, R> on State<T> {
       alignment: .center,
       margin: .only(bottom: padding.bottom),
       child: Text(
-        controller.isEnd ? '没有更多了' : '加载中...',
+        controller.isEnd ? '沒有更多了' : '載入中...',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, color: colorScheme.outline),
       ),
@@ -63,7 +63,7 @@ mixin ReplyFooterMixin<T extends StatefulWidget, R> on State<T> {
 
   Widget emptyWidget() {
     return HttpError(
-      errMsg: '还没有评论',
+      errMsg: '還沒有評論',
       onReload: controller.onReload,
     );
   }

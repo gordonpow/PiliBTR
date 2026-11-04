@@ -52,9 +52,9 @@ abstract final class NumUtils {
     }
 
     if (number >= 100000000) {
-      return format(100000000, '亿');
+      return format(100000000, '億');
     } else if (number >= 10000) {
-      return format(10000, '万');
+      return format(10000, '萬');
     } else {
       return number.toString();
     }

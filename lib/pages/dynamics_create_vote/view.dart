@@ -56,7 +56,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
     );
     return SimpleScaffold(
       appBar: AppBar(
-        title: Text('${_controller.voteId != null ? '' : '发起'}投票'),
+        title: Text('${_controller.voteId != null ? '' : '發起'}投票'),
       ),
       body: ListView(
         padding: EdgeInsets.only(
@@ -66,7 +66,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
         ),
         children: [
           const Text(
-            '投票类型',
+            '投票型別',
             style: TextStyle(fontSize: 14),
           ),
           const SizedBox(height: 12),
@@ -80,8 +80,8 @@ class _CreateVotePageState extends State<CreateVotePage> {
               onChanged: (value) => _controller
                 ..title.value = value
                 ..updateCanCreate(),
-              desc: '投票标题',
-              hintText: '请填写标题',
+              desc: '投票標題',
+              hintText: '請填寫標題',
               inputFormatters: [LengthLimitingTextInputFormatter(32)],
             ),
           ),
@@ -92,7 +92,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
               key: ValueKey('${_controller.key}desc'),
               initialValue: _controller.desc.value,
               onChanged: _controller.desc.call,
-              desc: '投票说明',
+              desc: '投票說明',
               inputFormatters: [LengthLimitingTextInputFormatter(100)],
             ),
           ),
@@ -126,8 +126,8 @@ class _CreateVotePageState extends State<CreateVotePage> {
                       onChanged: (value) => _controller
                         ..options[i].optDesc = value
                         ..updateCanCreate(),
-                      desc: '选项${i + 1}',
-                      hintText: '选项内容，最多20字',
+                      desc: '選項${i + 1}',
+                      hintText: '選項內容，最多20字',
                       inputFormatters: [LengthLimitingTextInputFormatter(20)],
                     ),
                   )
@@ -161,7 +161,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
                         children: [
                           Icon(Icons.add, size: 16),
                           Text(
-                            ' 添加选项',
+                            ' 新增選項',
                             style: TextStyle(fontSize: 13),
                           ),
                         ],
@@ -177,7 +177,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
             children: [
               SizedBox(
                 width: 100,
-                child: Text('单选/多选', style: _leadingStyle),
+                child: Text('單選/多選', style: _leadingStyle),
               ),
               Obx(() {
                 final choiceCnt = _controller.choiceCnt.value;
@@ -197,13 +197,13 @@ class _CreateVotePageState extends State<CreateVotePage> {
                           .map(
                             (e) => PopupMenuItem(
                               value: e,
-                              child: Text(e == 1 ? '单选' : '最多选$e项'),
+                              child: Text(e == 1 ? '單選' : '最多選$e項'),
                             ),
                           )
                           .toList();
                     },
                     child: Text(
-                      choiceCnt == 1 ? '单选         ' : '最多选$choiceCnt项',
+                      choiceCnt == 1 ? '單選         ' : '最多選$choiceCnt項',
                     ),
                   ),
                 );
@@ -217,7 +217,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
             children: [
               SizedBox(
                 width: 100,
-                child: Text('投票截止时间', style: _leadingStyle),
+                child: Text('投票截止時間', style: _leadingStyle),
               ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -248,7 +248,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
                           const Duration(minutes: 5)) {
                         _controller.endtime.value = newEndtime;
                       } else {
-                        SmartDialog.showToast('至少选择5分钟之后');
+                        SmartDialog.showToast('至少選擇5分鐘之後');
                       }
                     }
                   }
@@ -272,7 +272,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
             final canCreate = _controller.canCreate.value;
             return FilledButton.tonal(
               onPressed: canCreate ? _controller.onCreate : null,
-              child: const Text('发起投票'),
+              child: const Text('發起投票'),
             );
           }),
         ],
@@ -380,7 +380,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
                 ..type.value = index
                 ..updateCanCreate(),
               child: Text(
-                '${const ['文字', '图片'][index]}投票',
+                '${const ['文字', '圖片'][index]}投票',
                 style: const TextStyle(fontSize: 14, height: 1),
                 strutStyle: const StrutStyle(
                   height: 1,

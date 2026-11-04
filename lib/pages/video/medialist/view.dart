@@ -81,13 +81,13 @@ class _MediaListPanelState extends State<MediaListPanel>
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    widget.panelTitle ?? '稍后再看',
+                    widget.panelTitle ?? '稍後再看',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
                 iconButton(
                   iconSize: 20,
-                  tooltip: widget.desc ? '顺序播放' : '倒序播放',
+                  tooltip: widget.desc ? '順序播放' : '倒序播放',
                   icon: widget.desc
                       ? const Icon(MdiIcons.sortAscending)
                       : const Icon(MdiIcons.sortDescending),
@@ -98,7 +98,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                 ),
                 iconButton(
                   iconSize: 20,
-                  tooltip: '关闭',
+                  tooltip: '關閉',
                   icon: const Icon(Icons.close),
                   onPressed: Get.back,
                 ),
@@ -175,7 +175,7 @@ class _MediaListPanelState extends State<MediaListPanel>
           child: InkWell(
             onTap: () {
               if (item.type != 2) {
-                SmartDialog.showToast('不支持播放该类型视频');
+                SmartDialog.showToast('不支援播放該型別影片');
                 return;
               }
               Get.back();
@@ -208,7 +208,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                               right: 6.0,
                               top: 6.0,
                               type: switch (item.badge) {
-                                '充电专属' => PBadgeType.error,
+                                '充電專屬' => PBadgeType.error,
                                 _ => PBadgeType.primary,
                               },
                             ),
@@ -291,7 +291,7 @@ class _MediaListPanelState extends State<MediaListPanel>
                       customBorder: const CircleBorder(),
                       onTap: () => showConfirmDialog(
                         context: context,
-                        title: const Text('确定移除该视频？'),
+                        title: const Text('確定移除該影片？'),
                         onConfirm: () => widget.onDelete!(item, index),
                       ),
                       onLongPress: () => widget.onDelete!(item, index),

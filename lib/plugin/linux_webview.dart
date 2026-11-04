@@ -138,7 +138,7 @@ class _LinuxWebviewState extends State<LinuxWebview> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
-      return const Center(child: Text('网页加载失败'));
+      return const Center(child: Text('網頁載入失敗'));
     }
     if (!_ready) {
       return const Center(child: CircularProgressIndicator());

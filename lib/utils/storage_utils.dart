@@ -16,15 +16,15 @@ abstract final class StorageUtils {
         bytes: PlatformUtils.isDesktop ? Uint8List(0) : bytes,
       );
       if (path == null) {
-        SmartDialog.showToast("取消保存");
+        SmartDialog.showToast("取消儲存");
         return;
       }
       if (PlatformUtils.isDesktop) {
         await File(path.toFilePath()).writeAsBytes(bytes);
       }
-      SmartDialog.showToast("已保存");
+      SmartDialog.showToast("已儲存");
     } catch (e) {
-      SmartDialog.showToast("保存失败: $e");
+      SmartDialog.showToast("儲存失敗: $e");
     }
   }
 }

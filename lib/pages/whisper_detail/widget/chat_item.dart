@@ -128,7 +128,7 @@ class ChatItem extends StatelessWidget {
                     color: theme.colorScheme.outline.withValues(alpha: 0.2),
                   ),
                   Text(
-                    '此条消息为自动回复',
+                    '此條訊息為自動回覆',
                     style: theme.textTheme.labelMedium!.copyWith(
                       color: theme.colorScheme.outline,
                     ),
@@ -347,7 +347,7 @@ class ChatItem extends StatelessWidget {
                       SmartDialog.showToast(err.toString());
                     }
                   } else {
-                    SmartDialog.showToast('未匹配到 BV 号');
+                    SmartDialog.showToast('未匹配到 BV 號');
                     PageUtils.handleWebview(i['jump_url']);
                   }
                 },
@@ -469,7 +469,7 @@ class ChatItem extends StatelessWidget {
                       vertical: 8,
                     ),
                     child: Text(
-                      content['times'] == 0 ? '内容已失效' : content['title'],
+                      content['times'] == 0 ? '內容已失效' : content['title'],
                       style: TextStyle(
                         letterSpacing: 0.6,
                         height: 1.5,
@@ -513,7 +513,7 @@ class ChatItem extends StatelessWidget {
 
       // video
       case 5:
-        type = '视频';
+        type = '影片';
         onTap = () async {
           dynamic aid = content['id'];
           if (aid is String) {
@@ -545,7 +545,7 @@ class ChatItem extends StatelessWidget {
 
       // article
       case 6:
-        type = '专栏';
+        type = '專欄';
         onTap = () => Get.toNamed(
           '/articlePage',
           parameters: {
@@ -557,7 +557,7 @@ class ChatItem extends StatelessWidget {
 
       // dynamic
       case 11:
-        type = '动态';
+        type = '動態';
         onTap = () => PageUtils.pushDynFromId(id: content['id']);
         break;
 
@@ -740,7 +740,7 @@ class ChatItem extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: () => PiliScheme.routePushFromUrl(uri),
             child: Text(
-              text != null && text.isNotEmpty ? text : '查看详情',
+              text != null && text.isNotEmpty ? text : '檢視詳情',
             ),
           ),
         ];

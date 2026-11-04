@@ -40,7 +40,7 @@ class TrayController {
     final trayMenu = Menu.create();
     if (trayMenu != null) {
       _trayMenu = trayMenu;
-      _addTrayMenuItem(trayMenu, '显示窗口', WindowController.instance.show);
+      _addTrayMenuItem(trayMenu, '顯示視窗', WindowController.instance.show);
       trayMenu.addSeparator();
       _addTrayMenuItem(
         trayMenu,

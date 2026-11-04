@@ -150,7 +150,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
           onSubmitted: onSubmitted,
           focusNode: focusNode,
           decoration: InputDecoration(
-            hintText: widget.hint ?? "输入回复内容",
+            hintText: widget.hint ?? "輸入回覆內容",
             border: InputBorder.none,
             hintStyle: const TextStyle(fontSize: 14),
           ),
@@ -170,14 +170,14 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
             if (widget.root == 0) ...[
               const SizedBox(width: 8),
               ToolbarIconButton(
-                tooltip: '图片',
+                tooltip: '圖片',
                 selected: false,
                 icon: widget.canUploadPic
                     ? const Icon(Icons.image, size: 22)
                     : const Icon(Icons.image_not_supported, size: 22),
                 onPressed: widget.canUploadPic
                     ? onPickImageThrottle
-                    : () => SmartDialog.showToast('当前评论区不支持发送图片'),
+                    : () => SmartDialog.showToast('當前評論區不支援傳送圖片'),
               ),
             ],
             const SizedBox(width: 8),
@@ -189,7 +189,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
             const SizedBox(width: 8),
             Obx(
               () => ToolbarIconButton(
-                tooltip: '转到动态',
+                tooltip: '轉到動態',
                 onPressed: _syncToDynamic.toggle,
                 icon: const Icon(
                   CustomIcons.repeat_rounded_rotate_90,
@@ -210,7 +210,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
                   ),
                   visualDensity: VisualDensity.compact,
                 ),
-                child: const Text('发送'),
+                child: const Text('傳送'),
               ),
             ),
           ],
@@ -293,7 +293,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
               }
             },
             icon: Icon(Icons.post_add, size: 28, color: color),
-            title: '插入内容',
+            title: '插入內容',
           ),
           if (heroTag != null) ...[
             // if (isRoot)
@@ -325,13 +325,13 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
                 }
               },
               icon: Icon(Icons.my_location, size: 28, color: color),
-              title: '视频进度',
+              title: '影片進度',
             ),
             if (isRoot && widget.canUploadPic)
               item(
                 onTap: () async {
                   if (imageList.length >= limit) {
-                    SmartDialog.showToast('最多选择$limit张图片');
+                    SmartDialog.showToast('最多選擇$limit張圖片');
                     return;
                   }
                   try {
@@ -363,7 +363,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
                   size: 28,
                   color: color,
                 ),
-                title: '视频截图',
+                title: '影片截圖',
               ),
           ],
         ],
@@ -386,7 +386,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
       root: widget.root,
       parent: widget.parent,
       message: widget.replyItem != null && widget.replyItem!.root != 0
-          ? ' 回复 @${widget.replyItem!.member.name} : $message'
+          ? ' 回覆 @${widget.replyItem!.member.name} : $message'
           : message,
       atNameToMid: atNameToMid,
       pictures: pictures,
@@ -394,7 +394,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
     );
     if (res case Success(:final response)) {
       hasPub = true;
-      SmartDialog.showToast('发送成功');
+      SmartDialog.showToast('傳送成功');
       Get.back(result: response);
     } else {
       res.toast();
@@ -422,8 +422,8 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
     if (spans.isEmpty) {
       SmartDialog.showToast(
         warnings.isEmpty
-            ? '未发现用 \$ 括起的公式'
-            : '公式未能识别：${warnings.join('、')}（已保留原文）',
+            ? '未發現用 \$ 括起的公式'
+            : '公式未能識別：${warnings.join('、')}（已保留原文）',
       );
       return;
     }
@@ -432,7 +432,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
     _latexOn.value = true;
     if (warnings.isNotEmpty) {
       SmartDialog.showToast(
-        '无法识别：${warnings.join('、')}（已保留原文）',
+        '無法識別：${warnings.join('、')}（已保留原文）',
       );
     }
   }

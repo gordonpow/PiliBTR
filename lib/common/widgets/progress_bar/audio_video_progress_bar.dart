@@ -826,7 +826,7 @@ class RenderProgressBar extends RenderBox implements MouseTrackerAnnotation {
     config
       ..textDirection = TextDirection.ltr
       ..label =
-          '进度条' //'Progress bar';
+          '進度條' //'Progress bar';
       ..value = '${(_thumbValue * 100).round()}%'
       // increase action
       ..onIncrease = increaseAction;

@@ -24,7 +24,7 @@ import 'package:material_ui/material_ui.dart';
 
 enum _BlockType implements EnumWithLabel {
   local('本地'),
-  online('在线'),
+  online('線上'),
   ;
 
   @override
@@ -70,7 +70,7 @@ class _BlackListPageState extends State<BlackListPage>
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('黑名单管理')),
+      appBar: AppBar(title: const Text('黑名單管理')),
       body: Column(
         children: [
           TabBar(
@@ -122,7 +122,7 @@ class _BlackListPageState extends State<BlackListPage>
       return;
     }
     _blackListController.blackMids.add(intMid);
-    SmartDialog.showToast('屏蔽成功');
+    SmartDialog.showToast('遮蔽成功');
     setState(() {});
   }
 
@@ -130,7 +130,7 @@ class _BlackListPageState extends State<BlackListPage>
     var text = '';
     showConfirmDialog(
       context: context,
-      title: const Text('屏蔽用户'),
+      title: const Text('遮蔽使用者'),
       content: TextField(
         autofocus: true,
         textInputAction: .done,
@@ -153,7 +153,7 @@ class _BlackListPageState extends State<BlackListPage>
   void _showImportExportDialog() {
     showImportExportDialog<List>(
       context,
-      title: '黑名单',
+      title: '黑名單',
       localFileName: () => 'blackMids',
       onExport: () =>
           Utils.jsonEncoder.convert(_blackListController.blackMids.toList()),
@@ -177,12 +177,12 @@ class _BlackListPageState extends State<BlackListPage>
           mainAxisSize: .min,
           children: [
             FloatingActionButton(
-              tooltip: '导入/导出',
+              tooltip: '匯入/匯出',
               onPressed: _showImportExportDialog,
               child: const Icon(Icons.swap_vert, size: 26),
             ),
             FloatingActionButton(
-              tooltip: '添加',
+              tooltip: '新增',
               onPressed: _showAddMidDialog,
               child: const Icon(Icons.add),
             ),
@@ -212,7 +212,7 @@ class _BlackListPageState extends State<BlackListPage>
                       onTap: (mid) => Get.toNamed('/member?mid=$mid'),
                       onLongPress: (_) => showConfirmDialog(
                         context: context,
-                        title: const Text('确定移除该用户？'),
+                        title: const Text('確定移除該使用者？'),
                         onConfirm: () {
                           _blackListController.blackMids.remove(mid);
                           setState(() {});
@@ -269,7 +269,7 @@ class _BlackListPageState extends State<BlackListPage>
                       style: const TextStyle(fontSize: 14),
                     ),
                     subtitle: Text(
-                      '添加时间: ${DateFormatUtils.format(item.mtime, format: DateFormatUtils.longFormatDs)}',
+                      '新增時間: ${DateFormatUtils.format(item.mtime, format: DateFormatUtils.longFormatDs)}',
                       maxLines: 1,
                       style: style,
                       overflow: TextOverflow.ellipsis,

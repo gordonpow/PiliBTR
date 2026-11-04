@@ -104,7 +104,7 @@ class _FullScreenScState extends State<FullScreenSc> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('全屏 SuperChat 设置'),
+            const Text('全屏 SuperChat 設定'),
             Transform.scale(
               scale: 0.8,
               alignment: .centerRight,
@@ -175,7 +175,7 @@ class _FullScreenScState extends State<FullScreenSc> {
                           children: [
                             Expanded(
                               flex: 3,
-                              child: Text('缩放: ${_scale.toStringAsFixed(2)}'),
+                              child: Text('縮放: ${_scale.toStringAsFixed(2)}'),
                             ),
                             Expanded(
                               flex: 7,

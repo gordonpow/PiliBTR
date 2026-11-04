@@ -92,7 +92,7 @@ class LiveRoomController extends GetxController {
         liveTime * 1000,
         DateTime.now().millisecondsSinceEpoch,
       );
-      text += duration.isEmpty ? '刚刚开播' : '开播$duration';
+      text += duration.isEmpty ? '剛剛開播' : '開播$duration';
     }
     if (text.isEmpty) {
       return const SizedBox.shrink();
@@ -249,12 +249,12 @@ class LiveRoomController extends GetxController {
     );
     if (res case Success(:final response)) {
       if (response.liveStatus != 1) {
-        _showDialog('当前直播间未开播');
+        _showDialog('當前直播間未開播');
         return;
       }
       final playurl = response.playurlInfo?.playurl;
       if (playurl == null) {
-        _showDialog('无法获取播放地址');
+        _showDialog('無法獲取播放地址');
         return;
       }
       ruid = response.uid;
@@ -359,7 +359,7 @@ class LiveRoomController extends GetxController {
           TextButton(
             onPressed: Get.back,
             child: Text(
-              '关闭',
+              '關閉',
               style: TextStyle(color: ThemeUtils.theme.colorScheme.outline),
             ),
           ),
@@ -722,7 +722,7 @@ class LiveRoomController extends GetxController {
       anchorId: roomInfoH5.value?.roomInfo?.uid,
     );
     if (res.isSuccess) {
-      SmartDialog.showToast('点赞成功');
+      SmartDialog.showToast('點贊成功');
     } else {
       res.toast();
     }
@@ -730,7 +730,7 @@ class LiveRoomController extends GetxController {
   }
 
   void toastNotLogin() {
-    SmartDialog.showToast('账号未登录');
+    SmartDialog.showToast('賬號未登入');
   }
 
   void onSendDanmaku([bool fromEmote = false]) {

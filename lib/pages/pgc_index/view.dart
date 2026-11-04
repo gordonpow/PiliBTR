@@ -204,7 +204,7 @@ class _PgcIndexPageState extends State<PgcIndexPage>
               mainAxisSize: .min,
               children: [
                 Text(
-                  _ctr.isExpand.value ? '收起' : '展开',
+                  _ctr.isExpand.value ? '收起' : '展開',
                   style: TextStyle(color: theme.colorScheme.outline),
                 ),
                 Icon(

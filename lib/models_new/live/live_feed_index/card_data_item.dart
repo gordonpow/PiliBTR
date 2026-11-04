@@ -23,12 +23,12 @@ class CardDataItem {
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 0,
-        title: '人气',
+        title: '人氣',
       ),
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 9,
-        title: '虚拟主播',
+        title: '虛擬主播',
       ),
       CardLiveItem(
         areaV2Id: 0,
@@ -38,27 +38,27 @@ class CardDataItem {
       CardLiveItem(
         areaV2Id: 145,
         areaV2ParentId: 1,
-        title: '颜值',
+        title: '顏值',
       ),
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 1,
-        title: '娱乐',
+        title: '娛樂',
       ),
       CardLiveItem(
         areaV2Id: 86,
         areaV2ParentId: 2,
-        title: '英雄联盟',
+        title: '英雄聯盟',
       ),
       CardLiveItem(
         areaV2Id: 35,
         areaV2ParentId: 3,
-        title: '王者荣耀',
+        title: '王者榮耀',
       ),
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 5,
-        title: '电台',
+        title: '電臺',
       ),
       CardLiveItem(
         areaV2Id: 89,
@@ -68,27 +68,27 @@ class CardDataItem {
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 15,
-        title: '互动玩法',
+        title: '互動玩法',
       ),
       CardLiveItem(
         areaV2Id: 0,
         areaV2ParentId: 6,
-        title: '单机游戏',
+        title: '單機遊戲',
       ),
       CardLiveItem(
         areaV2Id: 21,
         areaV2ParentId: 1,
-        title: '视频唱见',
+        title: '影片唱見',
       ),
       CardLiveItem(
         areaV2Id: 301000,
         areaV2ParentId: 301,
-        title: '帮我玩',
+        title: '幫我玩',
       ),
       CardLiveItem(
         areaV2Id: 1013,
         areaV2ParentId: 1,
-        title: '团播',
+        title: '團播',
       ),
     ],
   );

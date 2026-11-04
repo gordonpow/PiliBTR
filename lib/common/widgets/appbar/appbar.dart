@@ -29,12 +29,12 @@ class MultiSelectAppBarWidget extends StatelessWidget
           onPressed: ctr.handleSelect,
           icon: const Icon(Icons.close_outlined),
         ),
-        title: Obx(() => Text('已选: ${ctr.checkedCount}')),
+        title: Obx(() => Text('已選: ${ctr.checkedCount}')),
         actions: [
           TextButton(
             style: style,
             onPressed: () => ctr.handleSelect(checked: true),
-            child: const Text('全选'),
+            child: const Text('全選'),
           ),
           ...?actions,
           TextButton(

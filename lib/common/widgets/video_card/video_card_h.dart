@@ -77,7 +77,7 @@ class VideoCardH extends StatelessWidget {
                                 top: 6.0,
                                 right: 6.0,
                                 type: switch (badge) {
-                                  '充电专属' => .error,
+                                  '充電專屬' => .error,
                                   _ => .primary,
                                 },
                               ),

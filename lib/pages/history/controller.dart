@@ -103,12 +103,12 @@ class HistoryController
     if (viewedList != null && viewedList.isNotEmpty) {
       _onDelete(viewedList);
     } else {
-      SmartDialog.showToast('无已看记录');
+      SmartDialog.showToast('無已看記錄');
     }
   }
 
   Future<void> _onDelete(Set<HistoryItemModel> removeList) async {
-    SmartDialog.showLoading(msg: '请求中');
+    SmartDialog.showLoading(msg: '請求中');
     final res = await UserHttp.delHistory(
       removeList
           .map((item) => '${item.history.business}_${item.kid}')
@@ -118,7 +118,7 @@ class HistoryController
     SmartDialog.dismiss();
     if (res.isSuccess) {
       afterDelete(removeList);
-      SmartDialog.showToast('已删除');
+      SmartDialog.showToast('已刪除');
     } else {
       res.toast();
     }
@@ -130,7 +130,7 @@ class HistoryController
     showConfirmDialog(
       context: Get.context!,
       title: const Text('提示'),
-      content: const Text('确认删除所选历史记录吗？'),
+      content: const Text('確認刪除所選歷史記錄嗎？'),
       onConfirm: () => _onDelete(allChecked.toSet()),
     );
   }

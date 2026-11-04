@@ -4,11 +4,11 @@ import 'package:PiliPlus/models/video/play/url.dart' show Volume;
 import 'package:PiliPlus/utils/storage_pref.dart';
 
 enum AudioNormalization {
-  disable('禁用'),
+  disable('停用'),
   // ref https://github.com/KRTirtho/spotube/commit/da10ab2e291d4ba4d3082b9a6ae535639fb8f1b7
-  dynaudnorm('预设 dynaudnorm', 'dynaudnorm=g=5:f=250:r=0.9:p=0.5'),
-  loudnorm('预设 loudnorm', 'loudnorm=I=-16:LRA=11:TP=-1.5'),
-  custom('自定义参数'),
+  dynaudnorm('預設 dynaudnorm', 'dynaudnorm=g=5:f=250:r=0.9:p=0.5'),
+  loudnorm('預設 loudnorm', 'loudnorm=I=-16:LRA=11:TP=-1.5'),
+  custom('自定義引數'),
   ;
 
   final String title;

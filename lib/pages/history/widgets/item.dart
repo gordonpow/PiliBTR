@@ -101,7 +101,7 @@ class HistoryItem extends StatelessWidget {
               height: 29,
               child: PopupMenuButton(
                 padding: EdgeInsets.zero,
-                tooltip: '功能菜单',
+                tooltip: '功能選單',
                 icon: Icon(
                   Icons.more_vert_outlined,
                   color: theme.colorScheme.outline,
@@ -122,7 +122,7 @@ class HistoryItem extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '访问：${item.authorName}',
+                            '訪問：${item.authorName}',
                             style: const TextStyle(fontSize: 13),
                           ),
                         ],
@@ -141,7 +141,7 @@ class HistoryItem extends StatelessWidget {
                         children: [
                           Icon(Icons.watch_later_outlined, size: 16),
                           SizedBox(width: 6),
-                          Text('稍后再看', style: TextStyle(fontSize: 13)),
+                          Text('稍後再看', style: TextStyle(fontSize: 13)),
                         ],
                       ),
                     ),
@@ -152,7 +152,7 @@ class HistoryItem extends StatelessWidget {
                       children: [
                         Icon(Icons.close_outlined, size: 16),
                         SizedBox(width: 6),
-                        Text('删除记录', style: TextStyle(fontSize: 13)),
+                        Text('刪除記錄', style: TextStyle(fontSize: 13)),
                       ],
                     ),
                   ),
@@ -232,7 +232,7 @@ Future<void> onPushHistory(HistoryItemModel item) async {
     if (item.liveStatus == 1) {
       PageUtils.toLiveRoom(item.history.oid);
     } else {
-      SmartDialog.showToast('直播未开播');
+      SmartDialog.showToast('直播未開播');
     }
   } else if (business == 'pgc') {
     PageUtils.viewPgc(

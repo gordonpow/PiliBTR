@@ -82,12 +82,12 @@ class _CreateFavPageState extends State<CreateFavPage> {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        title: Text(_mediaId != null ? '编辑' : '创建'),
+        title: Text(_mediaId != null ? '編輯' : '建立'),
         actions: [
           TextButton(
             onPressed: () {
               if (_titleController.text.isEmpty) {
-                SmartDialog.showToast('名称不能为空');
+                SmartDialog.showToast('名稱不能為空');
                 return;
               }
               FavHttp.addOrEditFolder(
@@ -99,7 +99,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 intro: _introController.text,
               ).then((res) {
                 if (res case Success(:final response)) {
-                  SmartDialog.showToast('${_mediaId != null ? '编辑' : '创建'}成功');
+                  SmartDialog.showToast('${_mediaId != null ? '編輯' : '建立'}成功');
                   if (mounted) {
                     Get.back(result: response);
                   }
@@ -199,7 +199,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 _pickImg(context);
               },
               child: const Text(
-                '替换封面',
+                '替換封面',
                 style: TextStyle(fontSize: 14),
               ),
             ),
@@ -284,7 +284,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                           ),
                         ),
                         const TextSpan(
-                          text: '名称',
+                          text: '名稱',
                           style: TextStyle(fontSize: 14),
                         ),
                       ],
@@ -307,7 +307,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                     ],
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: '名称',
+                      hintText: '名稱',
                       hintStyle: TextStyle(
                         fontSize: 14,
                         color: theme.colorScheme.outline,
@@ -332,7 +332,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                   SizedBox(
                     width: 55,
                     child: Text(
-                      '简介',
+                      '簡介',
                       style: TextStyle(
                         fontSize: 14,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -350,7 +350,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                       ],
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: '可填写简介',
+                        hintText: '可填寫簡介',
                         hintStyle: TextStyle(
                           fontSize: 14,
                           color: theme.colorScheme.outline,
@@ -377,7 +377,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 onTap: onTap,
                 tileColor: theme.colorScheme.onInverseSurface,
                 leading: Text(
-                  '公开',
+                  '公開',
                   style: leadingStyle,
                 ),
                 trailing: Transform.scale(

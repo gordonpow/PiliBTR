@@ -53,14 +53,14 @@ import 'package:path/path.dart' as path;
 List<SettingsModel> get styleSettings => [
   if (PlatformUtils.isDesktop) ...[
     const SwitchModel(
-      title: '显示窗口标题栏',
+      title: '顯示視窗標題欄',
       leading: Icon(Icons.window),
       setKey: SettingBoxKey.showWindowTitleBar,
       defaultVal: true,
       needReboot: true,
     ),
     const SwitchModel(
-      title: '显示托盘图标',
+      title: '顯示托盤圖示',
       leading: Icon(Icons.donut_large_rounded),
       setKey: SettingBoxKey.showTrayIcon,
       defaultVal: true,
@@ -69,92 +69,92 @@ List<SettingsModel> get styleSettings => [
   ],
   if (Platform.isLinux) _useSSDModel(),
   SwitchModel(
-    title: '横屏适配',
-    subtitle: '启用横屏布局与逻辑，平板、折叠屏等可开启；建议全屏方向设为【不改变当前方向】',
+    title: '橫屏適配',
+    subtitle: '啟用橫屏佈局與邏輯，平板、摺疊屏等可開啟；建議全屏方向設為【不改變當前方向】',
     leading: const Icon(Icons.phonelink_outlined),
     setKey: SettingBoxKey.horizontalScreen,
     defaultVal: Pref.horizontalScreen,
     onChanged: _onHorizontalScreenChanged,
   ),
   const SwitchModel(
-    title: '改用侧边栏',
-    subtitle: '开启后底栏与顶栏被替换，且相关设置失效',
+    title: '改用側邊欄',
+    subtitle: '開啟後底欄與頂欄被替換，且相關設定失效',
     leading: Icon(Icons.chrome_reader_mode_outlined),
     setKey: SettingBoxKey.useSideBar,
     defaultVal: false,
     needReboot: true,
   ),
   const SwitchModel(
-    title: '隐藏侧边栏文字',
-    subtitle: '仅显示图标，减少侧边栏占用宽度',
+    title: '隱藏側邊欄文字',
+    subtitle: '僅顯示圖示，減少側邊欄佔用寬度',
     leading: Icon(Icons.label_off_outlined),
     setKey: SettingBoxKey.hideSideBarLabel,
     defaultVal: false,
     needReboot: true,
   ),
   NormalModel(
-    title: 'App字体设置',
-    subtitle: '点击设置',
+    title: 'App字型設定',
+    subtitle: '點選設定',
     leading: const Icon(Icons.text_fields),
     onTap: (context, setState) => Get.toNamed('/fontSetting'),
   ),
   NormalModel(
-    title: '界面缩放',
-    getSubtitle: () => '当前缩放比例：${Pref.uiScale.toStringAsFixed(2)}',
+    title: '介面縮放',
+    getSubtitle: () => '當前縮放比例：${Pref.uiScale.toStringAsFixed(2)}',
     leading: const Icon(Icons.zoom_in_outlined),
     onTap: _showUiScaleDialog,
   ),
   const SwitchModel(
-    title: '首页切换页面动画',
+    title: '首頁切換頁面動畫',
     leading: Icon(Icons.home_outlined),
     setKey: SettingBoxKey.mainTabBarView,
     defaultVal: false,
     needReboot: true,
   ),
   NormalModel(
-    title: '页面过渡动画',
+    title: '頁面過渡動畫',
     leading: const Icon(Icons.animation),
-    getSubtitle: () => '当前：${Pref.pageTransition.name}',
+    getSubtitle: () => '當前：${Pref.pageTransition.name}',
     onTap: _showTransitionDialog,
   ),
   const SwitchModel(
-    title: '优化平板导航栏',
+    title: '最佳化平板導航欄',
     leading: Icon(Icons.auto_fix_high),
     setKey: SettingBoxKey.optTabletNav,
     defaultVal: true,
     needReboot: true,
   ),
   const SwitchModel(
-    title: 'MD3样式底栏',
-    subtitle: 'Material You设计规范底栏，关闭可变窄',
+    title: 'MD3樣式底欄',
+    subtitle: 'Material You設計規範底欄，關閉可變窄',
     leading: Icon(Icons.design_services_outlined),
     setKey: SettingBoxKey.enableMYBar,
     defaultVal: true,
     needReboot: true,
   ),
   const SwitchModel(
-    title: '悬浮底栏',
+    title: '懸浮底欄',
     leading: Icon(MdiIcons.soundbar),
     setKey: SettingBoxKey.floatingNavBar,
     defaultVal: false,
     needReboot: true,
   ),
   SwitchModel(
-    title: '显示粉丝勋章',
+    title: '顯示粉絲勳章',
     leading: const Icon(MdiIcons.medalOutline),
     setKey: SettingBoxKey.showMedal,
     defaultVal: true,
     onChanged: (value) => GlobalData().showMedal = value,
   ),
   SwitchModel(
-    title: '展示头像/评论/动态装饰',
+    title: '展示頭像/評論/動態裝飾',
     leading: const Icon(MdiIcons.stickerCircleOutline),
     setKey: SettingBoxKey.showDecorate,
     defaultVal: true,
     onChanged: (value) => PendantAvatar.showDecorate = value,
   ),
   SwitchModel(
-    title: '点击表情显示 Tooltip',
+    title: '點選表情顯示 Tooltip',
     leading: const Icon(Icons.emoji_emotions_outlined),
     setKey: SettingBoxKey.enableEmoteTooltip,
     defaultVal: false,
@@ -162,33 +162,33 @@ List<SettingsModel> get styleSettings => [
   ),
   NormalModel(
     leading: const Icon(Icons.calendar_view_week_outlined),
-    title: '列表宽度（dp）限制',
+    title: '列表寬度（dp）限制',
     getSubtitle: () =>
-        '当前: 主页${Pref.recommendCardWidth.toInt()}dp 其他${Pref.smallCardWidth.toInt()}dp，屏幕宽度:${MediaQuery.widthOf(Get.context!).toPrecision(2)}dp。宽度越小列数越多。',
+        '當前: 主頁${Pref.recommendCardWidth.toInt()}dp 其他${Pref.smallCardWidth.toInt()}dp，螢幕寬度:${MediaQuery.widthOf(Get.context!).toPrecision(2)}dp。寬度越小列數越多。',
     onTap: _showCardWidthDialog,
   ),
   const SwitchModel(
-    title: '播放页移除安全边距',
+    title: '播放頁移除安全邊距',
     leading: Icon(Icons.fit_screen_outlined),
     setKey: SettingBoxKey.removeSafeArea,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '视频播放页使用深色主题',
+    title: '影片播放頁使用深色主題',
     leading: Icon(Icons.dark_mode_outlined),
     setKey: SettingBoxKey.darkVideoPage,
     defaultVal: false,
   ),
   SwitchModel(
-    title: '动态页启用瀑布流',
-    subtitle: '关闭会显示为单列',
+    title: '動態頁啟用瀑布流',
+    subtitle: '關閉會顯示為單列',
     leading: const Icon(Icons.view_array_outlined),
     setKey: SettingBoxKey.dynamicsWaterfallFlow,
     defaultVal: Pref.horizontalScreen,
     needReboot: true,
   ),
   PopupModel(
-    title: '动态页UP主显示位置',
+    title: '動態頁UP主顯示位置',
     leading: const Icon(Icons.person_outlined),
     value: () => Pref.upPanelPosition,
     items: UpPanelPosition.values,
@@ -196,32 +196,32 @@ List<SettingsModel> get styleSettings => [
       GStorage.setting
           .put(SettingBoxKey.upPanelPosition, value.index)
           .whenComplete(setState);
-      SmartDialog.showToast('重启生效');
+      SmartDialog.showToast('重啟生效');
     },
   ),
   const SwitchModel(
-    title: '动态页显示所有已关注UP主',
+    title: '動態頁顯示所有已關注UP主',
     leading: Icon(Icons.people_alt_outlined),
     setKey: SettingBoxKey.dynamicsShowAllFollowedUp,
     defaultVal: false,
     needReboot: true,
   ),
   const SwitchModel(
-    title: '动态页展开正在直播UP列表',
+    title: '動態頁展開正在直播UP列表',
     leading: Icon(Icons.live_tv),
     setKey: SettingBoxKey.expandDynLivePanel,
     defaultVal: false,
     needReboot: true,
   ),
   PopupModel(
-    title: '动态未读标记',
+    title: '動態未讀標記',
     leading: const Icon(Icons.motion_photos_on_outlined),
     value: () => Pref.dynamicBadgeType,
     items: DynamicBadgeMode.values,
     onSelected: _setDynBadge,
   ),
   PopupModel(
-    title: '消息未读标记',
+    title: '訊息未讀標記',
     leading: const Icon(MdiIcons.bellBadgeOutline),
     value: () => Pref.msgBadgeMode,
     items: DynamicBadgeMode.values,
@@ -229,13 +229,13 @@ List<SettingsModel> get styleSettings => [
   ),
   NormalModel(
     onTap: _showMsgUnReadDialog,
-    title: '消息未读类型',
+    title: '訊息未讀型別',
     leading: const Icon(MdiIcons.bellCogOutline),
     getSubtitle: () =>
-        '当前消息类型：${Pref.msgUnReadTypeV2.map((item) => item.title).join('、')}',
+        '當前訊息型別：${Pref.msgUnReadTypeV2.map((item) => item.title).join('、')}',
   ),
   PopupModel(
-    title: '顶/底栏收起类型',
+    title: '頂/底欄收起型別',
     leading: const Icon(MdiIcons.arrowExpandVertical),
     value: () => Pref.barHideType,
     items: BarHideType.values,
@@ -243,33 +243,33 @@ List<SettingsModel> get styleSettings => [
       GStorage.setting
           .put(SettingBoxKey.barHideType, value.index)
           .whenComplete(setState);
-      SmartDialog.showToast('重启生效');
+      SmartDialog.showToast('重啟生效');
     },
   ),
   NormalModel(
-    title: '用户页默认展示TAB',
+    title: '使用者頁預設展示TAB',
     leading: const Icon(Icons.tab),
-    getSubtitle: () => '当前优先展示「${Pref.memberTab.title}」',
+    getSubtitle: () => '當前優先展示「${Pref.memberTab.title}」',
     onTap: _showMemberTabDialog,
   ),
   SwitchModel(
-    title: '显示UP主页小店TAB',
+    title: '顯示UP主頁小店TAB',
     leading: const Icon(Icons.shop_outlined),
     setKey: SettingBoxKey.showMemberShop,
     defaultVal: false,
     onChanged: (value) => MemberTabType.showMemberShop = value,
   ),
   SwitchModel(
-    title: '首页顶栏收起',
-    subtitle: '首页列表滑动时，收起顶栏',
+    title: '首頁頂欄收起',
+    subtitle: '首頁列表滑動時，收起頂欄',
     leading: const Icon(Icons.vertical_align_top_outlined),
     setKey: SettingBoxKey.hideTopBar,
     defaultVal: PlatformUtils.isMobile,
     needReboot: true,
   ),
   SwitchModel(
-    title: '首页底栏收起',
-    subtitle: '首页列表滑动时，收起底栏',
+    title: '首頁底欄收起',
+    subtitle: '首頁列表滑動時，收起底欄',
     leading: const Icon(Icons.vertical_align_bottom_outlined),
     setKey: SettingBoxKey.hideBottomBar,
     defaultVal: PlatformUtils.isMobile,
@@ -278,7 +278,7 @@ List<SettingsModel> get styleSettings => [
   NormalModel(
     onTap: (context, setState) => _showQualityDialog(
       context: context,
-      title: const Text('图片质量'),
+      title: const Text('圖片質量'),
       initValue: Pref.picQuality,
       onChanged: (picQuality) async {
         GlobalData().imgQuality = picQuality;
@@ -286,8 +286,8 @@ List<SettingsModel> get styleSettings => [
         setState();
       },
     ),
-    title: '图片质量',
-    subtitle: '选择合适的图片清晰度，上限100%',
+    title: '圖片質量',
+    subtitle: '選擇合適的圖片清晰度，上限100%',
     leading: const Icon(Icons.image_outlined),
     getTrailing: (theme) => Text(
       '${Pref.picQuality}%',
@@ -297,15 +297,15 @@ List<SettingsModel> get styleSettings => [
   NormalModel(
     onTap: (context, setState) => _showQualityDialog(
       context: context,
-      title: const Text('查看大图质量'),
+      title: const Text('檢視大圖質量'),
       initValue: Pref.previewQ,
       onChanged: (picQuality) async {
         await GStorage.setting.put(SettingBoxKey.previewQuality, picQuality);
         setState();
       },
     ),
-    title: '查看大图质量',
-    subtitle: '选择合适的图片清晰度，上限100%',
+    title: '檢視大圖質量',
+    subtitle: '選擇合適的圖片清晰度，上限100%',
     leading: const Icon(Icons.image_outlined),
     getTrailing: (theme) => Text(
       '${Pref.previewQ}%',
@@ -314,8 +314,8 @@ List<SettingsModel> get styleSettings => [
   ),
   NormalModel(
     onTap: _showReduceColorDialog,
-    title: '深色下图片颜色叠加',
-    subtitle: '显示颜色=图片原色x所选颜色，大图查看不受影响',
+    title: '深色下圖片顏色疊加',
+    subtitle: '顯示顏色=圖片原色x所選顏色，大圖檢視不受影響',
     leading: const Icon(Icons.format_color_fill_outlined),
     getTrailing: (theme) => Container(
       width: 20,
@@ -328,8 +328,8 @@ List<SettingsModel> get styleSettings => [
   ),
   NormalModel(
     leading: const Icon(Icons.opacity_outlined),
-    title: '气泡提示不透明度',
-    subtitle: '自定义气泡提示(Toast)不透明度',
+    title: '氣泡提示不透明度',
+    subtitle: '自定義氣泡提示(Toast)不透明度',
     getTrailing: (theme) => Text(
       CustomToast.toastOpacity.toStringAsFixed(1),
       style: theme.textTheme.titleSmall,
@@ -338,14 +338,14 @@ List<SettingsModel> get styleSettings => [
   ),
   PopupModel(
     leading: const Icon(Icons.flashlight_on_outlined),
-    title: '主题模式',
+    title: '主題模式',
     value: () => Pref.themeType,
     items: ThemeType.values,
     onSelected: _setThemeType,
   ),
   SwitchModel(
     leading: const Icon(Icons.invert_colors),
-    title: '纯黑主题',
+    title: '純黑主題',
     setKey: SettingBoxKey.isPureBlackTheme,
     defaultVal: false,
     onChanged: (value) {
@@ -357,31 +357,31 @@ List<SettingsModel> get styleSettings => [
   NormalModel(
     onTap: (context, setState) => Get.toNamed('/colorSetting'),
     leading: const Icon(Icons.color_lens_outlined),
-    title: '应用主题',
-    getSubtitle: () => '当前主题：${Pref.dynamicColor ? '动态取色' : '指定颜色'}',
+    title: '應用主題',
+    getSubtitle: () => '當前主題：${Pref.dynamicColor ? '動態取色' : '指定顏色'}',
     getTrailing: _themeTrailing,
   ),
   NormalModel(
     onTap: _showMineTabsDialog,
-    title: '我的页卡片',
+    title: '我的頁卡片',
     leading: const Icon(Icons.person_outline),
     getSubtitle: () =>
-        '当前显示：${Pref.mineTabs.map((item) => item.label).join('、')}',
+        '當前顯示：${Pref.mineTabs.map((item) => item.label).join('、')}',
   ),
   PopupModel(
     leading: const Icon(Icons.home_outlined),
-    title: '默认启动页',
+    title: '預設啟動頁',
     value: () => Pref.defaultHomePage,
     items: NavigationBarType.values,
     onSelected: (value, setState) {
       GStorage.setting
           .put(SettingBoxKey.defaultHomePage, value.index)
           .whenComplete(setState);
-      SmartDialog.showToast('重启生效');
+      SmartDialog.showToast('重啟生效');
     },
   ),
   const NormalModel(
-    title: '滑动动画弹簧参数',
+    title: '滑動動畫彈簧引數',
     leading: Icon(Icons.chrome_reader_mode_outlined),
     onTap: _showSpringDialog,
   ),
@@ -391,11 +391,11 @@ List<SettingsModel> get styleSettings => [
       arguments: {
         'key': SettingBoxKey.tabBarSort,
         'defaultBars': HomeTabType.values,
-        'title': '首页标签页',
+        'title': '首頁標籤頁',
       },
     ),
-    title: '首页标签页',
-    subtitle: '删除或调换首页标签页',
+    title: '首頁標籤頁',
+    subtitle: '刪除或調換首頁標籤頁',
     leading: const Icon(Icons.toc_outlined),
   ),
   NormalModel(
@@ -407,13 +407,13 @@ List<SettingsModel> get styleSettings => [
         'title': 'Navbar',
       },
     ),
-    title: 'Navbar编辑',
-    subtitle: '删除或调换Navbar',
+    title: 'Navbar編輯',
+    subtitle: '刪除或調換Navbar',
     leading: const Icon(Icons.toc_outlined),
   ),
   SwitchModel(
-    title: '返回时直接退出',
-    subtitle: '开启后在主页任意tab按返回键都直接退出，关闭则先回到Navbar的第一个tab',
+    title: '返回時直接退出',
+    subtitle: '開啟後在主頁任意tab按返回鍵都直接退出，關閉則先回到Navbar的第一個tab',
     leading: const Icon(Icons.exit_to_app_outlined),
     setKey: SettingBoxKey.directExitOnBack,
     defaultVal: false,
@@ -422,7 +422,7 @@ List<SettingsModel> get styleSettings => [
   if (Platform.isAndroid)
     NormalModel(
       onTap: (context, setState) => Get.toNamed('/displayModeSetting'),
-      title: '屏幕帧率',
+      title: '螢幕幀率',
       leading: const Icon(Icons.autofps_select_outlined),
     ),
 ];
@@ -446,7 +446,7 @@ void _showQualityDialog({
     ),
   ).then((result) {
     if (result != null) {
-      SmartDialog.showToast('设置成功');
+      SmartDialog.showToast('設定成功');
       onChanged(result.toInt());
     }
   });
@@ -467,7 +467,7 @@ void _showUiScaleDialog(
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('界面缩放'),
+      title: const Text('介面縮放'),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
       content: StatefulBuilder(
         onDispose: textController.dispose,
@@ -496,7 +496,7 @@ void _showUiScaleDialog(
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.]+')),
               ],
               decoration: const InputDecoration(
-                labelText: '缩放比例',
+                labelText: '縮放比例',
                 hintText: '0.50 - 2.00',
                 border: OutlineInputBorder(),
               ),
@@ -544,7 +544,7 @@ void _showUiScaleDialog(
               },
             );
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),
@@ -592,7 +592,7 @@ void _showSpringDialog(BuildContext context, _) {
       title: Row(
         mainAxisAlignment: .spaceBetween,
         children: [
-          const Text('弹簧参数'),
+          const Text('彈簧引數'),
           TextButton(
             style: TextButton.styleFrom(
               visualDensity: .compact,
@@ -611,7 +611,7 @@ void _showSpringDialog(BuildContext context, _) {
                 SmartDialog.showToast(e.toString());
               }
             },
-            child: Text(physicalMode ? '滑动时间' : '物理参数'),
+            child: Text(physicalMode ? '滑動時間' : '物理引數'),
           ),
         ],
       ),
@@ -647,7 +647,7 @@ void _showSpringDialog(BuildContext context, _) {
           onPressed: () {
             Get.back();
             GStorage.setting.delete(SettingBoxKey.springDescription);
-            SmartDialog.showToast('重置成功，重启生效');
+            SmartDialog.showToast('重置成功，重啟生效');
           },
           child: const Text('重置'),
         ),
@@ -672,12 +672,12 @@ void _showSpringDialog(BuildContext context, _) {
                 stiffness: res[1],
                 damping: res[2],
               );
-              SmartDialog.showToast('设置成功');
+              SmartDialog.showToast('設定成功');
             } catch (e) {
               SmartDialog.showToast(e.toString());
             }
           },
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     ),
@@ -691,7 +691,7 @@ Future<void> _showTransitionDialog(
   final res = await showDialog<Transition>(
     context: context,
     builder: (context) => SelectDialog<Transition>(
-      title: '页面过渡动画',
+      title: '頁面過渡動畫',
       value: Pref.pageTransition,
       values: Transition.values.map((e) => (e, e.name)).toList(),
     ),
@@ -710,10 +710,10 @@ Future<void> _showCardWidthDialog(
   final res = await showDialog<(double, double)>(
     context: context,
     builder: (context) => DualSliderDialog(
-      title: const Text('列表最大列宽度（默认240dp）'),
+      title: const Text('列表最大列寬度（預設240dp）'),
       value1: Pref.recommendCardWidth,
       value2: Pref.smallCardWidth,
-      description1: const Text('主页推荐流'),
+      description1: const Text('主頁推薦流'),
       description2: const Text('其他'),
       min: 150.0,
       max: 500.0,
@@ -726,7 +726,7 @@ Future<void> _showCardWidthDialog(
       SettingBoxKey.recommendCardWidth: res.$1,
       SettingBoxKey.smallCardWidth: res.$2,
     });
-    SmartDialog.showToast('重启生效');
+    SmartDialog.showToast('重啟生效');
     setState();
   }
 }
@@ -758,7 +758,7 @@ Future<void> _showMsgUnReadDialog(
   final res = await showDialog<Set<MsgUnReadType>>(
     context: context,
     builder: (context) => MultiSelectDialog<MsgUnReadType>(
-      title: '消息未读类型',
+      title: '訊息未讀型別',
       initValues: Pref.msgUnReadTypeV2,
       values: {for (final i in MsgUnReadType.values) i: i.title},
     ),
@@ -772,7 +772,7 @@ Future<void> _showMsgUnReadDialog(
       SettingBoxKey.msgUnReadTypeV2,
       res.map((item) => item.index).toList()..sort(),
     );
-    SmartDialog.showToast('设置成功');
+    SmartDialog.showToast('設定成功');
     setState();
   }
 }
@@ -795,7 +795,7 @@ void _showReduceColorDialog(
             if (color == Colors.white) {
               NetworkImgLayer.reduceLuxColor = null;
               GStorage.setting.delete(SettingBoxKey.reduceLuxColor);
-              SmartDialog.showToast('设置成功');
+              SmartDialog.showToast('設定成功');
               setState();
             } else {
               void onConfirm() {
@@ -804,7 +804,7 @@ void _showReduceColorDialog(
                   SettingBoxKey.reduceLuxColor,
                   color.toARGB32(),
                 );
-                SmartDialog.showToast('设置成功');
+                SmartDialog.showToast('設定成功');
                 setState();
               }
 
@@ -812,9 +812,9 @@ void _showReduceColorDialog(
                 showConfirmDialog(
                   context: context,
                   title: Text(
-                    '确认使用#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).toUpperCase().padLeft(6)}？',
+                    '確認使用#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).toUpperCase().padLeft(6)}？',
                   ),
-                  content: const Text('所选颜色过于昏暗，可能会影响图片观看'),
+                  content: const Text('所選顏色過於昏暗，可能會影響圖片觀看'),
                   onConfirm: onConfirm,
                 );
               } else {
@@ -845,7 +845,7 @@ Future<void> _showToastDialog(
   if (res != null) {
     CustomToast.toastOpacity = res;
     await GStorage.setting.put(SettingBoxKey.defaultToastOp, res);
-    SmartDialog.showToast('设置成功');
+    SmartDialog.showToast('設定成功');
     setState();
   }
 }
@@ -918,7 +918,7 @@ Future<void> _showMineTabsDialog(
   final res = await showDialog<List<MineTabType>>(
     context: context,
     builder: (context) => OrderedMultiSelectDialog<MineTabType>(
-      title: const Text('我的页卡片'),
+      title: const Text('我的頁卡片'),
       initValues: Pref.mineTabs,
       values: {for (final i in MineTabType.values) i: i.label},
     ),
@@ -928,7 +928,7 @@ Future<void> _showMineTabsDialog(
       SettingBoxKey.mineTabs,
       res.map((item) => item.index).toList(),
     );
-    SmartDialog.showToast('重启生效');
+    SmartDialog.showToast('重啟生效');
     setState();
   }
 }
@@ -940,7 +940,7 @@ Future<void> _showMemberTabDialog(
   final res = await showDialog<MemberTabType>(
     context: context,
     builder: (context) => SelectDialog<MemberTabType>(
-      title: '用户页默认展示TAB',
+      title: '使用者頁預設展示TAB',
       value: Pref.memberTab,
       values: MemberTabType.values.map((e) => (e, e.title)).toList(),
     ),

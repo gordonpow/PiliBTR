@@ -57,13 +57,13 @@ class VideoPopupMenu extends StatelessWidget {
                   ),
                   if (Accounts.main.isLogin)
                     _VideoCustomAction(
-                      '稍后再看',
+                      '稍後再看',
                       const Icon(MdiIcons.clockTimeEightOutline, size: 16),
                       () => UserHttp.toViewLater(bvid: videoItem.bvid),
                     ),
                   if (videoItem.cid != null && Pref.enableAi)
                     _VideoCustomAction(
-                      'AI总结',
+                      'AI總結',
                       const Icon(CustomIcons.ai_circle, size: 16),
                       () async {
                         final res = await UgcIntroController.getAiConclusion(
@@ -92,30 +92,30 @@ class VideoPopupMenu extends StatelessWidget {
                 ],
                 if (videoItem is! SpaceArchiveItem) ...[
                   _VideoCustomAction(
-                    '访问：${videoItem.owner.name}',
+                    '訪問：${videoItem.owner.name}',
                     const Icon(MdiIcons.accountCircleOutline, size: 16),
                     () => Get.toNamed('/member?mid=${videoItem.owner.mid}'),
                   ),
                   _VideoCustomAction(
-                    '不感兴趣',
+                    '不感興趣',
                     const Icon(MdiIcons.thumbDownOutline, size: 16),
                     () {
                       final rcmd = Accounts.get(.recommend);
                       if (rcmd.accessKey == null || rcmd.accessKey == "") {
                         SmartDialog.showToast(
-                          rcmd.isLogin ? '请退出账号后重新登录' : '账号未登录',
+                          rcmd.isLogin ? '請退出賬號後重新登入' : '賬號未登入',
                         );
                         return;
                       }
                       if (videoItem case final RcmdVideoItemAppModel item) {
                         ThreePoint? tp = item.threePoint;
                         if (tp == null) {
-                          SmartDialog.showToast("未能获取threePoint");
+                          SmartDialog.showToast("未能獲取threePoint");
                           return;
                         }
                         if (tp.dislikeReasons == null && tp.feedbacks == null) {
                           SmartDialog.showToast(
-                            "未能获取dislikeReasons或feedbacks",
+                            "未能獲取dislikeReasons或feedbacks",
                           );
                           return;
                         }
@@ -163,7 +163,7 @@ class VideoPopupMenu extends StatelessWidget {
                                 ],
                                 if (tp.feedbacks != null) ...[
                                   const SizedBox(height: 5),
-                                  const Text('反馈'),
+                                  const Text('反饋'),
                                   const SizedBox(height: 5),
                                   Wrap(
                                     spacing: 8.0,
@@ -194,7 +194,7 @@ class VideoPopupMenu extends StatelessWidget {
                                     style: FilledButton.styleFrom(
                                       visualDensity: VisualDensity.compact,
                                     ),
-                                    child: const Text("撤销"),
+                                    child: const Text("撤銷"),
                                   ),
                                 ),
                               ],
@@ -207,7 +207,7 @@ class VideoPopupMenu extends StatelessWidget {
                           builder: (context) => SimpleDialog(
                             contentPadding: const .all(24),
                             children: [
-                              const Center(child: Text("web端暂不支持精细选择")),
+                              const Center(child: Text("web端暫不支援精細選擇")),
                               const SizedBox(height: 5),
                               Wrap(
                                 spacing: 5.0,
@@ -224,7 +224,7 @@ class VideoPopupMenu extends StatelessWidget {
                                       );
                                       SmartDialog.dismiss();
                                       if (res.isSuccess) {
-                                        SmartDialog.showToast('点踩成功');
+                                        SmartDialog.showToast('點踩成功');
                                         onRemove?.call();
                                       } else {
                                         res.toast();
@@ -233,7 +233,7 @@ class VideoPopupMenu extends StatelessWidget {
                                     style: FilledButton.styleFrom(
                                       visualDensity: .compact,
                                     ),
-                                    child: const Text("点踩"),
+                                    child: const Text("點踩"),
                                   ),
                                   FilledButton.tonal(
                                     onPressed: () async {
@@ -251,7 +251,7 @@ class VideoPopupMenu extends StatelessWidget {
                                     style: FilledButton.styleFrom(
                                       visualDensity: .compact,
                                     ),
-                                    child: const Text("撤销"),
+                                    child: const Text("撤銷"),
                                   ),
                                 ],
                               ),
@@ -270,8 +270,8 @@ class VideoPopupMenu extends StatelessWidget {
                         return AlertDialog(
                           title: const Text('提示'),
                           content: Text(
-                            '确定拉黑:${videoItem.owner.name}(${videoItem.owner.mid})?'
-                            '\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除',
+                            '確定拉黑:${videoItem.owner.name}(${videoItem.owner.mid})?'
+                            '\n\n注：被拉黑的Up可以在隱私設定-黑名單管理中解除',
                           ),
                           actions: [
                             TextButton(
@@ -280,7 +280,7 @@ class VideoPopupMenu extends StatelessWidget {
                                 Pref.setBlackMid(videoItem.owner.mid!);
                                 onRemove?.call();
                               },
-                              child: const Text('本地屏蔽'),
+                              child: const Text('本地遮蔽'),
                             ),
                             TextButton(
                               onPressed: Get.back,
@@ -305,7 +305,7 @@ class VideoPopupMenu extends StatelessWidget {
                                   res.toast();
                                 }
                               },
-                              child: const Text('确认'),
+                              child: const Text('確認'),
                             ),
                           ],
                         );
@@ -314,7 +314,7 @@ class VideoPopupMenu extends StatelessWidget {
                   ),
                 ],
                 _VideoCustomAction(
-                  "${MineController.anonymity.value ? '退出' : '进入'}无痕模式",
+                  "${MineController.anonymity.value ? '退出' : '進入'}無痕模式",
                   MineController.anonymity.value
                       ? const Icon(MdiIcons.incognitoOff, size: 16)
                       : const Icon(MdiIcons.incognito, size: 16),

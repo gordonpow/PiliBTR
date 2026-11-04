@@ -110,7 +110,7 @@ class WhisperDetailController extends CommonListController<RspSessionMsg, Msg> {
     feedBack();
     SmartDialog.dismiss();
     if (!account.isLogin) {
-      SmartDialog.showToast('请先登录');
+      SmartDialog.showToast('請先登入');
       return;
     }
     final res = await ImGrpc.sendMsg(
@@ -132,7 +132,7 @@ class WhisperDetailController extends CommonListController<RspSessionMsg, Msg> {
       } else {
         onRefresh();
         onClearText();
-        SmartDialog.showToast('发送成功');
+        SmartDialog.showToast('傳送成功');
       }
     } else {
       res.toast();

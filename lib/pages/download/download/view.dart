@@ -142,10 +142,10 @@ class _DownloadPageState extends State<DownloadPage>
             ctr: _controller,
             actions: [updateBtn()],
             child: AppBar(
-              title: const Text('离线缓存'),
+              title: const Text('離線快取'),
               actions: [
                 IconButton(
-                  tooltip: '搜索',
+                  tooltip: '搜尋',
                   onPressed: () async {
                     await downloadService.waitForInitialization;
                     if (!mounted) return;
@@ -154,7 +154,7 @@ class _DownloadPageState extends State<DownloadPage>
                   icon: const Icon(Icons.search),
                 ),
                 IconButton(
-                  tooltip: '多选',
+                  tooltip: '多選',
                   onPressed: () {
                     if (enableMultiSelect) {
                       _controller.handleSelect();
@@ -185,7 +185,7 @@ class _DownloadPageState extends State<DownloadPage>
                           padding: const EdgeInsets.only(left: 12, bottom: 7),
                           sliver: SliverToBoxAdapter(
                             child: Text(
-                              '正在缓存 (${downloadService.waitDownloadQueue.length})',
+                              '正在快取 (${downloadService.waitDownloadQueue.length})',
                             ),
                           ),
                         ),
@@ -220,7 +220,7 @@ class _DownloadPageState extends State<DownloadPage>
                                 : 7,
                           ),
                           sliver: const SliverToBoxAdapter(
-                            child: Text('已缓存视频'),
+                            child: Text('已快取影片'),
                           ),
                         ),
                         SliverGrid.builder(

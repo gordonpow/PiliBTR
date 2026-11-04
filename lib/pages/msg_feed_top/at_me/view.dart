@@ -100,7 +100,7 @@ class _AtMePageState extends State<AtMePage> {
               final item = response[index];
               void onLongPress() => showConfirmDialog(
                 context: context,
-                title: const Text('确定删除该通知?'),
+                title: const Text('確定刪除該通知?'),
                 onConfirm: () => _atMeController.onRemove(item.id!, index),
               );
               return ListTile(

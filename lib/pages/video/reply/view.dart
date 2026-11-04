@@ -134,7 +134,7 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                     mentionItem: controller.mentionItem,
                   );
                 },
-                tooltip: '发表评论',
+                tooltip: '發表評論',
                 child: const Icon(Icons.reply),
               ),
             ),

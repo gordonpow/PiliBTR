@@ -13,12 +13,12 @@ import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 List<SettingsModel> get privacySettings => [
   NormalModel(
     onTap: (context, setState) => Get.toNamed('/blackListPage'),
-    title: '黑名单管理',
-    subtitle: '已拉黑用户',
+    title: '黑名單管理',
+    subtitle: '已拉黑使用者',
     leading: const Icon(Icons.block),
   ),
   const NormalModel(
-    title: 'buvid设置',
+    title: 'buvid設定',
     leading: Icon(CustomIcons.identifier_circle),
     onTap: _showBuvidDialog,
   ),
@@ -27,7 +27,7 @@ List<SettingsModel> get privacySettings => [
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('账号模式详情'),
+          title: const Text('賬號模式詳情'),
           content: SelectionArea(
             child: SingleChildScrollView(
               child: _getAccountDetail(context),
@@ -36,15 +36,15 @@ List<SettingsModel> get privacySettings => [
           actions: [
             TextButton(
               onPressed: Get.back,
-              child: const Text('确认'),
+              child: const Text('確認'),
             ),
           ],
         ),
       );
     },
     leading: const Icon(Icons.flag_outlined),
-    title: '了解账号模式',
-    subtitle: '查看各个账号模式作用的API列表',
+    title: '瞭解賬號模式',
+    subtitle: '檢視各個賬號模式作用的API列表',
   ),
 ];
 
@@ -111,7 +111,7 @@ void _showBuvidDialog(BuildContext context, VoidCallback setState) {
                           onPressed: () =>
                               i.$2.text = LoginUtils.generateBuvid(),
                           iconSize: 24,
-                          tooltip: '随机',
+                          tooltip: '隨機',
                           icon: const Icon(Icons.casino_outlined),
                         ),
                       ),
@@ -138,7 +138,7 @@ void _showBuvidDialog(BuildContext context, VoidCallback setState) {
                   }
                 }
               },
-              child: const Text('确定'),
+              child: const Text('確定'),
             ),
           ],
         ),

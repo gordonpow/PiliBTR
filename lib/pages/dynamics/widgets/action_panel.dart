@@ -55,13 +55,13 @@ class ActionPanel extends StatelessWidget {
                   FontAwesomeIcons.shareFromSquare,
                   size: 16,
                   color: outline,
-                  semanticLabel: "转发",
+                  semanticLabel: "轉發",
                 ),
                 style: btnStyle,
                 label: Text(
                   forward.count != null
                       ? NumUtils.numFormat(forward.count)
-                      : '转发',
+                      : '轉發',
                 ),
               );
             },
@@ -78,11 +78,11 @@ class ActionPanel extends StatelessWidget {
               FontAwesomeIcons.comment,
               size: 16,
               color: outline,
-              semanticLabel: "评论",
+              semanticLabel: "評論",
             ),
             style: btnStyle,
             label: Text(
-              comment.count != null ? NumUtils.numFormat(comment.count) : '评论',
+              comment.count != null ? NumUtils.numFormat(comment.count) : '評論',
             ),
           ),
         ),
@@ -95,11 +95,11 @@ class ActionPanel extends StatelessWidget {
               if (like.status ?? false) {
                 icon = FontAwesomeIcons.solidThumbsUp;
                 color = primary;
-                label = '已赞';
+                label = '已贊';
               } else {
                 icon = FontAwesomeIcons.thumbsUp;
                 color = outline;
-                label = '点赞';
+                label = '點贊';
               }
               final likeIcon = Icon(
                 icon,
@@ -124,7 +124,7 @@ class ActionPanel extends StatelessWidget {
                   transitionBuilder: (child, animation) =>
                       ScaleTransition(scale: animation, child: child),
                   child: Text(
-                    like.count != null ? NumUtils.numFormat(like.count) : '点赞',
+                    like.count != null ? NumUtils.numFormat(like.count) : '點贊',
                     key: ValueKey<int?>(like.count),
                     style: TextStyle(color: like.status! ? primary : outline),
                   ),

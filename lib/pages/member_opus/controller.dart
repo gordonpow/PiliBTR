@@ -21,9 +21,9 @@ class MemberOpusController
 
   String? next;
   Rx<SpaceTabFilter> type = const SpaceTabFilter(
-    text: "全部图文",
+    text: "全部圖文",
     meta: "all",
-    tabName: "图文",
+    tabName: "圖文",
   ).obs;
   List<SpaceTabFilter>? filter;
   SectionOpusCollection? collection;

@@ -101,7 +101,7 @@ class _DualSliderDialogState extends State<DualSliderDialog> {
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, (_tempValue1, _tempValue2)),
-          child: const Text('确定'),
+          child: const Text('確定'),
         ),
       ],
     );

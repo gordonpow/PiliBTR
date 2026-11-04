@@ -82,7 +82,7 @@ class MemberFavItem extends StatelessWidget {
                     const PBadge(
                       right: 6,
                       top: 6,
-                      text: '收藏夹',
+                      text: '收藏夾',
                     ),
                 ],
               ),
@@ -100,12 +100,12 @@ class MemberFavItem extends StatelessWidget {
                     const Spacer(),
                     Text(
                       item.type == 0
-                          ? '${item.mediaCount}个内容 · ${BiliUtils.isPublicFavText(item.attr)}'
+                          ? '${item.mediaCount}個內容 · ${BiliUtils.isPublicFavText(item.attr)}'
                           : item.type == 11
-                          ? '${item.mediaCount}个内容 · ${item.upper?.name}'
+                          ? '${item.mediaCount}個內容 · ${item.upper?.name}'
                           : item.type == 21
-                          ? '创建者: ${item.upper?.name}\n${item.mediaCount}个视频 · ${NumUtils.numFormat(item.viewCount)}播放'
-                          : '${item.mediaCount}个内容',
+                          ? '建立者: ${item.upper?.name}\n${item.mediaCount}個影片 · ${NumUtils.numFormat(item.viewCount)}播放'
+                          : '${item.mediaCount}個內容',
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.outline,

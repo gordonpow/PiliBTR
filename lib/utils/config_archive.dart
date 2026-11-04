@@ -84,7 +84,7 @@ abstract final class ConfigArchive {
     required Future<bool> Function(String warning) onWarning,
   }) async {
     if (bytes.length > _maxTotalBytes) {
-      throw UnsupportedError('数据包过大');
+      throw UnsupportedError('資料包過大');
     }
 
     final archive = ZipDecoder().decodeBytes(bytes);
@@ -92,20 +92,20 @@ abstract final class ConfigArchive {
     // 校验 meta
     final metaFile = archive.find(metaFileName);
     if (metaFile == null) {
-      throw UnsupportedError('不是有效的数据包（缺少 $metaFileName）');
+      throw UnsupportedError('不是有效的資料包（缺少 $metaFileName）');
     }
     final meta = jsonDecode(utf8.decode(metaFile.content));
     if (meta is! Map || meta['type'] != _type) {
-      throw UnsupportedError('不是有效的数据包');
+      throw UnsupportedError('不是有效的資料包');
     }
 
     // 校验 formatVersion
     final format = _parseFormat(meta['formatVersion']);
     if (format == null) {
-      throw UnsupportedError('不是有效的数据包（缺少合法的 formatVersion）');
+      throw UnsupportedError('不是有效的資料包（缺少合法的 formatVersion）');
     }
     if (format.major > _majorVersion) {
-      throw UnsupportedError('数据包格式过新（${format.toVersionString()}），请升级应用后再导入');
+      throw UnsupportedError('資料包格式過新（${format.toVersionString()}），請升級應用後再匯入');
     }
 
     final warning = _warningOf(meta);
@@ -122,7 +122,7 @@ abstract final class ConfigArchive {
     ) async {
       if (archive.find(name) case final file?) {
         totalBytes += file.size;
-        if (totalBytes > _maxTotalBytes) throw UnsupportedError('数据包过大');
+        if (totalBytes > _maxTotalBytes) throw UnsupportedError('資料包過大');
 
         try {
           await action(jsonDecode(utf8.decode(file.content)) as T);
@@ -142,7 +142,7 @@ abstract final class ConfigArchive {
 
     if (archive.find(fontFileName) case final file?) {
       totalBytes += file.size;
-      if (totalBytes > _maxTotalBytes) throw UnsupportedError('数据包过大');
+      if (totalBytes > _maxTotalBytes) throw UnsupportedError('資料包過大');
       final family = GStorage.setting.get(SettingBoxKey.appFont);
       if (family is String && family.contains('/')) {
         try {
@@ -156,7 +156,7 @@ abstract final class ConfigArchive {
           file.closeSync();
         }
       } else {
-        sb.writeln('$fontFileName：无法获取字体名');
+        sb.writeln('$fontFileName：無法獲取字型名');
       }
     }
 
@@ -171,21 +171,21 @@ abstract final class ConfigArchive {
     if (format != null &&
         format.major == _majorVersion &&
         format.minor > _minorVersion) {
-      warnings.writeln('此数据包使用更新的归档格式（${format.toVersionString()}），部分数据可能无法识别');
+      warnings.writeln('此資料包使用更新的歸檔格式（${format.toVersionString()}），部分資料可能無法識別');
     }
 
     final sourceApp = meta['appName'];
     if (sourceApp != Constants.appName) {
-      warnings.writeln('此数据包来自「$sourceApp」，与当前应用不同，可能不完全兼容');
+      warnings.writeln('此資料包來自「$sourceApp」，與當前應用不同，可能不完全相容');
     }
 
     final packageCode = safeToInt(meta['versionCode']);
     if (packageCode != null && packageCode > BuildConfig.versionCode) {
       final versionName = meta['versionName'];
       warnings.writeln(
-        '此数据包来自更新版本（v$versionName，构建号 $packageCode），'
-        '当前应用较旧（v${BuildConfig.versionName}，构建号 ${BuildConfig.versionCode}），'
-        '部分数据可能无法正确还原',
+        '此資料包來自更新版本（v$versionName，構建號 $packageCode），'
+        '當前應用較舊（v${BuildConfig.versionName}，構建號 ${BuildConfig.versionCode}），'
+        '部分資料可能無法正確還原',
       );
     }
     return warnings.isEmpty ? null : warnings.toString();
@@ -243,7 +243,7 @@ abstract final class ConfigArchive {
     // 先校验结构，避免 clear 后 putAll 失败导致旧设置丢失
     if (data[GStorage.setting.name] is! Map ||
         data[GStorage.video.name] is! Map) {
-      throw ArgumentError('设置数据格式不正确');
+      throw ArgumentError('設定資料格式不正確');
     }
     await GStorage.importAllJsonSettings(data);
   }

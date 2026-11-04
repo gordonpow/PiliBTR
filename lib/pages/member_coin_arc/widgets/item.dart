@@ -82,7 +82,7 @@ class MemberCoinLikeItem extends StatelessWidget {
                         )
                       else if (item.isSteins == true)
                         const PBadge(
-                          text: '互动',
+                          text: '互動',
                           top: 6,
                           right: 6,
                         ),

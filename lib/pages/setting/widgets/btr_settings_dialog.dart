@@ -44,7 +44,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
     if ((_enable || _playback) &&
         _cdnMode == BtrCdnMode.custom &&
         hosts.isEmpty) {
-      SmartDialog.showToast('请至少输入一个 CDN 节点');
+      SmartDialog.showToast('請至少輸入一個 CDN 節點');
       return;
     }
     await GStorage.setting.putAll({
@@ -55,7 +55,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
       SettingBoxKey.btrAutoThreads: _autoThreads,
       SettingBoxKey.btrThreads: BtrConfig.threadSteps[_threadIndex],
     });
-    SmartDialog.showToast('已保存，下一个视频或下载任务生效');
+    SmartDialog.showToast('已儲存，下一個影片或下載任務生效');
     if (mounted) Navigator.of(context).pop(true);
   }
 
@@ -69,7 +69,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
     const steps = BtrConfig.threadSteps;
 
     return AlertDialog(
-      title: const Text('线程撕裂者'),
+      title: const Text('線程撕裂者'),
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       content: SingleChildScrollView(
         child: Column(
@@ -79,14 +79,14 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('播放加速'),
-              subtitle: const Text('观看时由多个 CDN 同时缓冲，减少卡顿'),
+              subtitle: const Text('觀看時由多個 CDN 同時緩衝，減少卡頓'),
               value: _playback,
               onChanged: (v) => setState(() => _playback = v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('下载加速'),
-              subtitle: const Text('离线缓存使用多线程下载'),
+              title: const Text('下載加速'),
+              subtitle: const Text('離線快取使用多執行緒下載'),
               value: _enable,
               onChanged: (v) => setState(() => _enable = v),
             ),
@@ -125,38 +125,38 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           isDense: true,
-                          labelText: 'CDN 节点',
-                          hintText: '每行一个，例如\nupos-sz-mirrorali.bilivideo.com',
+                          labelText: 'CDN 節點',
+                          hintText: '每行一個，例如\nupos-sz-mirrorali.bilivideo.com',
                           helperText:
-                              '最多 ${BtrConfig.maxCustomCdn} 个，'
-                              '原始地址会一并使用',
+                              '最多 ${BtrConfig.maxCustomCdn} 個，'
+                              '原始地址會一併使用',
                         ),
                       ),
                     ] else ...[
                       const SizedBox(height: 6),
                       Text(
                         '${(_cdnMode == BtrCdnMode.mainland ? BtrConfig.mainlandHosts : BtrConfig.overseasHosts).length}'
-                        ' 个节点轮换使用，连续两次 0 KiB 的节点会被停用',
+                        ' 個節點輪換使用，連續兩次 0 KiB 的節點會被停用',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.outline,
                         ),
                       ),
                     ],
                     const SizedBox(height: 16),
-                    Text('线程', style: labelStyle),
+                    Text('執行緒', style: labelStyle),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('自动线程数（推荐）'),
-                      subtitle: const Text('播放用 8 个线程，下载按文件大小选 4 到 16 个'),
+                      title: const Text('自動執行緒數（推薦）'),
+                      subtitle: const Text('播放用 8 個執行緒，下載按檔案大小選 4 到 16 個'),
                       value: _autoThreads,
                       onChanged: (v) => setState(() => _autoThreads = v),
                     ),
                     Row(
                       children: [
-                        const Text('线程数'),
+                        const Text('執行緒數'),
                         const Spacer(),
                         Text(
-                          _autoThreads ? '自动' : '${steps[_threadIndex]}',
+                          _autoThreads ? '自動' : '${steps[_threadIndex]}',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: colorScheme.primary,
                           ),
@@ -192,7 +192,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
-                          '线程过多可能被 CDN 限流，建议 8 到 32',
+                          '執行緒過多可能被 CDN 限流，建議 8 到 32',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.error,
                           ),
@@ -211,7 +211,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
           onPressed: Navigator.of(context).pop,
           child: Text('取消', style: TextStyle(color: colorScheme.outline)),
         ),
-        TextButton(onPressed: _save, child: const Text('保存')),
+        TextButton(onPressed: _save, child: const Text('儲存')),
       ],
     );
   }

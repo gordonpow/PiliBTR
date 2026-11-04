@@ -54,7 +54,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
             PlayOrPauseButton(plPlayerController: plPlayerController),
             ComBtn(
               height: 30,
-              tooltip: '刷新',
+              tooltip: '重新整理',
               icon: const Icon(
                 Icons.refresh,
                 size: 18,
@@ -65,7 +65,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
             const Spacer(),
             ComBtn(
               height: 30,
-              tooltip: '屏蔽',
+              tooltip: '遮蔽',
               icon: const Icon(
                 size: 18,
                 Icons.block,
@@ -81,7 +81,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
                     arguments: liveRoomCtr,
                   );
                 } else {
-                  SmartDialog.showToast('账号未登录');
+                  SmartDialog.showToast('賬號未登入');
                 }
               },
             ),
@@ -92,7 +92,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
                     plPlayerController.enableShowLiveDanmaku.value;
                 return ComBtn(
                   height: 30,
-                  tooltip: "${enableShowLiveDanmaku ? '关闭' : '开启'}弹幕",
+                  tooltip: "${enableShowLiveDanmaku ? '關閉' : '開啟'}彈幕",
                   icon: enableShowLiveDanmaku
                       ? const Icon(
                           size: 18,
@@ -119,7 +119,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
             ),
             ComBtn(
               height: 30,
-              tooltip: '弹幕设置',
+              tooltip: '彈幕設定',
               icon: const Icon(
                 size: 18,
                 CustomIcons.dm_settings,
@@ -129,7 +129,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
             ),
             Obx(
               () => PopupMenuButton<VideoFitType>(
-                tooltip: '画面比例',
+                tooltip: '畫面比例',
                 initialValue: plPlayerController.videoFit.value,
                 color: Colors.black.withValues(alpha: 0.8),
                 itemBuilder: (context) {
@@ -168,7 +168,7 @@ class _BottomControlState extends State<BottomControl> with HeaderMixin {
                   return const SizedBox.shrink();
                 }
                 return PopupMenuButton<LiveQuality>(
-                  tooltip: '画质',
+                  tooltip: '畫質',
                   padding: .zero,
                   initialValue: quality,
                   onSelected: liveRoomCtr.changeQn,

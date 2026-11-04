@@ -35,7 +35,7 @@ abstract final class IOSPipHelper {
         final isResumed =
             WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
         if (args['error'] != null && isResumed) {
-          SmartDialog.showToast('画中画启动失败');
+          SmartDialog.showToast('畫中畫啟動失敗');
         }
         // Closing the PiP window in background stops playback, as on Android.
         if (args['closed'] == true && !isResumed) {

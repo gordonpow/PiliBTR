@@ -53,7 +53,7 @@ class PageInfoItem<T extends MultiSelectData> extends StatelessWidget {
                     Get.back();
                     showConfirmDialog(
                       context: context,
-                      title: const Text('确定删除？'),
+                      title: const Text('確定刪除？'),
                       onConfirm: () async {
                         await GStorage.watchProgress.deleteAll(
                           pageInfo.entries.map((e) => e.cid.toString()),
@@ -64,14 +64,14 @@ class PageInfoItem<T extends MultiSelectData> extends StatelessWidget {
                       },
                     );
                   },
-                  child: const Text('删除', style: TextStyle(fontSize: 14)),
+                  child: const Text('刪除', style: TextStyle(fontSize: 14)),
                 ),
                 DialogOption(
                   onPressed: () {
                     Get.back();
                     updatePageDm(pageInfo);
                   },
-                  child: const Text('更新弹幕', style: TextStyle(fontSize: 14)),
+                  child: const Text('更新彈幕', style: TextStyle(fontSize: 14)),
                 ),
               ],
             ),
@@ -117,7 +117,7 @@ class PageInfoItem<T extends MultiSelectData> extends StatelessWidget {
                     ),
                   ),
                   PBadge(
-                    text: '${pageInfo.entries.length}个视频',
+                    text: '${pageInfo.entries.length}個影片',
                     right: 6.0,
                     bottom: 6.0,
                     isBold: false,

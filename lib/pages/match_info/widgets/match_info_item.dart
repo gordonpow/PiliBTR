@@ -75,7 +75,7 @@ Widget? buildMatchBtn(ColorScheme colorScheme, MatchContest contest) {
         ),
       ),
       onPressed: () => PageUtils.toLiveRoom(contest.liveRoom),
-      child: const Text('观看直播'),
+      child: const Text('觀看直播'),
     );
   } else {
     late final outlinedStyle = ButtonStyle(
@@ -95,7 +95,7 @@ Widget? buildMatchBtn(ColorScheme colorScheme, MatchContest contest) {
       btn = OutlinedButton(
         style: outlinedStyle,
         onPressed: () => PageUtils.toLiveRoom(contest.liveRoom),
-        child: const Text('直播间'),
+        child: const Text('直播間'),
       );
     }
 
@@ -137,7 +137,7 @@ Widget buildContestItem(ColorScheme colorScheme, MatchContest contest) {
               if (contest.gameStage != null) TextSpan(text: contest.gameStage),
               if (contest.contestStatus == 3)
                 TextSpan(
-                  text: '    ${DateFormatUtils.dateFormat(contest.stime)} 已结束',
+                  text: '    ${DateFormatUtils.dateFormat(contest.stime)} 已結束',
                 )
               else if (contest.contestStatus == 1 && contest.stime != null)
                 TextSpan(

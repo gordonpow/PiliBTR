@@ -89,7 +89,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
     if (widget.privilegeType == null) {
       return SimpleScaffold(
         appBar: AppBar(
-          title: Text('$_name的充电排行榜${_count == null ? '' : '($_count)'}'),
+          title: Text('$_name的充電排行榜${_count == null ? '' : '($_count)'}'),
           actions: [
             TextButton(
               onPressed: () => Get.toNamed(
@@ -100,7 +100,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
                 },
               ),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-              child: const Text('充电'),
+              child: const Text('充電'),
             ),
             const SizedBox(width: 12),
           ],

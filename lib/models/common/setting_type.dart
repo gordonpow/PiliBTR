@@ -10,17 +10,17 @@ import 'package:PiliPlus/pages/setting/models/style_settings.dart';
 import 'package:PiliPlus/pages/setting/models/video_settings.dart';
 
 enum SettingType {
-  privacySetting('隐私设置'),
-  recommendSetting('推荐流设置'),
-  videoSetting('音视频设置'),
-  playSetting('播放器设置'),
-  dmSetting('弹幕设置'),
-  replySetting('评论设置'),
-  dynSetting('动态设置'),
-  styleSetting('外观设置'),
-  extraSetting('其它设置'),
-  webdavSetting('WebDAV 设置'),
-  about('关于'),
+  privacySetting('隱私設定'),
+  recommendSetting('推薦流設定'),
+  videoSetting('音影片設定'),
+  playSetting('播放器設定'),
+  dmSetting('彈幕設定'),
+  replySetting('評論設定'),
+  dynSetting('動態設定'),
+  styleSetting('外觀設定'),
+  extraSetting('其它設定'),
+  webdavSetting('WebDAV 設定'),
+  about('關於'),
   ;
 
   final String title;

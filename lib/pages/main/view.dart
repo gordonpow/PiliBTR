@@ -412,10 +412,10 @@ class _MainAppState extends PopScopeState<MainApp>
         const SizedBox(height: 8),
         msgBadge(_mainController),
         IconButton(
-          tooltip: '搜索',
+          tooltip: '搜尋',
           icon: const Icon(
             Icons.search_outlined,
-            semanticLabel: '搜索',
+            semanticLabel: '搜尋',
           ),
           onPressed: () => Get.toNamed('/search'),
         ),

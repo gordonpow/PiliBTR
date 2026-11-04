@@ -1,8 +1,8 @@
 enum SubtitlePrefType {
-  off('默认不显示字幕'),
-  on('优先选择非自动生成(ai)字幕'),
-  withoutAi('跳过自动生成(ai)字幕，选择第一个可用字幕'),
-  auto('静音时等同第二项，非静音时等同第三项'),
+  off('預設不顯示字幕'),
+  on('優先選擇非自動生成(ai)字幕'),
+  withoutAi('跳過自動生成(ai)字幕，選擇第一個可用字幕'),
+  auto('靜音時等同第二項，非靜音時等同第三項'),
   ;
 
   final String desc;

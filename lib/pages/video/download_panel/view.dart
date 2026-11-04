@@ -120,7 +120,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
             child: Row(
               spacing: 12,
               children: [
-                Text('画质', style: textStyle),
+                Text('畫質', style: textStyle),
                 Builder(
                   builder: (context) => PopupMenuButton<VideoQuality>(
                     initialValue: _quality,
@@ -139,7 +139,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
                     child: _buildPopupMenuChild(_quality.desc),
                   ),
                 ),
-                Text('音质', style: textStyle),
+                Text('音質', style: textStyle),
                 Builder(
                   builder: (context) => PopupMenuButton<AudioQuality>(
                     initialValue: _audioQuality,
@@ -464,7 +464,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
                               ),
                             if (isCharging == true)
                               const PBadge(
-                                text: '充电专属',
+                                text: '充電專屬',
                                 top: 6,
                                 right: 6,
                                 type: PBadgeType.error,
@@ -574,11 +574,11 @@ class _DownloadPanelState extends State<DownloadPanel> {
       child: Row(
         children: [
           _buildBottomBtn(
-            text: '缓存全部',
+            text: '快取全部',
             onTap: () {
               showConfirmDialog(
                 context: context,
-                title: const Text('确定缓存全部？'),
+                title: const Text('確定快取全部？'),
                 onConfirm: () {
                   for (int i = 0; i < widget.episodes.length; i++) {
                     _onDownload(
@@ -600,7 +600,7 @@ class _DownloadPanelState extends State<DownloadPanel> {
             ),
           ),
           _buildBottomBtn(
-            text: '查看缓存',
+            text: '檢視快取',
             onTap: () => Navigator.of(context).push(
               GetPageRoute(page: () => const DownloadPage()),
             ),

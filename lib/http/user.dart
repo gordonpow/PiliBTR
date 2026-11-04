@@ -183,7 +183,7 @@ abstract final class UserHttp {
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
     if (res.data['code'] == 0) {
-      SmartDialog.showToast('yeah！稍后再看');
+      SmartDialog.showToast('yeah！稍後再看');
       return const Success(null);
     } else {
       SmartDialog.showToast(res.data['message'].toString());

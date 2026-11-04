@@ -78,7 +78,7 @@ class SearchPgcItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text('评分:${item.mediaScore?['score']}', style: style),
+                    Text('評分:${item.mediaScore?['score']}', style: style),
                     Text.rich(
                       style: style,
                       TextSpan(

@@ -23,7 +23,7 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('话题')),
+      appBar: AppBar(title: const Text('話題')),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
         child: CustomScrollView(

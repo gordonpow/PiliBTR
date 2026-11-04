@@ -590,8 +590,8 @@ class VideoDetailController extends GetxController
               padding: const .symmetric(horizontal: 8, vertical: 4),
               fontSize: 14,
               text: item is SegmentModel
-                  ? '跳过: ${item.segmentType.shortTitle}'
-                  : '上次看到第${(item as int) + 1}P，点击跳转',
+                  ? '跳過: ${item.segmentType.shortTitle}'
+                  : '上次看到第${(item as int) + 1}P，點選跳轉',
               onTap: (_) {
                 if (item is int) {
                   try {
@@ -600,7 +600,7 @@ class VideoDetailController extends GetxController
                     SmartDialog.showToast('已跳至第${item + 1}P');
                   } catch (e) {
                     if (kDebugMode) debugPrint('$e');
-                    SmartDialog.showToast('跳转失败');
+                    SmartDialog.showToast('跳轉失敗');
                   }
                   onRemoveItem(listData.indexOf(item), item);
                 } else if (item is SegmentModel) {
@@ -621,7 +621,7 @@ class VideoDetailController extends GetxController
   /// 发送弹幕
   Future<void> showShootDanmakuSheet() async {
     if (plPlayerController.dmState.contains(cid.value)) {
-      SmartDialog.showToast('UP主已关闭弹幕');
+      SmartDialog.showToast('UP主已關閉彈幕');
       return;
     }
     final isPlaying =
@@ -798,7 +798,7 @@ class VideoDetailController extends GetxController
   void setLanguage(String language) {
     if (currLang.value == language) return;
     if (!isLoginVideo) {
-      SmartDialog.showToast('账号未登录');
+      SmartDialog.showToast('賬號未登入');
       return;
     }
     currLang.value = language;
@@ -898,7 +898,7 @@ class VideoDetailController extends GetxController
 
       if (data.acceptDesc?.contains('试看') == true) {
         SmartDialog.showToast(
-          '该视频为专属视频，仅提供试看',
+          '該影片為專屬影片，僅提供試看',
           displayTime: const Duration(seconds: 3),
         );
       }
@@ -937,7 +937,7 @@ class VideoDetailController extends GetxController
           await initPlayerIfNeeded(autoFullScreenFlag);
           return;
         } else {
-          SmartDialog.showToast('视频资源不存在');
+          SmartDialog.showToast('影片資源不存在');
           _autoPlay.value = false;
           videoState.value = false;
           if (plPlayerController.isFullScreen.value) {
@@ -1550,7 +1550,7 @@ class VideoDetailController extends GetxController
               this.audioUrl = audioUrl;
               playerInit();
             },
-            child: const Text('确定'),
+            child: const Text('確定'),
           ),
         ],
       ),
@@ -1570,7 +1570,7 @@ class VideoDetailController extends GetxController
     if (res case Success(:final response)) {
       final first = response.durl?.firstOrNull;
       if (first == null || first.playUrls.isEmpty) {
-        SmartDialog.showToast('不支持投屏');
+        SmartDialog.showToast('不支援投屏');
         return;
       }
       final url = VideoUtils.getCdnUrl(first.playUrls);

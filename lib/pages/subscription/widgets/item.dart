@@ -105,7 +105,7 @@ class SubItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${item.mediaCount}个视频',
+                '${item.mediaCount}個影片',
                 textAlign: TextAlign.start,
                 style: style,
               ),
@@ -133,7 +133,7 @@ class SubItem extends StatelessWidget {
 
 Future<void>? onPushSub(String label, String heroTag, SubItemModel item) {
   if (item.state == 1) {
-    SmartDialog.showToast('该$label已失效');
+    SmartDialog.showToast('該$label已失效');
     return null;
   }
   if (item.type == 11) {

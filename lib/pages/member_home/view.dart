@@ -164,7 +164,7 @@ class _MemberHomeState extends State<MemberHome>
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const TextSpan(text: ' TA现在并没有直播，去TA直播间'),
+                      const TextSpan(text: ' TA現在並沒有直播，去TA直播間'),
                     ],
                   ),
                   textAlign: .center,
@@ -289,7 +289,7 @@ class _MemberHomeState extends State<MemberHome>
     List<SpaceArchiveItem> archives,
   ) sync* {
     yield _header(
-      title: '视频',
+      title: '影片',
       param: 'contribute',
       param1: 'video',
       count: count,
@@ -340,7 +340,7 @@ class _MemberHomeState extends State<MemberHome>
     List<SpaceArchiveItem> coinArchives,
   ) sync* {
     yield _header(
-      title: '最近投币的视频',
+      title: '最近投幣的影片',
       param: 'coinArchive',
       count: count,
       visible: isOwner ? setting!.coinsVideo == 1 : null,
@@ -365,7 +365,7 @@ class _MemberHomeState extends State<MemberHome>
     List<SpaceArchiveItem> likeArchives,
   ) sync* {
     yield _header(
-      title: '最近点赞的视频',
+      title: '最近點讚的影片',
       param: 'likeArchive',
       count: count,
       visible: isOwner ? setting!.likesVideo == 1 : null,
@@ -390,7 +390,7 @@ class _MemberHomeState extends State<MemberHome>
     List<SpaceArticleItem> articles,
   ) sync* {
     yield _header(
-      title: '图文',
+      title: '圖文',
       param: 'contribute',
       param1: 'opus',
       count: count,
@@ -409,7 +409,7 @@ class _MemberHomeState extends State<MemberHome>
 
   Iterable<Widget> _buildAudio(int count, List<SpaceAudioItem> audios) sync* {
     yield _header(
-      title: '音频',
+      title: '音訊',
       param: 'contribute',
       param1: 'audio',
       count: count,
@@ -428,7 +428,7 @@ class _MemberHomeState extends State<MemberHome>
 
   Iterable<Widget> _buildComic(int count, List<SpaceArchiveItem> comics) sync* {
     yield _header(
-      title: '漫画',
+      title: '漫畫',
       param: 'contribute',
       param1: 'comic',
       count: count,

@@ -169,7 +169,7 @@ class _HomePageState extends CommonPageState<HomePage>
                 Icon(
                   Icons.search_outlined,
                   color: _colorScheme.onSecondaryContainer,
-                  semanticLabel: '搜索',
+                  semanticLabel: '搜尋',
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -251,7 +251,7 @@ Widget userAvatar({
           width: 38,
           height: 38,
           child: IconButton(
-            tooltip: '点击登录',
+            tooltip: '點選登入',
             style: IconButton.styleFrom(
               padding: .zero,
               backgroundColor: colorScheme.onInverseSurface,
@@ -276,7 +276,7 @@ Widget msgBadge(MainController mainController) {
         final count = mainController.msgUnReadCount.value;
         final isNumBadge = mainController.msgBadgeMode == .number;
         return IconButton(
-          tooltip: '消息',
+          tooltip: '訊息',
           onPressed: () {
             mainController
               ..clearUnreadMsg()

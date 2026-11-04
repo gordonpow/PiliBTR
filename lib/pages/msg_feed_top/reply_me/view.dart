@@ -34,7 +34,7 @@ class _ReplyMePageState extends State<ReplyMePage> {
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('回复我的'),
+        title: const Text('回覆我的'),
         actions: [
           IconButton(
             onPressed: () => Get.to(
@@ -102,7 +102,7 @@ class _ReplyMePageState extends State<ReplyMePage> {
 
               void onLongPress() => showConfirmDialog(
                 context: context,
-                title: const Text('确定删除该通知?'),
+                title: const Text('確定刪除該通知?'),
                 onConfirm: () => _replyMeController.onRemove(item.id, index),
               );
 
@@ -149,7 +149,7 @@ class _ReplyMePageState extends State<ReplyMePage> {
                           ),
                         ),
                       TextSpan(
-                        text: " 对我的${item.item?.business}发布了${item.counts}条评论",
+                        text: " 對我的${item.item?.business}釋出了${item.counts}條評論",
                         style: theme.textTheme.titleSmall!.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

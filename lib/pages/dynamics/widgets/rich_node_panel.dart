@@ -18,7 +18,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _linkFoldedText = '网页链接';
+const _linkFoldedText = '網頁連結';
 
 // 富文本
 TextSpan? richNode(

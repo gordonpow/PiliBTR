@@ -161,7 +161,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
           if (Platform.isLinux) {
             await LinuxCookieManager.clearAllWebsiteData();
             _linuxController?.reload();
-            SmartDialog.showToast('已清理缓存并刷新', alignment: Alignment.topCenter);
+            SmartDialog.showToast('已清理快取並重新整理', alignment: Alignment.topCenter);
           } else {
             await InAppWebViewController.clearAllCache();
             await _webViewController?.clearHistory();
@@ -192,10 +192,10 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
             }
           }
           _linuxController?.reload();
-          SmartDialog.showToast('设置成功，正在刷新网页', alignment: Alignment.topCenter);
+          SmartDialog.showToast('設定成功，正在重新整理網頁', alignment: Alignment.topCenter);
         } else {
           await LoginUtils.setWebCookie();
-          SmartDialog.showToast('设置成功，刷新或重新打开网页');
+          SmartDialog.showToast('設定成功，重新整理或重新開啟網頁');
         }
         break;
     }
@@ -458,7 +458,7 @@ document.styleSheets[0].insertRule('#app__display-area > div.control-panel {disp
                             final url = request.url.toString();
                             return AlertDialog(
                               title: Text(
-                                '下载文件: $suggestedFilename ?',
+                                '下載檔案: $suggestedFilename ?',
                                 style: const TextStyle(fontSize: 18),
                               ),
                               content: SelectionText(url),
@@ -479,7 +479,7 @@ document.styleSheets[0].insertRule('#app__display-area > div.control-panel {disp
                                     Get.back();
                                     PageUtils.launchURL(url);
                                   },
-                                  child: Text('确定 ($fileSize)'),
+                                  child: Text('確定 ($fileSize)'),
                                 ),
                               ],
                             );
@@ -529,9 +529,9 @@ document.styleSheets[0].insertRule('#app__display-area > div.control-panel {disp
                       final snackBar = SnackBar(
                         persist: false,
                         showCloseIcon: true,
-                        content: const Text('当前网页将要打开外部链接，是否打开'),
+                        content: const Text('當前網頁將要開啟外部連結，是否開啟'),
                         action: SnackBarAction(
-                          label: '打开',
+                          label: '開啟',
                           onPressed: () => PageUtils.launchURL(url),
                         ),
                       );

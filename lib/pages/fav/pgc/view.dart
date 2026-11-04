@@ -74,7 +74,7 @@ class _FavPgcPageState extends State<FavPgcPage>
                 tabs: const [
                   Tab(text: '想看'),
                   Tab(text: '在看'),
-                  Tab(text: '看过'),
+                  Tab(text: '看過'),
                 ],
                 onTap: (index) {
                   try {

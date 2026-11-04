@@ -120,11 +120,11 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
               return Text(
                 switch (score) {
                   1 => '很差',
-                  2 => '较差',
-                  3 => '还行',
+                  2 => '較差',
+                  3 => '還行',
                   4 => '很好',
                   5 => '佳作',
-                  _ => '轻触评分',
+                  _ => '輕觸評分',
                 },
                 style: TextStyle(
                   fontSize: 16,
@@ -173,7 +173,7 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
                             : Icons.check_box_outline_blank_outlined,
                         color: color,
                       ),
-                      Text(' 分享到动态', style: TextStyle(color: color)),
+                      Text(' 分享到動態', style: TextStyle(color: color)),
                     ],
                   );
                 },
@@ -208,7 +208,7 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
                   ),
                 ),
                 onPressed: _enablePost.value ? _onPost : null,
-                child: _isMod ? const Text('编辑') : const Text('发布'),
+                child: _isMod ? const Text('編輯') : const Text('釋出'),
               ),
             ),
           ),
@@ -227,14 +227,14 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
       );
       if (res.isSuccess) {
         Get.back();
-        SmartDialog.showToast('编辑成功');
+        SmartDialog.showToast('編輯成功');
       } else {
         res.toast();
       }
       return;
     }
     if (!Accounts.main.isLogin) {
-      SmartDialog.showToast('账号未登录');
+      SmartDialog.showToast('賬號未登入');
       return;
     }
     final res = await PgcHttp.pgcReviewPost(
@@ -245,7 +245,7 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
     );
     if (res.isSuccess) {
       Get.back();
-      SmartDialog.showToast('点评成功');
+      SmartDialog.showToast('點評成功');
     } else {
       res.toast();
     }

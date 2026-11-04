@@ -29,9 +29,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 enum DynType implements EnumWithLabel {
-  repost('转发'),
-  reply('评论'),
-  like('赞');
+  repost('轉發'),
+  reply('評論'),
+  like('贊');
 
   @override
   final String label;
@@ -158,7 +158,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
               () {
                 final count = controller.count.value;
                 return Text(
-                  '${count == -1 ? 0 : NumUtils.numFormat(count)}条回复',
+                  '${count == -1 ? 0 : NumUtils.numFormat(count)}條回覆',
                 );
               },
             ),
@@ -218,7 +218,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         }
 
         final child = httpError(
-          errMsg: '还没有评论',
+          errMsg: '還沒有評論',
           onReload: controller.onReload,
         );
         if (controller.voteCard case final voteCard?) {
@@ -293,7 +293,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
       if (showBackBtn) {
         return SimpleScaffold(
           appBar: AppBar(
-            title: const Text('评论详情'),
+            title: const Text('評論詳情'),
             shape: Border(
               bottom: BorderSide(
                 color: theme.colorScheme.outline.withValues(alpha: 0.1),
@@ -326,7 +326,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
   }
 
   Widget ratioWidget(double maxWidth) => IconButton(
-    tooltip: '页面比例调节',
+    tooltip: '頁面比例調節',
     onPressed: () => showDialog(
       context: context,
       builder: (context) => Align(
@@ -389,7 +389,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         );
       } catch (_) {}
     },
-    tooltip: '评论',
+    tooltip: '評論',
     child: const Icon(Icons.reply),
   );
 }

@@ -114,7 +114,7 @@ class _DownloadDetailPageState extends State<DownloadDetailPage>
               title: Text(widget.title),
               actions: [
                 IconButton(
-                  tooltip: '多选',
+                  tooltip: '多選',
                   onPressed: () {
                     if (enableMultiSelect) {
                       handleSelect();
@@ -179,7 +179,7 @@ class _DownloadDetailPageState extends State<DownloadDetailPage>
   void onRemove() {
     showConfirmDialog(
       context: context,
-      title: const Text('确定删除选中视频？'),
+      title: const Text('確定刪除選中影片？'),
       onConfirm: () async {
         SmartDialog.showLoading();
         final allChecked = this.allChecked.toList();

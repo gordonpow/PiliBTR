@@ -33,7 +33,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('全部标签'),
+        title: const Text('全部標籤'),
         actions: _controller.isLogin
             ? [
                 TextButton(
@@ -42,7 +42,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                     visualDensity: VisualDensity.compact,
                   ),
                   child: Obx(
-                    () => Text(_controller.isEditing.value ? '完成' : '编辑'),
+                    () => Text(_controller.isEditing.value ? '完成' : '編輯'),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -174,9 +174,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
             Text.rich(
               TextSpan(
                 children: [
-                  const TextSpan(text: '我的常用标签  '),
+                  const TextSpan(text: '我的常用標籤  '),
                   TextSpan(
-                    text: '点击进入标签',
+                    text: '點選進入標籤',
                     style: TextStyle(
                       fontSize: 13,
                       color: theme.colorScheme.outline,

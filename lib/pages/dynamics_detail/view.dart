@@ -560,7 +560,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
                       final forward = moduleStat?.forward;
                       return textIconButton(
                         icon: FontAwesomeIcons.shareFromSquare,
-                        text: '转发',
+                        text: '轉發',
                         stat: forward,
                         onPressed: (_) => showModalBottomSheet(
                           context: context,
@@ -602,7 +602,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
                 Expanded(
                   child: textIconButton(
                     icon: FontAwesomeIcons.comment,
-                    text: '评论',
+                    text: '評論',
                     stat: moduleStat?.comment,
                     onPressed: _jumpToComment,
                   ),
@@ -613,7 +613,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
                       return textIconButton(
                         icon: FontAwesomeIcons.thumbsUp,
                         activatedIcon: FontAwesomeIcons.solidThumbsUp,
-                        text: '点赞',
+                        text: '點贊',
                         stat: moduleStat?.like,
                         onPressed: (iconColor) => RequestUtils.onLikeDynamic(
                           dynItem,

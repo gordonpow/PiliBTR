@@ -471,7 +471,7 @@ class _EpisodePanelState extends State<EpisodePanel>
     }
 
     if (episode.badge == "会员" && !_isVip) {
-      SmartDialog.showToast('需要大会员');
+      SmartDialog.showToast('需要大會員');
       // return;
     }
 
@@ -615,7 +615,7 @@ class _EpisodePanelState extends State<EpisodePanel>
                           )
                         else if (isCharging == true)
                           const PBadge(
-                            text: '充电专属',
+                            text: '充電專屬',
                             top: 6,
                             right: 6,
                             type: .error,
@@ -703,7 +703,7 @@ class _EpisodePanelState extends State<EpisodePanel>
     if (res.isSuccess) {
       _favState!.toggle();
       _ugcController.seasonFavState[_seasonId] = !isFav;
-      SmartDialog.showToast('${isFav ? '取消' : ''}订阅成功');
+      SmartDialog.showToast('${isFav ? '取消' : ''}訂閱成功');
     } else {
       res.toast();
     }
@@ -713,7 +713,7 @@ class _EpisodePanelState extends State<EpisodePanel>
     if (isFav == null) return const SizedBox.shrink();
     return iconButton(
       iconSize: 22,
-      tooltip: isFav ? '取消订阅' : '订阅',
+      tooltip: isFav ? '取消訂閱' : '訂閱',
       icon: isFav
           ? const Icon(Icons.notifications_off_outlined)
           : const Icon(Icons.notifications_active_outlined),
@@ -745,7 +745,7 @@ class _EpisodePanelState extends State<EpisodePanel>
       final reversed = _isReversed(tabIndex);
       return iconButton(
         iconSize: 22,
-        tooltip: reversed ? '顺序' : '倒序',
+        tooltip: reversed ? '順序' : '倒序',
         icon: reversed
             ? const Icon(MdiIcons.sortNumericDescending)
             : const Icon(MdiIcons.sortNumericAscending),
@@ -772,7 +772,7 @@ class _EpisodePanelState extends State<EpisodePanel>
         if (_favState != null) Obx(() => _buildFavBtn(_favState!.value)),
         iconButton(
           iconSize: 22,
-          tooltip: '跳至顶部',
+          tooltip: '跳至頂部',
           icon: const Icon(Icons.vertical_align_top),
           onPressed: _jumpToTop,
         ),
@@ -784,7 +784,7 @@ class _EpisodePanelState extends State<EpisodePanel>
         ),
         iconButton(
           iconSize: 22,
-          tooltip: '跳至当前',
+          tooltip: '跳至當前',
           icon: const Icon(Icons.my_location),
           onPressed: _jumpToCurrent,
         ),
@@ -794,7 +794,7 @@ class _EpisodePanelState extends State<EpisodePanel>
         if (!_isSidePanel)
           iconButton(
             iconSize: 22,
-            tooltip: '关闭',
+            tooltip: '關閉',
             icon: const Icon(Icons.close),
             onPressed: Get.back,
           ),

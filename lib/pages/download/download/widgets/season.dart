@@ -52,7 +52,7 @@ class SeasonInfoItem extends StatelessWidget {
                     Get.back();
                     showConfirmDialog(
                       context: context,
-                      title: const Text('确定删除？'),
+                      title: const Text('確定刪除？'),
                       onConfirm: () async {
                         for (final pageInfo in season.pages) {
                           await GStorage.watchProgress.deleteAll(
@@ -65,14 +65,14 @@ class SeasonInfoItem extends StatelessWidget {
                       },
                     );
                   },
-                  child: const Text('删除', style: TextStyle(fontSize: 14)),
+                  child: const Text('刪除', style: TextStyle(fontSize: 14)),
                 ),
                 DialogOption(
                   onPressed: () {
                     Get.back();
                     updateSeasonDm(season);
                   },
-                  child: const Text('更新弹幕', style: TextStyle(fontSize: 14)),
+                  child: const Text('更新彈幕', style: TextStyle(fontSize: 14)),
                 ),
               ],
             ),
@@ -119,7 +119,7 @@ class SeasonInfoItem extends StatelessWidget {
                   const PBadge(text: '合集', top: 6.0, right: 6.0),
                   PBadge(
                     text:
-                        '${season.pages.fold(0, (a, b) => a + b.entries.length)}个视频',
+                        '${season.pages.fold(0, (a, b) => a + b.entries.length)}個影片',
                     right: 6.0,
                     bottom: 6.0,
                     isBold: false,

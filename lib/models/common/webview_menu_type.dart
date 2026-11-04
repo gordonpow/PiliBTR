@@ -1,9 +1,9 @@
 enum WebviewMenuItem {
-  refresh('刷新'),
-  copy('复制链接'),
-  openInBrowser('浏览器中打开'),
-  clearCache('清除缓存'),
-  resetCookie('重新设置Cookie'),
+  refresh('重新整理'),
+  copy('複製連結'),
+  openInBrowser('瀏覽器中開啟'),
+  clearCache('清除快取'),
+  resetCookie('重新設定Cookie'),
   goBack('返回'),
   ;
 

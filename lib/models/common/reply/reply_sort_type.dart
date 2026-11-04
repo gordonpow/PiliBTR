@@ -1,9 +1,9 @@
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 
 enum ReplySortType implements EnumWithLabel {
-  time('最新评论', '最新', label: '按时间'),
-  hot('最热评论', '最热', label: '按热度'),
-  select('精选评论', '精选'),
+  time('最新評論', '最新', label: '按時間'),
+  hot('最熱評論', '最熱', label: '按熱度'),
+  select('精選評論', '精選'),
   ;
 
   @override

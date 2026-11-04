@@ -180,7 +180,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
         ),
         if (item.rating != null)
           PBadge(
-            text: '评分 ${item.rating!.score!}',
+            text: '評分 ${item.rating!.score!}',
             top: null,
             right: 6,
             bottom: 6,
@@ -320,7 +320,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               const SizedBox(height: 5),
               Expanded(
                 child: Text(
-                  '简介：${item.evaluate}',
+                  '簡介：${item.evaluate}',
                   style: TextStyle(fontSize: 13, color: colorScheme.outline),
                 ),
               ),
@@ -415,7 +415,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               icon: const Icon(FontAwesomeIcons.thumbsUp),
               selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
               selectStatus: introController.hasLike.value,
-              semanticsLabel: '点赞',
+              semanticsLabel: '點贊',
               text: NumUtils.numFormat(stat.like),
               onStartTriple: introController.onStartTriple,
               onCancelTriple: introController.onCancelTriple,
@@ -428,7 +428,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               selectIcon: const Icon(FontAwesomeIcons.b),
               onTap: introController.actionCoinVideo,
               selectStatus: introController.hasCoin,
-              semanticsLabel: '投币',
+              semanticsLabel: '投幣',
               text: NumUtils.numFormat(stat.coin),
             ),
           ),
@@ -450,8 +450,8 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),
-            text: '缓存',
-            semanticsLabel: '缓存',
+            text: '快取',
+            semanticsLabel: '快取',
           ),
           Obx(
             () => ActionItem(
@@ -468,7 +468,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
             icon: const Icon(FontAwesomeIcons.shareFromSquare),
             onTap: () => introController.actionShareVideo(context),
             selectStatus: false,
-            semanticsLabel: '转发',
+            semanticsLabel: '轉發',
             text: NumUtils.numFormat(stat.share),
           ),
         ],

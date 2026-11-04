@@ -55,7 +55,7 @@ mixin BaseFavController
     showConfirmDialog(
       context: Get.context!,
       title: const Text('提示'),
-      content: const Text('确认删除所选收藏吗？'),
+      content: const Text('確認刪除所選收藏嗎？'),
       onConfirm: () async {
         final removeList = allChecked.toSet();
         final res = await FavHttp.favVideo(
@@ -189,7 +189,7 @@ class FavDetailController
 
   Future<void> onFav(bool isFav) async {
     if (!account.isLogin) {
-      SmartDialog.showToast('账号未登录');
+      SmartDialog.showToast('賬號未登入');
       return;
     }
     final res = isFav
@@ -220,7 +220,7 @@ class FavDetailController
     if (loadingState.value case Success(:final response)) {
       if (response != null && response.isNotEmpty) {
         if (folderInfo.value.mediaCount > 1000) {
-          SmartDialog.showToast('内容太多啦！超过1000不支持排序');
+          SmartDialog.showToast('內容太多啦！超過1000不支援排序');
           return;
         }
         Get.to(FavSortPage(favDetailController: this));

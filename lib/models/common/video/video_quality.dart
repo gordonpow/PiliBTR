@@ -9,19 +9,19 @@ final class VideoQuality extends BaseQuality {
   String toString() => '${super.toString()}, shortDesc: $shortDesc';
 
   static const VideoQuality hdrVivid = .new(129, 'HDR Vivid', 'HDR Vivid');
-  static const VideoQuality super8k = .new(127, '8K 超高清', '8K');
-  static const VideoQuality dolbyVision = .new(126, '杜比视界', '杜比');
+  static const VideoQuality super8k = .new(127, '8K 超高畫質', '8K');
+  static const VideoQuality dolbyVision = .new(126, '杜比視界', '杜比');
   static const VideoQuality hdr = .new(125, 'HDR 真彩', 'HDR');
-  static const VideoQuality super4K = .new(120, '4K 超高清', '4K');
-  static const VideoQuality high108060 = .new(116, '1080P 60帧', '1080P60');
-  static const VideoQuality high1080plus = .new(112, '1080P 高码率', '1080P+');
-  static const VideoQuality superResolution = .new(100, '智能修复', '智能修复');
-  static const VideoQuality high1080 = .new(80, '1080P 高清', '1080P');
-  static const VideoQuality high72060 = .new(74, '720P 60帧', '720P60');
-  static const VideoQuality high720 = .new(64, '720P 准高清', '720P');
-  static const VideoQuality clear480 = .new(32, '480P 标清', '480P');
-  static const VideoQuality fluent360 = .new(16, '360P 流畅', '360P');
-  static const VideoQuality speed240 = .new(6, '240P 极速', '240P');
+  static const VideoQuality super4K = .new(120, '4K 超高畫質', '4K');
+  static const VideoQuality high108060 = .new(116, '1080P 60幀', '1080P60');
+  static const VideoQuality high1080plus = .new(112, '1080P 高位元速率', '1080P+');
+  static const VideoQuality superResolution = .new(100, '智慧修復', '智慧修復');
+  static const VideoQuality high1080 = .new(80, '1080P 高畫質', '1080P');
+  static const VideoQuality high72060 = .new(74, '720P 60幀', '720P60');
+  static const VideoQuality high720 = .new(64, '720P 準高畫質', '720P');
+  static const VideoQuality clear480 = .new(32, '480P 標清', '480P');
+  static const VideoQuality fluent360 = .new(16, '360P 流暢', '360P');
+  static const VideoQuality speed240 = .new(6, '240P 極速', '240P');
 
   static const List<VideoQuality> values = [
     hdrVivid,

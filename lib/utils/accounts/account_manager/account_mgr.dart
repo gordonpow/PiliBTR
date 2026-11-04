@@ -248,21 +248,21 @@ class AccountManager extends Interceptor {
   static Future<String> dioError(DioException error) async {
     switch (error.type) {
       case .badCertificate:
-        return '证书有误！';
+        return '證書有誤！';
       case .badResponse:
-        return '服务器异常，请稍后重试！';
+        return '伺服器異常，請稍後重試！';
       case .cancel:
-        return '请求已被取消，请重新请求';
+        return '請求已被取消，請重新請求';
       case .connectionError:
-        return '连接错误，请检查网络设置';
+        return '連線錯誤，請檢查網路設定';
       case .connectionTimeout:
-        return '网络连接超时，请检查网络设置';
+        return '網路連線超時，請檢查網路設定';
       case .receiveTimeout:
-        return '响应超时，请稍后重试！';
+        return '響應超時，請稍後重試！';
       case .sendTimeout:
-        return '发送请求超时，请检查网络设置';
+        return '傳送請求超時，請檢查網路設定';
       case .transformTimeout:
-        return '转换响应数据超时！';
+        return '轉換響應資料超時！';
       case .unknown:
         String desc;
         try {
@@ -272,11 +272,11 @@ class AccountManager extends Interceptor {
         } catch (_) {
           desc = '';
         }
-        return '$desc网络异常 ${error.error}';
+        return '$desc網路異常 ${error.error}';
     }
   }
 }
 
 extension _ConnectivityResultExt on ConnectivityResult {
-  String get desc => const ['蓝牙', 'Wi-Fi', '局域', '流量', '无', '代理', '其他'][index];
+  String get desc => const ['藍牙', 'Wi-Fi', '局域', '流量', '無', '代理', '其他'][index];
 }

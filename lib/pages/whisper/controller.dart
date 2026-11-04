@@ -35,7 +35,7 @@ class WhisperController extends CommonWhisperController<SessionMainReply> {
     super.onInit();
     msgFeedTopItems = [
       const (
-        name: "回复我的",
+        name: "回覆我的",
         icon: Icons.message_outlined,
         route: "/replyMe",
         enabled: true,
@@ -47,13 +47,13 @@ class WhisperController extends CommonWhisperController<SessionMainReply> {
         enabled: true,
       ),
       (
-        name: "收到的赞",
+        name: "收到的贊",
         icon: Icons.favorite_border_outlined,
         route: "/likeMe",
         enabled: !disableLikeMsg,
       ),
       const (
-        name: "系统通知",
+        name: "系統通知",
         icon: Icons.notifications_none_outlined,
         route: "/sysMsg",
         enabled: true,

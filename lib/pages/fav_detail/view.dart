@@ -146,7 +146,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                 Obx(
                   () {
                     return Text(
-                      '已选: ${controller.checkedCount}',
+                      '已選: ${controller.checkedCount}',
                       style: const TextStyle(fontSize: 15),
                     );
                   },
@@ -166,7 +166,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                   style: theme.textTheme.titleMedium,
                 ),
                 Text(
-                  '共${controller.folderInfo.value.mediaCount}条视频',
+                  '共${controller.folderInfo.value.mediaCount}條影片',
                   style: theme.textTheme.labelMedium,
                 ),
               ],
@@ -179,7 +179,7 @@ class _FavDetailPageState extends State<FavDetailPage>
   List<Widget> _actions(ThemeData theme) {
     return [
       IconButton(
-        tooltip: '搜索',
+        tooltip: '搜尋',
         onPressed: () {
           final folderInfo = controller.folderInfo.value;
           Get.toNamed(
@@ -251,7 +251,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                           controller.folderInfo.value = res;
                         }
                       }),
-                  child: const Text('编辑信息'),
+                  child: const Text('編輯資訊'),
                 ),
               ] else
                 PopupMenuItem(
@@ -272,23 +272,23 @@ class _FavDetailPageState extends State<FavDetailPage>
                       uname: folderInfo.upper?.name,
                     ),
                   ),
-                  child: const Text('分享至动态'),
+                  child: const Text('分享至動態'),
                 ),
               if (isOwner) ...<PopupMenuEntry>[
                 PopupMenuItem(
                   onTap: controller.cleanFav,
-                  child: const Text('清除失效内容'),
+                  child: const Text('清除失效內容'),
                 ),
                 if (!BiliUtils.isDefaultFav(folderInfo.attr)) ...[
                   const PopupMenuDivider(height: 12),
                   PopupMenuItem(
                     onTap: () => showConfirmDialog(
                       context: context,
-                      title: const Text('确定删除该收藏夹?'),
+                      title: const Text('確定刪除該收藏夾?'),
                       onConfirm: () =>
                           FavHttp.deleteFolder(mediaIds: mediaId).then((res) {
                             if (res.isSuccess) {
-                              SmartDialog.showToast('删除成功');
+                              SmartDialog.showToast('刪除成功');
                               Get.back(result: true);
                             } else {
                               res.toast();
@@ -296,7 +296,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                           }),
                     ),
                     child: Text(
-                      '删除',
+                      '刪除',
                       style: TextStyle(
                         color: theme.colorScheme.error,
                       ),
@@ -318,7 +318,7 @@ class _FavDetailPageState extends State<FavDetailPage>
       TextButton(
         style: btnStyle,
         onPressed: () => controller.handleSelect(checked: true),
-        child: const Text('全选'),
+        child: const Text('全選'),
       ),
       TextButton(
         style: btnStyle,
@@ -329,7 +329,7 @@ class _FavDetailPageState extends State<FavDetailPage>
           mediaId: controller.mediaId,
           mid: controller.account.mid,
         ),
-        child: Text('复制', style: textStyle),
+        child: Text('複製', style: textStyle),
       ),
       TextButton(
         style: btnStyle,
@@ -340,13 +340,13 @@ class _FavDetailPageState extends State<FavDetailPage>
           mediaId: controller.mediaId,
           mid: controller.account.mid,
         ),
-        child: Text('移动', style: textStyle),
+        child: Text('移動', style: textStyle),
       ),
       TextButton(
         style: btnStyle,
         onPressed: controller.onRemove,
         child: Text(
-          '删除',
+          '刪除',
           style: TextStyle(color: theme.colorScheme.error),
         ),
       ),
@@ -454,7 +454,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                             const SizedBox(height: 4),
                           ],
                           Text(
-                            '共${folderInfo.mediaCount}条视频 · '
+                            '共${folderInfo.mediaCount}條影片 · '
                             '${BiliUtils.isPublicFavText(folderInfo.attr)}',
                             style: style,
                           ),
@@ -488,7 +488,7 @@ class _FavDetailPageState extends State<FavDetailPage>
                       height: 60,
                       alignment: Alignment.center,
                       child: Text(
-                        controller.isEnd ? '没有更多了' : '加载中...',
+                        controller.isEnd ? '沒有更多了' : '載入中...',
                         style: TextStyle(
                           color: theme.colorScheme.outline,
                           fontSize: 13,

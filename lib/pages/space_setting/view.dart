@@ -22,7 +22,7 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('空间设置')),
+      appBar: AppBar(title: const Text('空間設定')),
       body: Obx(() => _buildBody(theme, _controller.loadingState.value)),
     );
   }

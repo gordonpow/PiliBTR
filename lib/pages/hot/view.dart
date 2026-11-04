@@ -96,7 +96,7 @@ class _HotPageState extends State<HotPage>
                     ),
                     _buildEntranceItem(
                       iconUrl: 'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
-                      title: '每周必看',
+                      title: '每週必看',
                       onTap: () => Get.toNamed('/popularSeries'),
                     ),
                     _buildEntranceItem(

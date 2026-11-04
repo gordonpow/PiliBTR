@@ -3,25 +3,25 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 
 enum SearchType implements EnumWithLabel {
-  all('综合', api: Api.searchAll),
+  all('綜合', api: Api.searchAll),
   // 番剧：media_bangumi,
-  media_bangumi('番剧'),
+  media_bangumi('番劇'),
   // 影视：media_ft
-  media_ft('影视'),
+  media_ft('影視'),
   // 直播间及主播：live
   // live,
   // 直播间：live_room
-  live_room('直播间'),
+  live_room('直播間'),
   // 主播：live_user
   // live_user,
   // 话题：topic
   // topic,
   // 用户：bili_user
-  bili_user('用户'),
+  bili_user('使用者'),
   // 专栏：article
-  article('专栏'),
+  article('專欄'),
   // 视频：video
-  video('视频'),
+  video('影片'),
   ;
 
   // 相簿：photo

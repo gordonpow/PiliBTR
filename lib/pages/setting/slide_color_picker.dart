@@ -170,7 +170,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
                   Get.back();
                   widget.onChanged(DmUtils.decimalToColor(_rgb));
                 },
-                child: const Text('确定'),
+                child: const Text('確定'),
               ),
               const SizedBox(width: 16),
             ],

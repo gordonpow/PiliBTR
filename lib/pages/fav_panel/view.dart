@@ -97,7 +97,7 @@ class _FavPanelState extends State<FavPanel> {
                     minLeadingWidth: 0,
                     title: Text(item.title),
                     subtitle: Text(
-                      '${NumUtils.numFormat(item.mediaCount)}个内容${isFull ? '(已满)' : ''} · ${BiliUtils.isPublicFavText(item.attr)}',
+                      '${NumUtils.numFormat(item.mediaCount)}個內容${isFull ? '(已滿)' : ''} · ${BiliUtils.isPublicFavText(item.attr)}',
                       style: textStyle,
                     ),
                     trailing: isFull
@@ -140,11 +140,11 @@ class _FavPanelState extends State<FavPanel> {
         AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
-            tooltip: '关闭',
+            tooltip: '關閉',
             onPressed: Get.back,
             icon: const Icon(Icons.close_outlined),
           ),
-          title: const Text('添加到收藏夹'),
+          title: const Text('新增到收藏夾'),
           actions: [
             TextButton.icon(
               onPressed: () => Get.toNamed('/createFav')?.then((data) {
@@ -159,7 +159,7 @@ class _FavPanelState extends State<FavPanel> {
                 }
               }),
               icon: Icon(Icons.add, color: colorScheme.primary),
-              label: const Text('新建收藏夹'),
+              label: const Text('新建收藏夾'),
               style: const ButtonStyle(
                 visualDensity: .compact,
                 padding: WidgetStatePropertyAll(

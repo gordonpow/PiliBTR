@@ -295,7 +295,7 @@ final class Parser {
       if (token == null) {
         if (endToken != null) {
           final expected = _pairs[endToken] ?? endToken;
-          throw ParseError('缺少闭合定界符 $expected');
+          throw ParseError('缺少閉合定界符 $expected');
         }
         return items;
       }
@@ -370,7 +370,7 @@ final class Parser {
   TexNode _parseItem() {
     final token = _peek();
     if (token == null) {
-      throw ParseError('意外的输入结束');
+      throw ParseError('意外的輸入結束');
     }
     pos++;
     switch (token.kind) {
@@ -477,7 +477,7 @@ final class Parser {
     while (true) {
       final token = _peek();
       if (token == null) {
-        throw ParseError('环境 $envName 缺少 \\end{$envName}');
+        throw ParseError('環境 $envName 缺少 \\end{$envName}');
       }
       if (token.kind == TokenKind.cmd) {
         pos++;
@@ -490,7 +490,7 @@ final class Parser {
             return items;
           }
           throw ParseError(
-            '环境闭合不匹配: \\begin{$envName} 对 \\end{$endName}',
+            '環境閉合不匹配: \\begin{$envName} 對 \\end{$endName}',
           );
         }
         items.add(

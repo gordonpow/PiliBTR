@@ -127,13 +127,13 @@ abstract final class ReplyUtils {
                     },
                   );
                 },
-                child: const Text('申诉'),
+                child: const Text('申訴'),
               ),
             if (!isManual)
               TextButton(
                 onPressed: Get.back,
                 child: Text(
-                  '关闭',
+                  '關閉',
                   style: TextStyle(color: colorScheme.outline),
                 ),
               ),
@@ -157,7 +157,7 @@ abstract final class ReplyUtils {
                           ),
                   ),
                   TextSpan(
-                    text: ' 评论检查结果',
+                    text: ' 評論檢查結果',
                     style: TextStyle(color: color),
                   ),
                 ],
@@ -183,14 +183,14 @@ abstract final class ReplyUtils {
       );
 
       if (res case Error(:final errMsg)) {
-        SmartDialog.showToast('获取评论主列表时发生错误：$errMsg');
+        SmartDialog.showToast('獲取評論主列表時發生錯誤：$errMsg');
         return;
       } else if (res case Success(:final response)) {
         final index =
             response.replies?.indexWhere((item) => item.rpid == id) ?? -1;
         if (index != -1) {
           // found
-          showReplyCheckResult('无账号状态下找到了你的评论，评论正常！\n\n你的评论：$message');
+          showReplyCheckResult('無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
         } else {
           // not found
 
@@ -205,7 +205,7 @@ abstract final class ReplyUtils {
 
           if (res1 is Error) {
             // not found
-            showReplyCheckResult('无法找到你的评论。\n\n你的评论：$message', isBan: true);
+            showReplyCheckResult('無法找到你的評論。\n\n你的評論：$message', isBan: true);
           } else {
             // found
 
@@ -223,21 +223,21 @@ abstract final class ReplyUtils {
               // not found
               showReplyCheckResult(
                 res2.errMsg?.startsWith('12022') == true
-                    ? '你的评论被shadow ban（仅自己可见）！\n\n你的评论: $message'
-                    : '评论不可见(${res2.errMsg}): $message',
+                    ? '你的評論被shadow ban（僅自己可見）！\n\n你的評論: $message'
+                    : '評論不可見(${res2.errMsg}): $message',
                 isBan: true,
               );
             } else {
               // found
               showReplyCheckResult(
                 isManual
-                    ? '无账号状态下找到了你的评论，评论正常！\n\n你的评论：$message'
+                    ? '無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message'
                     : '''
-你评论状态有点可疑，虽然无账号翻找评论区获取不到你的评论，但是无账号可通过
+你評論狀態有點可疑，雖然無賬號翻找評論區獲取不到你的評論，但是無賬號可通過
 https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$type
-获取你的评论，疑似评论区被戒严或者这是你的视频。
+獲取你的評論，疑似評論區被戒嚴或者這是你的影片。
 
-你的评论：$message''',
+你的評論：$message''',
               );
             }
           }
@@ -265,7 +265,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
             // not found
           } else {
             // found
-            showReplyCheckResult('无账号状态下找到了你的评论，评论正常！\n\n你的评论：$message');
+            showReplyCheckResult('無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
             return;
           }
         }
@@ -293,7 +293,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
           } else {
             // found
             showReplyCheckResult(
-              '你的评论被shadow ban（仅自己可见）！\n\n你的评论: $message',
+              '你的評論被shadow ban（僅自己可見）！\n\n你的評論: $message',
               isBan: true,
             );
             return;
@@ -301,7 +301,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
         }
       }
 
-      showReplyCheckResult('评论不可见: $message', isBan: true);
+      showReplyCheckResult('評論不可見: $message', isBan: true);
     }
   }
 }

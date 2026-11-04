@@ -22,11 +22,11 @@ abstract final class DateFormatUtils {
     final diff = now.difference(date);
 
     final diffInMins = diff.inMinutes;
-    if (diffInMins < 1) return '刚刚';
-    if (diffInMins < 60) return '$diffInMins分钟前';
+    if (diffInMins < 1) return '剛剛';
+    if (diffInMins < 60) return '$diffInMins分鐘前';
 
     final diffInHours = diff.inHours;
-    if (diffInHours < 24) return '$diffInHours小时前';
+    if (diffInHours < 24) return '$diffInHours小時前';
 
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(date.year, date.month, date.day);

@@ -63,7 +63,7 @@ class FavFolderItem extends StatelessWidget {
             style: const TextStyle(height: 1.42, letterSpacing: 0.3),
           ),
           Text(
-            ' 共${item.mediaCount}条视频 · ${BiliUtils.isPublicFavText(item.attr)}',
+            ' 共${item.mediaCount}條影片 · ${BiliUtils.isPublicFavText(item.attr)}',
             style: theme.textTheme.labelSmall!.copyWith(
               color: theme.colorScheme.outline,
             ),

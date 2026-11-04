@@ -166,11 +166,11 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
   @override
   bool handleError(String? errMsg) {
     tab2 = const [
-      SpaceTab2(title: '动态', param: 'dynamic'),
+      SpaceTab2(title: '動態', param: 'dynamic'),
       SpaceTab2(
         title: '投稿',
         param: 'contribute',
-        items: [SpaceTab2Item(title: '视频', param: 'video')],
+        items: [SpaceTab2Item(title: '影片', param: 'video')],
       ),
       SpaceTab2(title: '收藏', param: 'favorite'),
       SpaceTab2(title: '追番', param: 'bangumi'),
@@ -195,21 +195,21 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
   void blockUser(BuildContext context) {
     if (!account.isLogin) {
       Pref.setBlackMid(mid);
-      SmartDialog.showToast('屏蔽成功');
+      SmartDialog.showToast('遮蔽成功');
       return;
     }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('提示'),
-        content: Text(relation.value != 128 ? '确定拉黑UP主?' : '从黑名单移除UP主'),
+        content: Text(relation.value != 128 ? '確定拉黑UP主?' : '從黑名單移除UP主'),
         actions: [
           TextButton(
             onPressed: () {
               Get.back();
               Pref.setBlackMid(mid);
             },
-            child: const Text('本地屏蔽'),
+            child: const Text('本地遮蔽'),
           ),
           TextButton(
             onPressed: Get.back,
@@ -223,7 +223,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
               Get.back();
               _onBlock();
             },
-            child: const Text('确认'),
+            child: const Text('確認'),
           ),
         ],
       ),
@@ -253,7 +253,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
       _onBlock();
     } else {
       if (!account.isLogin) {
-        SmartDialog.showToast('账号未登录');
+        SmartDialog.showToast('賬號未登入');
         return;
       }
       RequestUtils.actionRelationMod(
@@ -293,7 +293,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
   Future<void> vipExpAdd() async {
     final res = await UserHttp.vipExpAdd();
     if (res.isSuccess) {
-      SmartDialog.showToast('领取成功');
+      SmartDialog.showToast('領取成功');
     } else {
       res.toast();
     }

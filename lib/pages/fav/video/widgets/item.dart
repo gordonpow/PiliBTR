@@ -88,7 +88,7 @@ class FavVideoItem extends StatelessWidget {
               ),
             ),
           Text(
-            '${item.mediaCount}个内容',
+            '${item.mediaCount}個內容',
             style: TextStyle(
               fontSize: fontSize,
               color: color,

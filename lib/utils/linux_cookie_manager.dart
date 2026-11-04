@@ -39,7 +39,7 @@ abstract final class LinuxCookieManager {
     ).clearAllWebsiteData();
     if (!result.isComplete) {
       final errors = result.failures.values.toSet().join('; ');
-      throw StateError(errors.isEmpty ? '未能清理全部网站数据' : errors);
+      throw StateError(errors.isEmpty ? '未能清理全部網站資料' : errors);
     }
   }
 

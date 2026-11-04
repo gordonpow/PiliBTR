@@ -91,6 +91,13 @@ Future<void> _initAppPath() async {
   appSupportDirPath = (await getApplicationSupportDirectory()).path;
 }
 
+// PiliBTR shows its UI in Traditional Chinese (Taiwan).
+const _zhTW = Locale.fromSubtags(
+  languageCode: 'zh',
+  scriptCode: 'Hant',
+  countryCode: 'TW',
+);
+
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
@@ -299,9 +306,9 @@ class MyApp extends StatelessWidget {
       darkTheme: dark,
       themeMode: ThemeUtils.themeMode = Pref.themeMode,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      locale: const Locale("zh", "CN"),
-      fallbackLocale: const Locale("zh", "CN"),
-      supportedLocales: const [Locale("zh", "CN"), Locale("en", "US")],
+      locale: _zhTW,
+      fallbackLocale: _zhTW,
+      supportedLocales: const [_zhTW, Locale("zh", "CN"), Locale("en", "US")],
       initialRoute: '/',
       getPages: Routes.getPages,
       defaultTransition: Pref.pageTransition,

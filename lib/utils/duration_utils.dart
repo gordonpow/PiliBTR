@@ -47,8 +47,8 @@ abstract final class DurationUtils {
     if (years > 0) format.write('$years年');
     if (months > 0) format.write('$months月');
     if (days > 0) format.write('$days天');
-    if (hours > 0) format.write('$hours小时');
-    if (minutes > 0) format.write('$minutes分钟');
+    if (hours > 0) format.write('$hours小時');
+    if (minutes > 0) format.write('$minutes分鐘');
 
     return format.toString();
   }

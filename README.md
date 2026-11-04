@@ -1,4 +1,6 @@
-# PiliPlus 線程撕裂者版（PiliPlus BTR）
+# PiliBTR（PiliPlus 線程撕裂者版）
+
+<img src="assets/images/logo/logo.png" width="96" alt="PiliBTR icon">
 
 本版本 fork 自 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)，加入「線程撕裂者」（Bilibili Thread Ripper，BTR）的多 CDN 並行加速。設計參考 [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)（MIT），並移植到 Android 手機。
 
@@ -19,8 +21,10 @@
 | CDN 模式 | 大陸（9 個節點）、海外（4 個節點）、自訂（最多 32 個） |
 | 線程數 | 自動（推薦），或手動選 4、8、16、32、64、128 |
 | 容錯 | 自動停用壞節點，依速度挑節點，卡住時補抓，最後可退回原網址 |
+| 繁體中文介面 | 全部介面文字改為繁體中文（台灣用語），系統元件使用 zh_TW 語系 |
+| App 名稱與圖示 | App 名稱改為 PiliBTR，新圖示：撕成 4 條線程的播放鍵 |
 
-設定位置：**設定 → 影片設定 → 线程撕裂者（多 CDN 加速）**
+設定位置：**設定 → 影片設定 → 線程撕裂者（多 CDN 加速）**
 
 ## 架構
 
@@ -96,6 +100,10 @@
 | `lib/plugin/pl_player/controller.dart` | 播放網址改經過代理 |
 | `lib/pages/setting/models/video_settings.dart` | 加入設定入口 |
 | `lib/utils/storage_key.dart` | 加入 6 個設定鍵 |
+| `lib/scripts/to_traditional.py`、`lib/scripts/dartlex.py` | 新增：把介面字串轉成繁體中文的腳本 |
+| `lib/main.dart` | 語系改為 zh_TW |
+| `lib/common/constants.dart`、`lib/http/api.dart` | App 名稱、原始碼網址、檢查更新改指向 PiliBTR |
+| `assets/images/logo/`、`android/app/src/main/res/` | 新圖示、啟動畫面、App 名稱 |
 
 ## 建置（Windows，Android）
 
@@ -103,6 +111,19 @@
 2. 開啟 Windows 開發人員模式，並執行 `git config --global core.longpaths true`。
 3. PiliPlus 需要先修補 Flutter SDK 和 `material_ui` 套件。設定環境變數 `FLUTTER_ROOT` 和 `GITHUB_WORKSPACE`，再執行 `lib/scripts/patch.ps1 android`。在 Windows 上，要把腳本裡的 `~/.pub-cache` 改成 `$env:LOCALAPPDATA/Pub/Cache`。
 4. 執行 `flutter build apk --release --split-per-abi`。
+
+### 繁體中文轉換
+
+上游 PiliPlus 的介面字串是簡體中文，直接寫在 Dart 程式裡。本版本用 [OpenCC](https://github.com/BYVoid/OpenCC)（`s2twp`，台灣用語）轉換字串常數，註解和程式碼不變。和 Bilibili 伺服器回傳的簡體文字做比對的字串會保留簡體，清單在腳本的 `PROTECT` 裡。
+
+每次合併上游之後，執行：
+
+```sh
+pip install opencc
+python lib/scripts/to_traditional.py
+```
+
+腳本可以重複執行。影片標題、評論等伺服器內容仍是原文。
 
 ## 授權
 

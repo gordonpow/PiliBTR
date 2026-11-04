@@ -11,7 +11,7 @@ mixin PageOrderBtnMixin<S extends StatefulWidget, R, T> on State<S> {
           ? const Icon(MdiIcons.sortNumericDescending)
           : const Icon(MdiIcons.sortNumericAscending),
       initialValue: controller.pageDesc,
-      tooltip: '页码顺序',
+      tooltip: '頁碼順序',
       onSelected: (value) {
         controller.updatePageOrder(value);
         (context as Element).markNeedsBuild();

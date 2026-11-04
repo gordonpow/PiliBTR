@@ -50,12 +50,12 @@ class MineController extends GetxController with AccountMixin {
   late final list = <({IconData icon, String title, VoidCallback onTap})>[
     (
       icon: CustomIcons.folderDownloadOutline,
-      title: '离线缓存',
+      title: '離線快取',
       onTap: () => Get.toNamed('/download'),
     ),
     (
       icon: CustomIcons.history,
-      title: '观看记录',
+      title: '觀看記錄',
       onTap: () {
         if (isLogin) {
           Get.toNamed('/history');
@@ -64,7 +64,7 @@ class MineController extends GetxController with AccountMixin {
     ),
     (
       icon: CustomIcons.subscriptions_outlined,
-      title: '我的订阅',
+      title: '我的訂閱',
       onTap: () {
         if (isLogin) {
           Get.toNamed('/subscription');
@@ -73,7 +73,7 @@ class MineController extends GetxController with AccountMixin {
     ),
     (
       icon: CustomIcons.watch_later_outlined,
-      title: '稍后再看',
+      title: '稍後再看',
       onTap: () {
         if (isLogin) {
           Get.toNamed('/later');
@@ -162,7 +162,7 @@ class MineController extends GetxController with AccountMixin {
 
   static void onChangeAnonymity() {
     if (Accounts.account.isEmpty) {
-      SmartDialog.showToast('请先登录');
+      SmartDialog.showToast('請先登入');
       return;
     }
     final newVal = !anonymity.value;
@@ -196,17 +196,17 @@ class MineController extends GetxController with AccountMixin {
                     children: <Widget>[
                       const Icon(MdiIcons.incognito, size: 20),
                       const SizedBox(width: 10),
-                      Text('已进入无痕模式', style: theme.textTheme.titleMedium),
+                      Text('已進入無痕模式', style: theme.textTheme.titleMedium),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '搜索不携带身份信息\n'
-                    '不产生查询或播放记录\n'
-                    '点赞等其它操作不受影响\n'
-                    '播放进度信息跟随视频取流\n'
-                    '上次观看分p信息跟随主账号\n'
-                    '(前往隐私设置了解详情)',
+                    '搜尋不攜帶身份資訊\n'
+                    '不產生查詢或播放記錄\n'
+                    '點贊等其它操作不受影響\n'
+                    '播放進度資訊跟隨影片取流\n'
+                    '上次觀看分p資訊跟隨主賬號\n'
+                    '(前往隱私設定瞭解詳情)',
                     style: theme.textTheme.bodySmall,
                   ),
                   Row(
@@ -215,17 +215,17 @@ class MineController extends GetxController with AccountMixin {
                       TextButton(
                         onPressed: () {
                           SmartDialog.dismiss(result: true);
-                          SmartDialog.showToast('已设为永久无痕模式');
+                          SmartDialog.showToast('已設為永久無痕模式');
                         },
-                        child: Text('保存为永久', style: style),
+                        child: Text('儲存為永久', style: style),
                       ),
                       const SizedBox(width: 10),
                       TextButton(
                         onPressed: () {
                           SmartDialog.dismiss();
-                          SmartDialog.showToast('已设为临时无痕模式');
+                          SmartDialog.showToast('已設為臨時無痕模式');
                         },
-                        child: Text('仅本次（默认）', style: style),
+                        child: Text('僅本次（預設）', style: style),
                       ),
                     ],
                   ),
@@ -266,7 +266,7 @@ class MineController extends GetxController with AccountMixin {
                 children: [
                   const Icon(MdiIcons.incognitoOff, size: 20),
                   const SizedBox(width: 10),
-                  Text('已退出无痕模式', style: theme.textTheme.titleMedium),
+                  Text('已退出無痕模式', style: theme.textTheme.titleMedium),
                 ],
               ),
             ),

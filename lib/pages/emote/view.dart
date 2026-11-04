@@ -191,7 +191,7 @@ class _EmotePanelState extends State<EmotePanel>
     child: TextButton.icon(
       onPressed: _emotePanelController.onReload,
       icon: const Icon(Icons.refresh),
-      label: Text(errMsg ?? '没有数据'),
+      label: Text(errMsg ?? '沒有資料'),
     ),
   );
 }

@@ -194,7 +194,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                                 TextSpan(
                                   text: hasTopic
                                       ? _topic.value!.second
-                                      : '选择话题',
+                                      : '選擇話題',
                                   style: TextStyle(
                                     color: hasTopic
                                         ? null
@@ -226,7 +226,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                   controller: _titleEditCtr,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
-                    hintText: '标题，选填20字',
+                    hintText: '標題，選填20字',
                     isDense: true,
                     visualDensity: .standard,
                     contentPadding: EdgeInsets.zero,
@@ -349,7 +349,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
         ),
         Center(
           child: Text(
-            _isEdit ? '编辑动态' : '发布动态',
+            _isEdit ? '編輯動態' : '釋出動態',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
         ),
@@ -366,7 +366,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                 ),
                 visualDensity: VisualDensity.compact,
               ),
-              child: Text(_publishTime.value == null ? '发布' : '定时发布'),
+              child: Text(_publishTime.value == null ? '釋出' : '定時釋出'),
             ),
           ),
         ),
@@ -395,7 +395,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                 index == 0 ? Icons.visibility : Icons.visibility_off,
               ),
               const SizedBox(width: 4),
-              Text(index == 0 ? '所有人可见' : '仅自己可见'),
+              Text(index == 0 ? '所有人可見' : '僅自己可見'),
             ],
           ),
         ),
@@ -412,7 +412,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
             ),
             const SizedBox(width: 4),
             Text(
-              _isPrivate.value ? '仅自己可见' : '所有人可见',
+              _isPrivate.value ? '僅自己可見' : '所有人可見',
               style: TextStyle(
                 height: 1,
                 color: color,
@@ -523,12 +523,12 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                     if (selectedTime != null) {
                       if (selectedDate.day == nowDate.day) {
                         if (selectedTime.hour < nowTime.hour) {
-                          SmartDialog.showToast('时间设置错误，至少选择6分钟之后');
+                          SmartDialog.showToast('時間設定錯誤，至少選擇6分鐘之後');
                           return;
                         } else if (selectedTime.hour == nowTime.hour) {
                           if (selectedTime.minute < nowTime.minute + 6) {
                             if (selectedDate.day == nowDate.day) {
-                              SmartDialog.showToast('时间设置错误，至少选择6分钟之后');
+                              SmartDialog.showToast('時間設定錯誤，至少選擇6分鐘之後');
                             }
                             return;
                           }
@@ -544,7 +544,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                     }
                   }
                 },
-          child: const Text('定时发布'),
+          child: const Text('定時釋出'),
         )
       : OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
@@ -638,7 +638,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
           item(
             onTap: _onReserve,
             icon: Icon(CustomIcons.live_reserve, size: 28, color: color),
-            title: '直播预约',
+            title: '直播預約',
           ),
         ],
       ),
@@ -680,7 +680,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
             ..value = newValue;
         } else {
           onInsertText(
-            '我发起了一个投票',
+            '我發起了一個投票',
             RichTextType.text,
           );
           onInsertText(
@@ -706,7 +706,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
     onChanged: onChanged,
     onSubmitted: onSubmitted,
     decoration: InputDecoration(
-      hintText: '说点什么吧',
+      hintText: '說點什麼吧',
       visualDensity: .standard,
       hintStyle: TextStyle(color: theme.colorScheme.outline),
       border: const OutlineInputBorder(
@@ -723,7 +723,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
 
   @override
   Future<void> onCustomPublish({List? pictures}) async {
-    SmartDialog.showLoading(msg: '正在发布');
+    SmartDialog.showLoading(msg: '正在釋出');
     List<Map<String, dynamic>>? extraContent = getRichContent();
     final hasRichText = extraContent != null;
 
@@ -744,7 +744,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
       if (res.isSuccess) {
         hasPub = true;
         Get.back();
-        SmartDialog.showToast('发布成功');
+        SmartDialog.showToast('釋出成功');
         widget.onSuccess?.call();
       } else {
         res.toast();
@@ -780,7 +780,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
     if (res case Success(:final response)) {
       hasPub = true;
       Get.back();
-      SmartDialog.showToast('发布成功');
+      SmartDialog.showToast('釋出成功');
       final id = response?['dyn_id'];
       RequestUtils.insertCreatedDyn(id);
       if (!_isPrivate.value && _publishTime.value == null) {
@@ -833,7 +833,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                   spacing: 3,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('直播预约: ${reserveCard.title}'),
+                    Text('直播預約: ${reserveCard.title}'),
                     Text(
                       '${DateFormatUtils.longFormatD.format(
                         DateTime.fromMillisecondsSinceEpoch(reserveCard.livePlanStartTime! * 1000),
