@@ -730,7 +730,7 @@ class LiveRoomController extends GetxController {
   }
 
   void toastNotLogin() {
-    SmartDialog.showToast('賬號未登入');
+    SmartDialog.showToast('帳號未登入');
   }
 
   void onSendDanmaku([bool fromEmote = false]) {

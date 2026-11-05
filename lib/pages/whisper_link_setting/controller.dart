@@ -66,7 +66,7 @@ class WhisperLinkSettingController extends GetxController {
       showConfirmDialog(
         context: Get.context!,
         title: const Text('確認關閉內容推送嗎？'),
-        content: const Text('若關閉此開關，你將不再收到該賬號的圖文訊息與稿件推送，但通知類訊息不受影響'),
+        content: const Text('若關閉此開關，你將不再收到該帳號的圖文訊息與稿件推送，但通知類訊息不受影響'),
         onConfirm: () => _setPush(isPush),
       );
       return;

@@ -476,7 +476,7 @@ class AudioController extends GetxController
   @override
   Future<void> actionLikeVideo() async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final newVal = !hasLike.value;
@@ -505,7 +505,7 @@ class AudioController extends GetxController
   @override
   Future<void> actionTriple() async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final res = await AudioGrpc.audioTripleLike(
@@ -574,7 +574,7 @@ class AudioController extends GetxController
   @override
   void showFavBottomSheet(BuildContext context, {bool isLongPress = false}) {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     if (enableQuickFav) {

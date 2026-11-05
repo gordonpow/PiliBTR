@@ -86,7 +86,7 @@ class ZanButtonGrpc extends StatelessWidget {
   }
 
   static void _toastNotLogin() {
-    SmartDialog.showToast('賬號未登入');
+    SmartDialog.showToast('帳號未登入');
   }
 
   @override

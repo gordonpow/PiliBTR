@@ -27,7 +27,7 @@ List<SettingsModel> get privacySettings => [
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('賬號模式詳情'),
+          title: const Text('帳號模式詳情'),
           content: SelectionArea(
             child: SingleChildScrollView(
               child: _getAccountDetail(context),
@@ -43,8 +43,8 @@ List<SettingsModel> get privacySettings => [
       );
     },
     leading: const Icon(Icons.flag_outlined),
-    title: '瞭解賬號模式',
-    subtitle: '檢視各個賬號模式作用的API列表',
+    title: '瞭解帳號模式',
+    subtitle: '檢視各個帳號模式作用的API列表',
   ),
 ];
 

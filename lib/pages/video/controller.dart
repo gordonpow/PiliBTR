@@ -798,7 +798,7 @@ class VideoDetailController extends GetxController
   void setLanguage(String language) {
     if (currLang.value == language) return;
     if (!isLoginVideo) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     currLang.value = language;

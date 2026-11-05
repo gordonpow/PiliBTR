@@ -23,7 +23,7 @@ class BlackListController
     if (Accounts.main.isLogin) {
       queryData();
     } else {
-      loadingState.value = const Error('賬號未登入');
+      loadingState.value = const Error('帳號未登入');
     }
   }
 

@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       children: [
         const SizedBox(height: 20),
-        const Text('使用賬號密碼登入'),
+        const Text('使用帳號密碼登入'),
         const SizedBox(height: 20),
         Padding(
           padding: const .symmetric(horizontal: 20),
@@ -236,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.account_box),
                     border: const UnderlineInputBorder(),
-                    labelText: '賬號',
+                    labelText: '帳號',
                     hintText: '郵箱/手機號',
                     suffixIcon: IconButton(
                       onPressed: _loginPageCtr.usernameTextController.clear,
@@ -349,7 +349,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Text(
             '根據 bilibili 官方登入介面規範，密碼將在本地加鹽、加密後傳輸。\n'
             '鹽與公鑰均由官方提供；以 RSA/ECB/PKCS1Padding 方式加密。\n'
-            '賬號密碼僅用於該登入介面，不予儲存；本地僅儲存登入憑證。\n'
+            '帳號密碼僅用於該登入介面，不予儲存；本地僅儲存登入憑證。\n'
             '請務必在 ${Constants.appName} 開源倉庫等可信渠道下載安裝。',
             textAlign: TextAlign.center,
             style: theme.textTheme.labelSmall!.copyWith(

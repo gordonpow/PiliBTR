@@ -258,7 +258,7 @@ class SearchVideoController
                   ).toList(),
                 ),
                 const SizedBox(height: 20),
-                const Text('內容分割槽', style: TextStyle(fontSize: 16)),
+                const Text('內容分區', style: TextStyle(fontSize: 16)),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,

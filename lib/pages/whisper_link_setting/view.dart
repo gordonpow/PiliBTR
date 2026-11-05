@@ -193,7 +193,7 @@ class _WhisperLinkSettingPageState extends State<WhisperLinkSettingPage> {
                   onTap: () => _controller.setPush(response.pushSetting == 0),
                   title: const Text('接收訊息推送', style: TextStyle(fontSize: 14)),
                   subtitle: Text(
-                    '若關閉此開關，你將不再收到該賬號的圖文訊息與稿件推送，但通知類訊息不受影響',
+                    '若關閉此開關，你將不再收到該帳號的圖文訊息與稿件推送，但通知類訊息不受影響',
                     style: subTitleS,
                   ),
                   trailing: Transform.scale(

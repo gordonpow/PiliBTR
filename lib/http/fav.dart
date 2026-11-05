@@ -417,7 +417,7 @@ abstract final class FavHttp {
     if (res.data['code'] == 0) {
       return Success(FavFolderData.fromJson(res.data['data']));
     } else {
-      return Error(res.data['message'] ?? '賬號未登入');
+      return Error(res.data['message'] ?? '帳號未登入');
     }
   }
 

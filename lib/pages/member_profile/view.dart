@@ -70,7 +70,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return SimpleScaffold(
-      appBar: AppBar(title: const Text('賬號資料')),
+      appBar: AppBar(title: const Text('帳號資料')),
       body: _buildBody(),
     );
   }
@@ -340,7 +340,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }) async {
     final accessKey = Accounts.main.accessKey;
     if (accessKey == null || accessKey.isEmpty) {
-      SmartDialog.showToast('請退出賬號後重新登入');
+      SmartDialog.showToast('請退出帳號後重新登入');
       return;
     }
     final data = <String, String>{

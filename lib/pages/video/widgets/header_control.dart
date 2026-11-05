@@ -607,7 +607,7 @@ class HeaderControlState extends State<HeaderControl>
                             iconData: Icons.play_circle_outline,
                             onTap:
                                 plPlayerController.setContinuePlayInBackground,
-                            text: " 後臺播放 ",
+                            text: " 背景播放 ",
                             selectStatus: plPlayerController
                                 .continuePlayInBackground
                                 .value,
@@ -786,7 +786,7 @@ class HeaderControlState extends State<HeaderControl>
                   dense: true,
                   onTap: () {
                     if (!Accounts.main.isLogin) {
-                      SmartDialog.showToast('賬號未登入');
+                      SmartDialog.showToast('帳號未登入');
                       return;
                     }
                     Get.back();

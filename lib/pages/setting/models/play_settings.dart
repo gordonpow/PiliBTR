@@ -321,24 +321,31 @@ List<SettingsModel> get playSettings => [
   ),
   if (PlatformUtils.isMobile)
     const SwitchModel(
-      title: '後臺播放',
-      subtitle: '進入後臺時繼續播放',
+      title: '背景播放',
+      subtitle: '進入背景時繼續播放',
       leading: Icon(Icons.motion_photos_pause_outlined),
       setKey: SettingBoxKey.continuePlayInBackground,
       defaultVal: false,
     ),
+  const SwitchModel(
+    title: '返回時縮小為小視窗',
+    subtitle: '離開影片頁時，在 App 內以小視窗繼續播放（類似 YouTube）',
+    leading: Icon(Icons.picture_in_picture_alt_outlined),
+    setKey: SettingBoxKey.miniPlayerOnBack,
+    defaultVal: true,
+  ),
   if ((Platform.isAndroid && PiliAndroidHelper.isPipAvailable) ||
       (Platform.isIOS && IOSPipHelper.isAvailable))
     SwitchModel(
-      title: '後臺畫中畫',
-      subtitle: '進入後臺時以小窗形式（PiP）播放',
+      title: '背景畫中畫',
+      subtitle: '進入背景時以小窗形式（PiP）播放',
       leading: const Icon(Icons.picture_in_picture_outlined),
       setKey: SettingBoxKey.autoPiP,
       defaultVal: false,
       onChanged: Platform.isAndroid
           ? (val) {
               if (val && !videoPlayerServiceHandler!.enableBackgroundPlay) {
-                SmartDialog.showToast('建議開啟後臺音訊服務');
+                SmartDialog.showToast('建議開啟背景音訊服務');
               }
             }
           : null,
@@ -389,7 +396,7 @@ List<SettingsModel> get playSettings => [
   ),
   if (PlatformUtils.isMobile)
     SwitchModel(
-      title: '後臺音訊服務',
+      title: '背景音訊服務',
       subtitle: '避免畫中畫沒有播放暫停功能',
       leading: const Icon(Icons.volume_up_outlined),
       setKey: SettingBoxKey.enableBackgroundPlay,

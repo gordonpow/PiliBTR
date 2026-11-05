@@ -205,7 +205,7 @@ class MineController extends GetxController with AccountMixin {
                     '不產生查詢或播放記錄\n'
                     '點贊等其它操作不受影響\n'
                     '播放進度資訊跟隨影片取流\n'
-                    '上次觀看分p資訊跟隨主賬號\n'
+                    '上次觀看分p資訊跟隨主帳號\n'
                     '(前往隱私設定瞭解詳情)',
                     style: theme.textTheme.bodySmall,
                   ),

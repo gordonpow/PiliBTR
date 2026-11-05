@@ -17,7 +17,7 @@ enum HomeTabType implements EnumWithLabel {
   live('直播'),
   rcmd('推薦'),
   hot('熱門'),
-  rank('分割槽'),
+  rank('分區'),
   bangumi('番劇'),
   cinema('影視'),
   ;

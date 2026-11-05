@@ -46,7 +46,7 @@ class _SettingPageState extends State<SettingPage> {
   static const List<_SettingsModel> _items = [
     _SettingsModel(
       type: .privacySetting,
-      subtitle: '賬號、黑名單',
+      subtitle: '帳號、黑名單',
       icon: Icon(Icons.privacy_tip_outlined),
     ),
     _SettingsModel(
@@ -61,7 +61,7 @@ class _SettingPageState extends State<SettingPage> {
     ),
     _SettingsModel(
       type: .playSetting,
-      subtitle: '雙擊/長按、全屏、後臺播放、彈幕、字幕、底部進度條等',
+      subtitle: '雙擊/長按、全屏、背景播放、彈幕、字幕、底部進度條等',
       icon: Icon(Icons.touch_app_outlined),
     ),
     _SettingsModel(
@@ -198,7 +198,7 @@ class _SettingPageState extends State<SettingPage> {
         ListTile(
           onTap: () => LoginPageController.switchAccountDialog(context),
           leading: const Icon(Icons.switch_account_outlined),
-          title: Text('切換賬號', style: titleStyle),
+          title: Text('切換帳號', style: titleStyle),
         ),
         Obx(
           () => _noAccount.value
@@ -238,7 +238,7 @@ class _SettingPageState extends State<SettingPage> {
     final result = await showDialog<Set<LoginAccount>>(
       context: context,
       builder: (context) => MultiSelectDialog<LoginAccount>(
-        title: '選擇要登出的賬號uid',
+        title: '選擇要登出的帳號uid',
         initValues: const Iterable.empty(),
         values: {
           for (final i in Accounts.account.values) i: i.mid.toString(),
@@ -253,7 +253,7 @@ class _SettingPageState extends State<SettingPage> {
         return AlertDialog(
           title: const Text('提示'),
           content: Text(
-            "確認要退出以下賬號登入嗎\n\n${result.map((i) => i.mid).join('\n')}",
+            "確認要退出以下帳號登入嗎\n\n${result.map((i) => i.mid).join('\n')}",
           ),
           actions: [
             TextButton(
@@ -280,14 +280,14 @@ class _SettingPageState extends State<SettingPage> {
                 SmartDialog.dismiss();
                 final logoutAccounts = res.nonNulls.toSet();
                 if (logoutAccounts.isEmpty) {
-                  SmartDialog.showToast('所選賬號均退出登入失敗');
+                  SmartDialog.showToast('所選帳號均退出登入失敗');
                 } else {
                   Get.back();
                   _removeAccounts(logoutAccounts);
                   if (logoutAccounts.length != result.length) {
                     result.removeWhere(logoutAccounts.contains);
                     SmartDialog.showToast(
-                      '賬號 ${result.map((i) => i.mid).join(",")} 退出登入失敗',
+                      '帳號 ${result.map((i) => i.mid).join(",")} 退出登入失敗',
                     );
                   }
                 }

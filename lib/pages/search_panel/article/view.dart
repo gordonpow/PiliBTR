@@ -61,7 +61,7 @@ class _SearchArticlePanelState
             const Spacer(),
             Obx(
               () => Text(
-                '分割槽: ${controller.articleZoneType!.value.label}',
+                '分區: ${controller.articleZoneType!.value.label}',
                 maxLines: 1,
                 style: TextStyle(color: colorScheme.outline),
               ),

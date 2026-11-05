@@ -158,7 +158,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                   ),
                 );
               } else {
-                SmartDialog.showToast('賬號未登入');
+                SmartDialog.showToast('帳號未登入');
               }
             },
             icon: const Icon(CustomIcons.topic_tag, size: 20),
@@ -333,7 +333,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                   child: const Text('舉報'),
                   onTap: () {
                     if (!_controller.isLogin) {
-                      SmartDialog.showToast('賬號未登入');
+                      SmartDialog.showToast('帳號未登入');
                       return;
                     }
                     PageUtils.inAppWebview(

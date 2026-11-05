@@ -422,7 +422,7 @@ class UserInfoCard extends StatelessWidget {
               ),
             ),
             TextSpan(
-              text: ' 該賬號封禁中',
+              text: ' 該帳號封禁中',
               style: TextStyle(
                 color: isLight
                     ? colorScheme.onErrorContainer

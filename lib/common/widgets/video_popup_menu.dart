@@ -103,7 +103,7 @@ class VideoPopupMenu extends StatelessWidget {
                       final rcmd = Accounts.get(.recommend);
                       if (rcmd.accessKey == null || rcmd.accessKey == "") {
                         SmartDialog.showToast(
-                          rcmd.isLogin ? '請退出賬號後重新登入' : '賬號未登入',
+                          rcmd.isLogin ? '請退出帳號後重新登入' : '帳號未登入',
                         );
                         return;
                       }

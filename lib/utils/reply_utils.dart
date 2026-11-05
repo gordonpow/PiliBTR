@@ -190,7 +190,7 @@ abstract final class ReplyUtils {
             response.replies?.indexWhere((item) => item.rpid == id) ?? -1;
         if (index != -1) {
           // found
-          showReplyCheckResult('無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
+          showReplyCheckResult('無帳號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
         } else {
           // not found
 
@@ -231,9 +231,9 @@ abstract final class ReplyUtils {
               // found
               showReplyCheckResult(
                 isManual
-                    ? '無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message'
+                    ? '無帳號狀態下找到了你的評論，評論正常！\n\n你的評論：$message'
                     : '''
-你評論狀態有點可疑，雖然無賬號翻找評論區獲取不到你的評論，但是無賬號可通過
+你評論狀態有點可疑，雖然無帳號翻找評論區獲取不到你的評論，但是無帳號可通過
 https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$type
 獲取你的評論，疑似評論區被戒嚴或者這是你的影片。
 
@@ -265,7 +265,7 @@ https://api.bilibili.com/x/v2/reply/reply?oid=$oid&pn=1&ps=20&root=$id&type=$typ
             // not found
           } else {
             // found
-            showReplyCheckResult('無賬號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
+            showReplyCheckResult('無帳號狀態下找到了你的評論，評論正常！\n\n你的評論：$message');
             return;
           }
         }

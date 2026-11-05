@@ -189,7 +189,7 @@ class FavDetailController
 
   Future<void> onFav(bool isFav) async {
     if (!account.isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final res = isFav

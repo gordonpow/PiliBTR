@@ -205,7 +205,7 @@ mixin FavMixin on TripleMixin {
   // 收藏
   void showFavBottomSheet(BuildContext context, {bool isLongPress = false}) {
     if (!Accounts.main.isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     // 快速收藏 &

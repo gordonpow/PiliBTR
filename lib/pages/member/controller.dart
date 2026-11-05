@@ -253,7 +253,7 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
       _onBlock();
     } else {
       if (!account.isLogin) {
-        SmartDialog.showToast('賬號未登入');
+        SmartDialog.showToast('帳號未登入');
         return;
       }
       RequestUtils.actionRelationMod(

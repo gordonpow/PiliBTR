@@ -128,7 +128,7 @@ class PgcIntroController extends CommonIntroController {
   @override
   Future<void> actionLikeVideo() async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final newVal = !hasLike.value;
@@ -416,7 +416,7 @@ class PgcIntroController extends CommonIntroController {
   Future<void> actionTriple() async {
     feedBack();
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     if (hasLike.value && hasCoin && hasFav.value) {

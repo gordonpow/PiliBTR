@@ -46,6 +46,9 @@ PROTECT = {
 # Corrections applied after OpenCC.
 FIXUP = {
     '執行緒撕裂者': '線程撕裂者',  # project name (BTR = Bilibili thread ripper)
+    '分割槽': '分區',  # 分区 = video category, not disk partition
+    '賬': '帳',  # 帳號 is the Taiwan form
+    '後臺': '背景',  # background playback
 }
 
 

@@ -192,7 +192,7 @@ class LoginPageController extends GetxController
         SmartDialog.showToast("嗶哩嗶哩登入已失效，請重新登入");
       }
     } catch (e) {
-      SmartDialog.showToast("獲取嗶哩嗶哩使用者資訊失敗，可前往賬號管理重試");
+      SmartDialog.showToast("獲取嗶哩嗶哩使用者資訊失敗，可前往帳號管理重試");
     }
   }
 
@@ -250,7 +250,7 @@ class LoginPageController extends GetxController
           "hindMail": safeCenterRes['data']['account_info']!["hide_mail"],
         };
         if (!safeCenterRes['data']['account_info']!['tel_verify']) {
-          SmartDialog.showToast("當前賬號未支援手機號驗證，請嘗試其它登入方式");
+          SmartDialog.showToast("當前帳號未支援手機號驗證，請嘗試其它登入方式");
           return;
         }
 
@@ -387,7 +387,7 @@ class LoginPageController extends GetxController
                   if (data['token_info'] == null ||
                       data['cookie_info'] == null) {
                     SmartDialog.showToast(
-                      '登入異常，介面未返回身份資訊，可能是因為賬號風控，請嘗試其它登入方式。\n${oauth2AccessTokenRes["msg"]}，\n $data',
+                      '登入異常，介面未返回身份資訊，可能是因為帳號風控，請嘗試其它登入方式。\n${oauth2AccessTokenRes["msg"]}，\n $data',
                     );
                     return;
                   }
@@ -410,7 +410,7 @@ class LoginPageController extends GetxController
       }
       if (data['token_info'] == null || data['cookie_info'] == null) {
         SmartDialog.showToast(
-          '登入異常，介面未返回身份資訊，可能是因為賬號風控，請嘗試其它登入方式。\n${res["msg"]}，\n $data',
+          '登入異常，介面未返回身份資訊，可能是因為帳號風控，請嘗試其它登入方式。\n${res["msg"]}，\n $data',
         );
         return;
       }
@@ -624,7 +624,7 @@ class LoginPageController extends GetxController
     if (Accounts.main.isLogin) {
       SmartDialog.showToast('登入成功');
     } else {
-      SmartDialog.showToast('登入成功, 請先設定賬號模式');
+      SmartDialog.showToast('登入成功, 請先設定帳號模式');
       await switchAccountDialog(Get.context!);
     }
   }
@@ -654,7 +654,7 @@ class LoginPageController extends GetxController
                 style: const TextStyle(height: 1.5),
                 TextSpan(
                   children: [
-                    const TextSpan(text: '賬號切換'),
+                    const TextSpan(text: '帳號切換'),
                     TextSpan(
                       text: '\nmid為0時使用匿名',
                       style: TextStyle(

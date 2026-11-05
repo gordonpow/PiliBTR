@@ -25,6 +25,7 @@ import 'package:PiliPlus/plugin/pl_player/models/duration.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
@@ -691,9 +692,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   // 获取实例 传参
   static PlPlayerController getInstance({bool isLive = false}) {
     // 如果实例尚未创建，则创建一个新实例
-    return (_instance ??= PlPlayerController._())
+    final instance = (_instance ??= PlPlayerController._())
       ..isLive = isLive
       .._playerCount += 1;
+    // A new player page takes the player from the mini player.
+    MiniPlayer.handOver();
+    return instance;
   }
 
   bool _processing = false;

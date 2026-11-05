@@ -233,7 +233,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
   Future<void> actionTriple() async {
     feedBack();
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     if (hasLike.value && hasCoin && hasFav.value) {
@@ -272,7 +272,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
   @override
   Future<void> actionLikeVideo() async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     if (videoDetail.value.stat == null) {
@@ -294,7 +294,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
 
   Future<void> actionDislikeVideo() async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final res = await VideoHttp.dislikeVideo(
@@ -467,7 +467,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
   // 关注/取关up
   Future<void> actionRelationMod(BuildContext context) async {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final videoDetail = this.videoDetail.value;
@@ -785,7 +785,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     int? mid,
   ) async {
     if (!Accounts.heartbeat.isLogin) {
-      SmartDialog.showToast("賬號未登入");
+      SmartDialog.showToast("帳號未登入");
       return null;
     }
     SmartDialog.showLoading(msg: '正在獲取AI總結');

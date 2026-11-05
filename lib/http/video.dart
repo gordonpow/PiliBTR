@@ -516,7 +516,7 @@ abstract final class VideoHttp {
     required bool type,
   }) async {
     if (Accounts.main.accessKey.isNullOrEmpty) {
-      return const Error('請退出賬號後重新登入');
+      return const Error('請退出帳號後重新登入');
     }
     final res = await Request().post(
       Api.dislikeVideo,
@@ -541,7 +541,7 @@ abstract final class VideoHttp {
     int? feedbackId,
   }) async {
     if (Accounts.get(AccountType.recommend).accessKey.isNullOrEmpty) {
-      return const Error('請退出賬號後重新登入');
+      return const Error('請退出帳號後重新登入');
     }
     assert((reasonId != null) ^ (feedbackId != null));
     final res = await Request().get(
@@ -570,7 +570,7 @@ abstract final class VideoHttp {
     int? feedbackId,
   }) async {
     if (Accounts.get(AccountType.recommend).accessKey.isNullOrEmpty) {
-      return const Error('請退出賬號後重新登入');
+      return const Error('請退出帳號後重新登入');
     }
     final res = await Request().get(
       Api.feedDislikeCancel,
@@ -664,7 +664,7 @@ abstract final class VideoHttp {
       GStorage.reply?.delete(rpid.toString());
       return const Success(null);
     } else {
-      return const Error('請退出賬號後重新登入');
+      return const Error('請退出帳號後重新登入');
     }
   }
 

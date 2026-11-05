@@ -196,18 +196,23 @@ class VideoCardH extends StatelessWidget {
           ),
           if (videoItem.isLive != true) ...[
             const SizedBox(height: 3),
-            Row(
-              spacing: 8,
-              children: [
-                StatWidget(
-                  type: .play,
-                  value: videoItem.stat.view,
-                ),
-                StatWidget(
-                  type: .danmaku,
-                  value: videoItem.stat.danmu,
-                ),
-              ],
+            // Scale down in narrow cards instead of overflowing.
+            FittedBox(
+              fit: .scaleDown,
+              alignment: .centerLeft,
+              child: Row(
+                spacing: 8,
+                children: [
+                  StatWidget(
+                    type: .play,
+                    value: videoItem.stat.view,
+                  ),
+                  StatWidget(
+                    type: .danmaku,
+                    value: videoItem.stat.danmu,
+                  ),
+                ],
+              ),
             ),
           ],
         ],

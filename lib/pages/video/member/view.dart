@@ -360,7 +360,7 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                   Get.toNamed('/editProfile');
                 } else {
                   if (!account.isLogin) {
-                    SmartDialog.showToast('賬號未登入');
+                    SmartDialog.showToast('帳號未登入');
                     return;
                   }
                   RequestUtils.actionRelationMod(

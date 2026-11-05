@@ -54,7 +54,7 @@ List<SettingsModel> get recommendSettings => [
     key: SettingBoxKey.minLikeRatioForRecommend,
     values: [0, 1, 2, 3, 4],
     onChanged: (value) => RecommendFilter.minLikeRatioForRecommend = value,
-    filterScope: 'Web推薦、熱門、分割槽',
+    filterScope: 'Web推薦、熱門、分區',
   ),
   getBanWordModel(
     title: '標題關鍵詞過濾',
@@ -63,16 +63,16 @@ List<SettingsModel> get recommendSettings => [
       RecommendFilter.rcmdRegExp = value;
       RecommendFilter.enableFilter = value.pattern.isNotEmpty;
     },
-    banScope: '推薦、熱門、分割槽、相關影片',
+    banScope: '推薦、熱門、分區、相關影片',
   ),
   getBanWordModel(
-    title: '分割槽關鍵詞過濾',
+    title: '分區關鍵詞過濾',
     key: SettingBoxKey.banWordForZone,
     onChanged: (value) {
       VideoHttp.zoneRegExp = value;
       VideoHttp.enableFilter = value.pattern.isNotEmpty;
     },
-    banScope: 'App推薦、熱門、分割槽',
+    banScope: 'App推薦、熱門、分區',
   ),
   getVideoFilterSelectModel(
     title: '影片時長',
@@ -87,7 +87,7 @@ List<SettingsModel> get recommendSettings => [
     key: SettingBoxKey.minPlayForRcmd,
     values: [0, 50, 100, 500, 1000],
     onChanged: (value) => RecommendFilter.minPlayForRcmd = value,
-    filterScope: '推薦、熱門、分割槽、相關影片',
+    filterScope: '推薦、熱門、分區、相關影片',
   ),
   SwitchModel(
     title: '已關注UP豁免推薦過濾',

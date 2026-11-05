@@ -48,6 +48,7 @@ import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/pages/video/widgets/intro_layout.dart';
 import 'package:PiliPlus/pages/video/widgets/player_focus.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
@@ -331,6 +332,23 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
   }
 
+  // Leave with back: keep playing in the mini player.
+  bool _toMini = false;
+  bool _miniWasPlaying = false;
+
+  void _onPopInvokedWithResult(bool didPop, Object? result) {
+    final ctr = videoDetailController.plPlayerController;
+    if (didPop &&
+        MiniPlayer.enabled &&
+        plPlayerController != null &&
+        ctr.videoController != null &&
+        !ctr.isCloseAll) {
+      _toMini = true;
+      _miniWasPlaying = ctr.playerStatus.isPlaying;
+    }
+    ctr.onPopInvokedWithResult(didPop, result);
+  }
+
   @override
   void dispose() {
     plPlayerController
@@ -356,11 +374,22 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     if (!videoDetailController.plPlayerController.isCloseAll) {
-      videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
-      if (plPlayerController != null) {
+      if (_toMini &&
+          plPlayerController != null &&
+          MiniPlayer.show(
+            ctr: plPlayerController!,
+            args: videoDetailController.args,
+            heroTag: heroTag,
+            wasPlaying: _miniWasPlaying,
+          )) {
+        // The mini player keeps this page's reference on the player.
+        videoDetailController.makeHeartBeat();
+      } else if (plPlayerController != null) {
+        videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
         videoDetailController.makeHeartBeat();
         plPlayerController!.dispose();
       } else {
+        videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
         PlPlayerController.updatePlayCount();
       }
     }
@@ -1190,7 +1219,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       PopupMenuItem(
         onTap: () {
           if (!Accounts.main.isLogin) {
-            SmartDialog.showToast('賬號未登入');
+            SmartDialog.showToast('帳號未登入');
           } else {
             PageUtils.reportVideo(videoDetailController.aid);
           }
@@ -1210,8 +1239,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         !isFullScreen &&
         !videoDetailController.plPlayerController.isDesktopPip &&
         (videoDetailController.horizontalScreen || isPortrait),
-    onPopInvokedWithResult:
-        videoDetailController.plPlayerController.onPopInvokedWithResult,
+    onPopInvokedWithResult: _onPopInvokedWithResult,
     child: Obx(
       () =>
           !videoDetailController.videoState.value ||

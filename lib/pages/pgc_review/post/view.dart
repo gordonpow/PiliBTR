@@ -234,7 +234,7 @@ class _PgcReviewPostPanelState extends State<PgcReviewPostPanel> {
       return;
     }
     if (!Accounts.main.isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
     final res = await PgcHttp.pgcReviewPost(

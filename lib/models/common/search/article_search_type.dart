@@ -12,7 +12,7 @@ enum ArticleOrderType {
 }
 
 enum ArticleZoneType {
-  all('全部分割槽', 0),
+  all('全部分區', 0),
   douga('動畫', 2),
   game('遊戲', 1),
   cinephile('影視', 28),

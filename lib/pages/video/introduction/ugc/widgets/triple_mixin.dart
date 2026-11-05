@@ -36,7 +36,7 @@ mixin TripleMixin on GetxController, TickerProvider {
 
   void actionCoinVideo() {
     if (!isLogin) {
-      SmartDialog.showToast('賬號未登入');
+      SmartDialog.showToast('帳號未登入');
       return;
     }
 

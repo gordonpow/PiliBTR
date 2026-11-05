@@ -387,7 +387,7 @@ abstract final class RequestUtils {
                   ),
                 ),
                 content: SelectionText(
-                  '${isSuccess ? '無賬號狀態下找到了你的動態，動態正常！' : '你的動態被shadow ban（僅自己可見）！'}${dynText != null ? ' \n\n動態內容: $dynText' : ''}',
+                  '${isSuccess ? '無帳號狀態下找到了你的動態，動態正常！' : '你的動態被shadow ban（僅自己可見）！'}${dynText != null ? ' \n\n動態內容: $dynText' : ''}',
                 ),
                 actions: actions.isEmpty ? null : actions,
               );

@@ -286,7 +286,7 @@ Future<void> _importAllDataFromArchive(BuildContext context) async {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('匯入所有資料？'),
-      content: const Text('將用壓縮包內的設定、賬號資訊、歷史評論、搜尋記錄、黑名單、自定義字型覆蓋當前資料，此操作不可撤銷。'),
+      content: const Text('將用壓縮包內的設定、帳號資訊、歷史評論、搜尋記錄、黑名單、自定義字型覆蓋當前資料，此操作不可撤銷。'),
       actions: actions,
     ),
   );
