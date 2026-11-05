@@ -1,9 +1,11 @@
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
+import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
 
 abstract final class Accounts {
@@ -59,6 +61,9 @@ abstract final class Accounts {
 
   static Future<void> deleteAll(Set<Account> accounts) async {
     final isLoginMain = Accounts.main.isLogin;
+    final recommendChanged = accounts.contains(
+      accountMode[AccountType.recommend.index],
+    );
     for (int i = 0; i < AccountType.values.length; i++) {
       if (accounts.contains(accountMode[i])) {
         accountMode[i] = AnonymousAccount();
@@ -67,6 +72,13 @@ abstract final class Accounts {
     await Future.wait(accounts.map((i) => i.delete()));
     if (isLoginMain && !Accounts.main.isLogin) {
       await LoginUtils.onLogoutMain();
+    }
+    if (recommendChanged) _reloadRcmd();
+  }
+
+  static void _reloadRcmd() {
+    if (Get.isRegistered<RcmdController>()) {
+      Get.find<RcmdController>().onAccountChanged();
     }
   }
 
@@ -83,6 +95,11 @@ abstract final class Accounts {
         break;
       case AccountType.heartbeat:
         MineController.anonymity.value = !account.isLogin;
+        break;
+      case AccountType.recommend:
+        // The home feed was loaded with the old account (for example the
+        // guest account before login): load it again for the new account.
+        _reloadRcmd();
         break;
       default:
         break;

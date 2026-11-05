@@ -50,6 +50,13 @@ class RcmdController extends CommonListController {
     }
   }
 
+  /// The recommend account changed: drop the items of the old account
+  /// (also the saved ones) and load the feed again.
+  void onAccountChanged() {
+    lastRefreshAt = null;
+    onReload();
+  }
+
   @override
   Future<void> onRefresh() {
     page = 0;
