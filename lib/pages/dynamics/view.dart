@@ -134,7 +134,12 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       case .top:
         child = Column(
           children: [
-            upPanelPart(colorScheme),
+            // Without login there are no followed UP: hide the row.
+            Obx(
+              () => _mainController.accountService.isLogin.value
+                  ? upPanelPart(colorScheme)
+                  : const SizedBox.shrink(),
+            ),
             Expanded(child: child),
           ],
         );

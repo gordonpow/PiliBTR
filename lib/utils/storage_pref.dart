@@ -193,7 +193,7 @@ abstract final class Pref {
   static UpPanelPosition get upPanelPosition =>
       UpPanelPosition.values[_setting.get(
         SettingBoxKey.upPanelPosition,
-        defaultValue: UpPanelPosition.leftFixed.index,
+        defaultValue: UpPanelPosition.top.index,
       )];
 
   static FullScreenMode get fullScreenMode {
