@@ -182,6 +182,10 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
   VideoController? _video;
   bool _muted = true;
   bool _playing = false;
+
+  /// True after the first video frame shows. Until then the cover stays
+  /// visible (no black frame).
+  bool _firstFrame = false;
   String? _error;
   final List<StreamSubscription> _subs = [];
   bool _disposed = false;
@@ -312,6 +316,9 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
           }),
         );
       setState(() => _video = controller);
+      controller.waitUntilFirstFrameRendered.then((_) {
+        if (mounted) setState(() => _firstFrame = true);
+      });
       await player.open(Media(media));
     } catch (e) {
       if (kDebugMode) debugPrint('VideoPreview: $e');
@@ -487,7 +494,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
       fit: StackFit.expand,
       children: [
         // The cover (under this widget) shows until the first frame.
-        if (video != null && _playing)
+        if (video != null && _firstFrame)
           ColoredBox(
             color: Colors.black,
             child: FittedBox(
@@ -514,7 +521,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
               ),
             ),
           )
-        else if (!_playing)
+        else if (!_firstFrame || !_playing)
           const Center(
             child: SizedBox.square(
               dimension: 22,

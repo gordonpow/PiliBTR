@@ -729,6 +729,27 @@ class VideoDetailController extends GetxController
     return null;
   }
 
+  /// The cover shows over the player until the first video frame, so the
+  /// page does not show a black screen while the video loads.
+  late final showCoverUntilFrame = true.obs;
+
+  void _watchFirstFrame() {
+    final videoController = plPlayerController.videoController;
+    if (videoController == null) {
+      showCoverUntilFrame.value = false;
+      return;
+    }
+    videoController.waitUntilFirstFrameRendered
+        .timeout(const Duration(seconds: 8))
+        .then(
+          (_) {},
+          onError: (_) {},
+        )
+        .whenComplete(() {
+          if (!isClosed) showCoverUntilFrame.value = false;
+        });
+  }
+
   Future<void> playerInit({
     bool? autoplay,
     bool autoFullScreenFlag = false,
@@ -773,6 +794,7 @@ class VideoDetailController extends GetxController
     );
 
     if (isClosed) return;
+    _watchFirstFrame();
 
     if (plPlayerController.enableBlock) {
       initSkip();

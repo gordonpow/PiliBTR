@@ -1492,6 +1492,42 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
         plPlayer(width: width, height: height),
 
+        // Autoplay: the cover shows until the first video frame (no black
+        // screen while the video loads).
+        Obx(
+          () =>
+              videoDetailController.autoPlay &&
+                  videoDetailController.showCoverUntilFrame.value &&
+                  videoDetailController.cover.value.isNotEmpty
+              ? Positioned.fill(
+                  child: IgnorePointer(
+                    child: Stack(
+                      fit: .expand,
+                      children: [
+                        NetworkImgLayer(
+                          type: .emote,
+                          quality: 60,
+                          src: videoDetailController.cover.value,
+                          width: width,
+                          height: height,
+                          cacheWidth: true,
+                        ),
+                        const Center(
+                          child: SizedBox.square(
+                            dimension: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+
         Obx(() {
           if (!videoDetailController.autoPlay) {
             return Positioned.fill(
