@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
@@ -220,7 +221,14 @@ class _MediaPageState extends CommonPageState<MinePage>
             style: style,
             tooltip: '設定',
             onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
-            icon: const Icon(Icons.settings_outlined),
+            // Red dot when a new version is available.
+            icon: Obx(
+              () => Badge(
+                isLabelVisible: Update.available.value != null,
+                smallSize: 7,
+                child: const Icon(Icons.settings_outlined),
+              ),
+            ),
           ),
           const SizedBox(width: 16),
         ],

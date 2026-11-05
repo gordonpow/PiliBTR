@@ -71,8 +71,9 @@ class MainController extends GetxController
   @override
   void onInit() {
     super.onInit();
+    // Silent check: a new version only shows red dots.
     if (Pref.autoUpdate) {
-      Update.checkUpdate();
+      Update.check();
     }
 
     setNavBarConfig();

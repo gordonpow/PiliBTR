@@ -1,149 +1,175 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Directory, File, Platform;
 
-import 'package:PiliPlus/build_config.dart';
+import 'package:PiliPlus/btr_version.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/http/api.dart';
-import 'package:PiliPlus/http/browser_ua.dart';
-import 'package:PiliPlus/http/init.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:PiliPlus/utils/storage.dart';
-import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:collection/collection.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 
+/// A release on GitHub that is newer than this build.
+class UpdateInfo {
+  const UpdateInfo({
+    required this.tag,
+    required this.body,
+    required this.htmlUrl,
+    required this.assets,
+  });
+
+  final String tag;
+  final String body;
+  final String htmlUrl;
+
+  /// Name and download URL of each file of the release.
+  final List<({String name, String url})> assets;
+}
+
+/// Checks the PiliBTR releases on GitHub. It never shows a dialog by
+/// itself: a new version only sets [available], which shows red dots on
+/// the "mine" tab, the settings button and the update setting.
 abstract final class Update {
-  // 检查更新
-  static Future<void> checkUpdate([bool isAuto = true]) async {
-    if (kDebugMode) return;
-    SmartDialog.dismiss();
+  static final available = Rxn<UpdateInfo>();
+  static final checking = false.obs;
+
+  /// Download progress from 0 to 1, or null when no download runs.
+  static final progress = RxnDouble();
+
+  static const _channel = MethodChannel('pilibtr/update');
+
+  static final _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 15),
+      headers: {
+        'accept': 'application/vnd.github+json',
+        'user-agent': 'PiliBTR',
+      },
+    ),
+  );
+
+  /// Version numbers of a tag like `v2.2.0-btr.7`.
+  static List<int> _parse(String tag) {
+    final m = RegExp(r'(\d+)\.(\d+)\.(\d+)(?:-btr\.(\d+))?').firstMatch(tag);
+    if (m == null) return const [0, 0, 0, 0];
+    return [for (var i = 1; i <= 4; i++) int.tryParse(m[i] ?? '') ?? 0];
+  }
+
+  static bool _isNewer(String tag, String current) {
+    final a = _parse(tag), b = _parse(current);
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return a[i] > b[i];
+    }
+    return false;
+  }
+
+  /// Checks for a new release. With [silent], it shows no message.
+  static Future<void> check({bool silent = true}) async {
+    if (checking.value) return;
+    checking.value = true;
     try {
-      final res = await Request().get(
-        Api.latestApp,
-        options: Options(
-          headers: {'user-agent': BrowserUa.mob},
-          extra: {'account': const NoAccount()},
-        ),
+      final res = await _dio.get(Api.latestApp);
+      final data = res.data;
+      if (data is! List) throw const FormatException('no release list');
+      final release = data.cast<Map>().firstWhereOrNull(
+        (e) => e['draft'] != true && e['prerelease'] != true,
       );
-      if (res.data is Map || res.data.isEmpty) {
-        if (!isAuto) {
-          SmartDialog.showToast('檢查更新失敗，GitHub介面未返回資料，請檢查網路');
-        }
+      final tag = release?['tag_name'] as String?;
+      if (release == null || tag == null || !_isNewer(tag, btrVersion)) {
+        available.value = null;
+        _deleteDownloads();
+        if (!silent) SmartDialog.showToast('已是最新版本');
         return;
       }
-      final data = res.data[0];
-      final int latest =
-          DateTime.parse(data['created_at']).millisecondsSinceEpoch ~/ 1000;
-      if (BuildConfig.buildTime >= latest) {
-        if (!isAuto) {
-          SmartDialog.showToast('已是最新版本');
-        }
-      } else {
-        SmartDialog.show(
-          animationType: SmartAnimationType.centerFade_otherSlide,
-          builder: (context) {
-            final colorScheme = ColorScheme.of(context);
-            Widget downloadBtn(String text, {String? ext}) => TextButton(
-              onPressed: () => onDownload(data, ext: ext),
-              child: Text(text),
-            );
-            return AlertDialog(
-              title: const Text('🎉 發現新版本 '),
-              content: SizedBox(
-                height: 280,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${data['tag_name']}',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('${data['body']}'),
-                      TextButton(
-                        onPressed: () => PageUtils.launchURL(
-                          '${Constants.sourceCodeUrl}/commits/main',
-                        ),
-                        child: Text(
-                          "點此檢視完整更新(即commit)內容",
-                          style: TextStyle(color: colorScheme.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                if (isAuto)
-                  TextButton(
-                    onPressed: () {
-                      SmartDialog.dismiss();
-                      GStorage.setting.put(SettingBoxKey.autoUpdate, false);
-                    },
-                    child: Text(
-                      '不再提醒',
-                      style: TextStyle(color: colorScheme.outline),
-                    ),
-                  ),
-                TextButton(
-                  onPressed: SmartDialog.dismiss,
-                  child: Text(
-                    '取消',
-                    style: TextStyle(color: colorScheme.outline),
-                  ),
-                ),
-                if (Platform.isWindows) ...[
-                  downloadBtn('zip', ext: 'zip'),
-                  downloadBtn('exe', ext: 'exe'),
-                ] else if (Platform.isLinux) ...[
-                  downloadBtn('rpm', ext: 'rpm'),
-                  downloadBtn('deb', ext: 'deb'),
-                  downloadBtn('targz', ext: 'tar.gz'),
-                ] else
-                  downloadBtn('Github'),
-              ],
-            );
-          },
-        );
-      }
+      available.value = UpdateInfo(
+        tag: tag,
+        body: (release['body'] as String?)?.trim() ?? '',
+        htmlUrl:
+            release['html_url'] as String? ??
+            '${Constants.sourceCodeUrl}/releases/latest',
+        assets: [
+          for (final Map a in (release['assets'] as List? ?? const []))
+            (
+              name: a['name'] as String,
+              url: a['browser_download_url'] as String,
+            ),
+        ],
+      );
+      if (!silent) SmartDialog.showToast('發現新版本 $tag');
     } catch (e) {
       if (kDebugMode) debugPrint('failed to check update: $e');
+      if (!silent) SmartDialog.showToast('檢查更新失敗，請檢查網路');
+    } finally {
+      checking.value = false;
     }
   }
 
-  // 下载适用于当前系统的安装包
-  static Future<void> onDownload(Map data, {String? ext}) async {
-    SmartDialog.dismiss();
+  /// Removes downloaded APKs: this build is up to date, so they are old.
+  static Future<void> _deleteDownloads() async {
     try {
-      void download(String plat) {
-        if (data['assets'].isNotEmpty) {
-          for (Map<String, dynamic> i in data['assets']) {
-            final String name = i['name'];
-            if (name.contains(plat) &&
-                (ext == null || ext.isEmpty ? true : name.endsWith(ext))) {
-              PageUtils.launchURL(i['browser_download_url']);
-              return;
-            }
-          }
-          throw UnsupportedError('platform not found: $plat');
-        }
-      }
+      final dir = Directory('${(await getTemporaryDirectory()).path}/update');
+      if (dir.existsSync()) await dir.delete(recursive: true);
+    } catch (_) {}
+  }
 
-      if (Platform.isAndroid) {
-        // 获取设备信息
-        AndroidDeviceInfo androidInfo = await DeviceInfoPlugin().androidInfo;
-        // [arm64-v8a]
-        download(androidInfo.supportedAbis.first);
-      } else {
-        download(Platform.operatingSystem);
+  /// Downloads the APK of [info] for this device and opens the system
+  /// installer. On other platforms it opens the release page.
+  static Future<void> downloadAndInstall(UpdateInfo info) async {
+    if (progress.value != null) return;
+    if (!Platform.isAndroid) {
+      PageUtils.launchURL(info.htmlUrl);
+      return;
+    }
+    final abis = (await DeviceInfoPlugin().androidInfo).supportedAbis;
+    ({String name, String url})? asset;
+    for (final abi in abis) {
+      asset = info.assets.firstWhereOrNull(
+        (e) => e.name.contains(abi) && e.name.endsWith('.apk'),
+      );
+      if (asset != null) break;
+    }
+    if (asset == null) {
+      SmartDialog.showToast('找不到適用此裝置的安裝檔');
+      PageUtils.launchURL(info.htmlUrl);
+      return;
+    }
+    // The installer reads the file through the FileProvider path
+    // `cache/update/` (android/app/src/main/res/xml/update_paths.xml).
+    final dir = Directory('${(await getTemporaryDirectory()).path}/update');
+    final file = File('${dir.path}/${asset.name}');
+    progress.value = 0;
+    try {
+      // A complete file stays after a download (for example when the
+      // user must first allow installs): use it again.
+      if (!file.existsSync()) {
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+        dir.createSync(recursive: true);
+        final part = '${file.path}.part';
+        await _dio.download(
+          asset.url,
+          part,
+          onReceiveProgress: (received, total) {
+            if (total > 0) progress.value = received / total;
+          },
+        );
+        File(part).renameSync(file.path);
+      }
+      progress.value = null;
+      final result = await _channel.invokeMethod<String>('installApk', {
+        'path': file.path,
+      });
+      if (result == 'permission') {
+        SmartDialog.showToast('請允許 PiliBTR 安裝應用程式，再按一次安裝');
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('download error: $e');
-      PageUtils.launchURL('${Constants.sourceCodeUrl}/releases/latest');
+      if (kDebugMode) debugPrint('update download error: $e');
+      SmartDialog.showToast('下載更新失敗：$e');
+    } finally {
+      progress.value = null;
     }
   }
 }

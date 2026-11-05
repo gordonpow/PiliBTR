@@ -1,3 +1,5 @@
+import 'package:PiliPlus/utils/update.dart';
+import 'package:PiliPlus/pages/update/view.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -86,7 +88,7 @@ class _SettingPageState extends State<SettingPage> {
     ),
     _SettingsModel(
       type: .extraSetting,
-      subtitle: '震動、搜尋、收藏、ai、評論、動態、代理、更新檢查等',
+      subtitle: '震動、搜尋、收藏、ai、評論、動態、代理等',
       icon: Icon(Icons.extension_outlined),
     ),
     _SettingsModel(
@@ -195,6 +197,26 @@ class _SettingPageState extends State<SettingPage> {
                     : Text(item.subtitle!, style: subTitleStyle),
               ),
             ),
+        ListTile(
+          onTap: () => Get.to(() => const UpdatePage()),
+          leading: Obx(
+            () => Badge(
+              isLabelVisible: Update.available.value != null,
+              smallSize: 7,
+              child: const Icon(Icons.system_update_alt),
+            ),
+          ),
+          title: Text('更新', style: titleStyle),
+          subtitle: Obx(
+            () {
+              final tag = Update.available.value?.tag;
+              return Text(
+                tag == null ? '自動檢查、手動檢查更新' : '發現新版本 $tag',
+                style: subTitleStyle,
+              );
+            },
+          ),
+        ),
         ListTile(
           onTap: () => LoginPageController.switchAccountDialog(context),
           leading: const Icon(Icons.switch_account_outlined),

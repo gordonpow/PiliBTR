@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/compact_navigation_bar.dart';
 import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
@@ -368,6 +369,16 @@ class _MainAppState extends PopScopeState<MainApp>
 
   Widget _buildIcon({required NavigationBarType type, bool selected = false}) {
     final icon = selected ? type.selectIcon : type.icon;
+    if (type == .mine) {
+      // Red dot when a new version is available.
+      return Obx(
+        () => Badge(
+          isLabelVisible: Update.available.value != null,
+          smallSize: 7,
+          child: icon,
+        ),
+      );
+    }
     if (type == .message) {
       return Obx(() {
         final count = _mainController.msgUnReadCount.value;
