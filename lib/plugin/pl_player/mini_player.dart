@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
@@ -262,6 +264,58 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
 
   /// Current place of the window (global). Null until the first layout.
   Rect? _rect;
+
+  /// Corner of the window. The window keeps this corner when the screen
+  /// changes (for example rotation).
+  late bool _left = widget.toLeft;
+  bool _top = false;
+
+  /// Space for the bottom navigation bar of the main page. The bar can
+  /// hide when the list scrolls: then the window goes down to the edge.
+  static const double _barSpace = 80;
+  Worker? _barWorker;
+  bool _dragging = false;
+
+  double get _bottomGap {
+    if (!Get.isRegistered<MainController>()) return _barSpace;
+    final main = Get.find<MainController>();
+    if (!main.hideBottomBar) return _barSpace;
+    if (main.showBottomBar case final show?) return show.value ? _barSpace : 0;
+    if (main.barOffset case final offset?) {
+      final hidden = (offset.value / Style.topBarHeight).clamp(0.0, 1.0);
+      return _barSpace * (1 - hidden);
+    }
+    return _barSpace;
+  }
+
+  void _listenBar() {
+    if (!Get.isRegistered<MainController>()) return;
+    final main = Get.find<MainController>();
+    if (!main.hideBottomBar) return;
+    if (main.showBottomBar case final show?) {
+      _barWorker = ever<bool>(show, (_) => _onBarChanged(animate: true));
+    } else if (main.barOffset case final offset?) {
+      _barWorker = ever<double>(offset, (_) => _onBarChanged(animate: false));
+    }
+  }
+
+  /// The bottom bar moved: a window at a bottom corner moves with it.
+  void _onBarChanged({required bool animate}) {
+    if (!mounted || _top || _dragging || _opening || _rect == null) return;
+    final media = MediaQuery.of(context);
+    final target = _cornerRect(
+      media,
+      _rect!.size,
+      _left,
+      bottomGap: _bottomGap,
+    );
+    if (animate) {
+      _animateTo(target, duration: const Duration(milliseconds: 400));
+    } else {
+      _anim.stop();
+      setState(() => _rect = target);
+    }
+  }
   RectTween? _tween;
   late final AnimationController _anim;
   late final CurvedAnimation _curve;
@@ -275,6 +329,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   void initState() {
     super.initState();
     widget.ctr.addStatusLister(_onStatus);
+    _listenBar();
     _anim = AnimationController(vsync: this)..addListener(_onTick);
     _curve = CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic);
   }
@@ -285,7 +340,13 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
     final media = MediaQuery.of(context);
     final size = _windowSize(media);
     if (_rect == null) {
-      final target = _cornerRect(media, size, widget.toLeft);
+      final target = _cornerRect(
+        media,
+        size,
+        _left,
+        top: _top,
+        bottomGap: _bottomGap,
+      );
       // Open with a swipe: fly from the video. Else grow from the corner.
       final from =
           widget.from ??
@@ -300,14 +361,26 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
         duration: Duration(milliseconds: widget.from != null ? 380 : 240),
       );
     } else {
-      // The screen changed (for example rotation): keep the window inside.
-      _rect = _snapRect(media, _rect!.topLeft & size, Offset.zero);
+      // The screen changed (for example rotation): same corner, new place.
+      _anim.stop();
+      if (_opening) {
+        _opening = false;
+        _opacity = 1;
+      }
+      _rect = _cornerRect(
+        media,
+        size,
+        _left,
+        top: _top,
+        bottomGap: _bottomGap,
+      );
     }
   }
 
   @override
   void dispose() {
     widget.ctr.removeStatusLister(_onStatus);
+    _barWorker?.dispose();
     _curve.dispose();
     _anim.dispose();
     super.dispose();
@@ -359,31 +432,39 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
     media.size.width - size.width - media.padding.right - _margin,
   );
 
-  /// Default place: a bottom corner, above the navigation bar.
-  static Rect _cornerRect(MediaQueryData media, Size size, bool left) {
+  /// Place of a corner. A bottom corner stays [bottomGap] above the
+  /// bottom edge (space for the navigation bar).
+  static Rect _cornerRect(
+    MediaQueryData media,
+    Size size,
+    bool left, {
+    bool top = false,
+    double bottomGap = _barSpace,
+  }) {
     final x = left ? _leftX(media) : _rightX(media, size);
-    final y = math.max(_minTop(media), _maxTop(media, size) - 80);
+    final y = top
+        ? _minTop(media)
+        : math.max(_minTop(media), _maxTop(media, size) - bottomGap);
     return Offset(x, y) & size;
   }
 
-  /// Place for [rect] after a drag: snap to the nearest side edge (also
-  /// use the fling [velocity]), and keep it inside the screen.
+  /// Place for [rect] after a drag: snap to the nearest corner (also use
+  /// the fling [velocity]).
   Rect _snapRect(MediaQueryData media, Rect rect, Offset velocity) {
-    final size = rect.size;
-    final leftX = _leftX(media);
-    final rightX = _rightX(media, size);
-    final projectedX = rect.left + velocity.dx * 0.15;
-    final x = (projectedX + size.width / 2) < media.size.width / 2
-        ? leftX
-        : rightX;
-    final y = (rect.top + velocity.dy * 0.1).clamp(
-      _minTop(media),
-      _maxTop(media, size),
+    final center = rect.center + velocity * 0.15;
+    _left = center.dx < media.size.width / 2;
+    _top = center.dy < media.size.height / 2;
+    return _cornerRect(
+      media,
+      rect.size,
+      _left,
+      top: _top,
+      bottomGap: _bottomGap,
     );
-    return Offset(x, y) & size;
   }
 
   void _onPanStart(DragStartDetails details) {
+    _dragging = true;
     _anim.stop();
     if (_opening) {
       _opening = false;
@@ -396,6 +477,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   }
 
   void _onPanEnd(DragEndDetails details) {
+    _dragging = false;
     final media = MediaQuery.of(context);
     _animateTo(
       _snapRect(media, _rect!, details.velocity.pixelsPerSecond),
