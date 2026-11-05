@@ -57,7 +57,6 @@ class MainController extends GetxController
   late final RxnString msgUnReadCount = RxnString(null);
   late int lastCheckUnreadAt = 0;
 
-  final enableMYBar = Pref.enableMYBar;
   final floatingNavBar = Pref.floatingNavBar;
   final useSideBar = Pref.useSideBar;
   final hideSideBarLabel = Pref.hideSideBarLabel;
@@ -86,8 +85,8 @@ class MainController extends GetxController
           )
         : PageController(initialPage: selectedIndex.value);
 
-    hideBottomBar =
-        !useSideBar && navigationBars.length > 1 && Pref.hideBottomBar;
+    // The bottom bar always stays on screen.
+    hideBottomBar = false;
     if (hideBottomBar) {
       switch (barHideType) {
         case .instant:
@@ -229,7 +228,7 @@ class MainController extends GetxController
         (GStorage.setting.get(SettingBoxKey.navBarSort) as List?)?.fromCast();
     late final List<NavigationBarType> navigationBars;
     if (navBarSort == null || navBarSort.isEmpty) {
-      navigationBars = NavigationBarType.values;
+      navigationBars = NavigationBarType.defaultOrder.toList();
     } else {
       navigationBars = navBarSort
           .map(NavigationBarType.values.elementAt)
@@ -304,6 +303,9 @@ class MainController extends GetxController
         checkUnread();
       } else if (currentNav == NavigationBarType.dynamics) {
         setDynCount();
+      } else if (currentNav == NavigationBarType.message) {
+        clearUnreadMsg();
+        lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
       }
     } else {
       int now = DateTime.now().millisecondsSinceEpoch;
@@ -314,7 +316,7 @@ class MainController extends GetxController
           () => switch (currentNav) {
             .home => homeController.onRefresh(),
             .dynamics => dynamicController.onRefresh(),
-            .mine => null,
+            .mine || .message => null,
           },
         );
       } else {

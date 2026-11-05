@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/compact_navigation_bar.dart';
 import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -169,38 +170,17 @@ class _MainAppState extends PopScopeState<MainApp>
                 .toList(),
           ),
         );
-      } else if (_mainController.enableMYBar) {
+      } else {
         bottomNav = Obx(
-          () => NavigationBar(
-            maintainBottomViewPadding: true,
+          () => CompactNavigationBar(
             onDestinationSelected: _mainController.setIndex,
             selectedIndex: _mainController.selectedIndex.value,
             destinations: _mainController.navigationBars
                 .map(
-                  (e) => NavigationDestination(
+                  (e) => CompactNavigationDestination(
                     label: e.label,
                     icon: _buildIcon(type: e),
                     selectedIcon: _buildIcon(type: e, selected: true),
-                  ),
-                )
-                .toList(),
-          ),
-        );
-      } else {
-        bottomNav = Obx(
-          () => BottomNavigationBar(
-            currentIndex: _mainController.selectedIndex.value,
-            onTap: _mainController.setIndex,
-            iconSize: 16,
-            selectedFontSize: 12,
-            unselectedFontSize: 12,
-            type: .fixed,
-            items: _mainController.navigationBars
-                .map(
-                  (e) => BottomNavigationBarItem(
-                    label: e.label,
-                    icon: _buildIcon(type: e),
-                    activeIcon: _buildIcon(type: e, selected: true),
                   ),
                 )
                 .toList(),
@@ -388,6 +368,19 @@ class _MainAppState extends PopScopeState<MainApp>
 
   Widget _buildIcon({required NavigationBarType type, bool selected = false}) {
     final icon = selected ? type.selectIcon : type.icon;
+    if (type == .message) {
+      return Obx(() {
+        final count = _mainController.msgUnReadCount.value;
+        final isNumBadge = _mainController.msgBadgeMode == .number;
+        return Badge(
+          isLabelVisible:
+              _mainController.msgBadgeMode != .hidden && count != null,
+          label: isNumBadge && count != null ? Text(count) : null,
+          padding: const .symmetric(horizontal: 6),
+          child: icon,
+        );
+      });
+    }
     return type == .dynamics
         ? Obx(
             () {

@@ -30,6 +30,8 @@ class _WhisperPageState extends State<WhisperPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     return SimpleScaffold(
       appBar: AppBar(
+        // As a tab of the main page there is no back button.
+        titleSpacing: ModalRoute.of(context)?.canPop ?? true ? null : 16,
         title: const Text('訊息'),
         actions: [
           IconButton(

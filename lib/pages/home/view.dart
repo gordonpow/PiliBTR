@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/custom_height_widget.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
+import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -52,6 +53,20 @@ class _HomePageState extends CommonPageState<HomePage>
             controller: _homeController.tabController,
             tabs: _homeController.tabs.map((e) => Tab(text: e.label)).toList(),
             isScrollable: true,
+            labelStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(fontSize: 15),
+            labelColor: _colorScheme.primary,
+            unselectedLabelColor: _colorScheme.onSurfaceVariant,
+            indicatorSize: TabBarIndicatorSize.label,
+            // A short line under the selected tab.
+            indicator: UnderlineTabIndicator(
+              borderRadius: const BorderRadius.all(Radius.circular(2)),
+              borderSide: BorderSide(width: 3, color: _colorScheme.primary),
+              insets: const EdgeInsets.symmetric(horizontal: 8),
+            ),
             dividerColor: Colors.transparent,
             dividerHeight: 0,
             splashBorderRadius: Style.mdRadius,
@@ -95,13 +110,19 @@ class _HomePageState extends CommonPageState<HomePage>
 
   Widget customAppBar() {
     const padding = EdgeInsets.fromLTRB(14, 6, 14, 0);
+    // Avatar on the left and the search bar on the right. The message
+    // button is in the bottom bar when it has the message tab.
     final child = Row(
       children: [
-        searchBar(),
-        const SizedBox(width: 4),
-        msgBadge(_mainController),
-        const SizedBox(width: 8),
         userAvatar(colorScheme: _colorScheme, mainController: _mainController),
+        const SizedBox(width: 12),
+        searchBar(),
+        if (!_mainController.navigationBars.contains(
+          NavigationBarType.message,
+        )) ...[
+          const SizedBox(width: 4),
+          msgBadge(_mainController),
+        ],
       ],
     );
     if (_homeController.hideTopBar) {
@@ -148,10 +169,14 @@ class _HomePageState extends CommonPageState<HomePage>
     const borderRadius = BorderRadius.all(Radius.circular(25));
     return Expanded(
       child: SizedBox(
-        height: 44,
+        height: 38,
         child: Material(
-          borderRadius: borderRadius,
-          color: _colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: _colorScheme.outline.withValues(alpha: 0.5),
+            ),
+          ),
+          color: Colors.transparent,
           child: InkWell(
             borderRadius: borderRadius,
             splashColor: _colorScheme.primaryContainer.withValues(

@@ -125,14 +125,6 @@ List<SettingsModel> get styleSettings => [
     needReboot: true,
   ),
   const SwitchModel(
-    title: 'MD3樣式底欄',
-    subtitle: 'Material You設計規範底欄，關閉可變窄',
-    leading: Icon(Icons.design_services_outlined),
-    setKey: SettingBoxKey.enableMYBar,
-    defaultVal: true,
-    needReboot: true,
-  ),
-  const SwitchModel(
     title: '懸浮底欄',
     leading: Icon(MdiIcons.soundbar),
     setKey: SettingBoxKey.floatingNavBar,
@@ -267,14 +259,6 @@ List<SettingsModel> get styleSettings => [
     defaultVal: PlatformUtils.isMobile,
     needReboot: true,
   ),
-  SwitchModel(
-    title: '首頁底欄收起',
-    subtitle: '首頁列表滑動時，收起底欄',
-    leading: const Icon(Icons.vertical_align_bottom_outlined),
-    setKey: SettingBoxKey.hideBottomBar,
-    defaultVal: PlatformUtils.isMobile,
-    needReboot: true,
-  ),
   NormalModel(
     onTap: (context, setState) => _showQualityDialog(
       context: context,
@@ -403,7 +387,7 @@ List<SettingsModel> get styleSettings => [
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.navBarSort,
-        'defaultBars': NavigationBarType.values,
+        'defaultBars': NavigationBarType.defaultOrder,
         'title': 'Navbar',
       },
     ),
