@@ -28,6 +28,28 @@ abstract final class MiniPlayer {
   static bool get enabled =>
       GStorage.setting.get(SettingBoxKey.miniPlayerOnBack, defaultValue: true);
 
+  /// Setting: a diagonal swipe down (to the bottom left or bottom right) on
+  /// the video shrinks it to the mini player.
+  static bool get swipeEnabled =>
+      GStorage.setting.get(SettingBoxKey.miniPlayerOnSwipe, defaultValue: true);
+
+  static bool _swipeRequest = false;
+
+  /// Called by the swipe gesture before it pops the video page: the next
+  /// pop opens the mini player, also when [enabled] is false.
+  static void requestFromSwipe() {
+    _swipeRequest = true;
+    // Clear the request if no video page pops.
+    Future.delayed(const Duration(seconds: 1), () => _swipeRequest = false);
+  }
+
+  /// Returns true (once) if a swipe gesture asked for the mini player.
+  static bool takeSwipeRequest() {
+    final request = _swipeRequest;
+    _swipeRequest = false;
+    return request;
+  }
+
   static bool get active => _entry != null;
 
   /// Shows the mini player for [ctr]. [args] are the arguments of the

@@ -42,6 +42,7 @@ import 'package:PiliPlus/plugin/pl_player/models/double_tap_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/gesture_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
+import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/app_bar_ani.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/backward_seek.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/bottom_control.dart';
@@ -1004,9 +1005,18 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           // 右边区域
           _gestureType = .right;
         }
+      } else if (cumulativeDelta.dy > 40 && dx > 40 && _canSwipeToMini) {
+        // Diagonal swipe down (bottom left or bottom right): leave the
+        // video page and keep playing in the mini player.
+        _gestureType = .mini;
+        feedBack();
+        MiniPlayer.requestFromSwipe();
+        Navigator.maybePop(context);
       }
       return;
     }
+
+    if (_gestureType == .mini) return;
 
     Offset delta = details.focalPointDelta;
 
@@ -1097,6 +1107,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       );
     }
   }
+
+  bool get _canSwipeToMini =>
+      PlatformUtils.isMobile &&
+      MiniPlayer.swipeEnabled &&
+      !isFullScreen &&
+      !plPlayerController.isLive &&
+      plPlayerController.videoController != null;
 
   void _onPanEnd(ScaleEndDetails details) {
     if (_gestureType == .horizontal) {

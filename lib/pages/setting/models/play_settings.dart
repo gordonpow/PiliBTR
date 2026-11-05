@@ -73,7 +73,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '進入詳情頁自動播放',
     leading: Icon(Icons.motion_photos_auto_outlined),
     setKey: SettingBoxKey.autoPlayEnable,
-    defaultVal: false,
+    defaultVal: true,
   ),
   const SwitchModel(
     title: '全屏顯示鎖定按鈕',
@@ -332,6 +332,13 @@ List<SettingsModel> get playSettings => [
     subtitle: '離開影片頁時，在 App 內以小視窗繼續播放（類似 YouTube）',
     leading: Icon(Icons.picture_in_picture_alt_outlined),
     setKey: SettingBoxKey.miniPlayerOnBack,
+    defaultVal: true,
+  ),
+  const SwitchModel(
+    title: '斜下滑縮小為小視窗',
+    subtitle: '在影片上往左下或右下滑動，縮小為小視窗繼續播放',
+    leading: Icon(Icons.south_west),
+    setKey: SettingBoxKey.miniPlayerOnSwipe,
     defaultVal: true,
   ),
   if ((Platform.isAndroid && PiliAndroidHelper.isPipAvailable) ||

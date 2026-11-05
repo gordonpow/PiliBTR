@@ -338,8 +338,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   void _onPopInvokedWithResult(bool didPop, Object? result) {
     final ctr = videoDetailController.plPlayerController;
+    final fromSwipe = MiniPlayer.takeSwipeRequest();
     if (didPop &&
-        MiniPlayer.enabled &&
+        (MiniPlayer.enabled || fromSwipe) &&
         plPlayerController != null &&
         ctr.videoController != null &&
         !ctr.isCloseAll) {

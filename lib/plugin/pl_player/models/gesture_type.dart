@@ -7,4 +7,6 @@ enum GestureType {
   horizontal,
   center_up,
   center_down,
+  // Diagonal swipe down: shrink the video to the mini player.
+  mini,
 }
