@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
 import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
@@ -341,6 +342,12 @@ List<SettingsModel> get playSettings => [
     setKey: SettingBoxKey.miniPlayerOnSwipe,
     defaultVal: true,
   ),
+  NormalModel(
+    title: '小視窗大小',
+    leading: const Icon(Icons.aspect_ratio),
+    getSubtitle: () => '當前:「${MiniPlayer.sizeLabels[MiniPlayer.sizeIndex]}」',
+    onTap: _showMiniPlayerSizeDialog,
+  ),
   if ((Platform.isAndroid && PiliAndroidHelper.isPipAvailable) ||
       (Platform.isIOS && IOSPipHelper.isAvailable))
     SwitchModel(
@@ -428,6 +435,24 @@ List<SettingsModel> get playSettings => [
     defaultVal: false,
   ),
 ];
+
+Future<void> _showMiniPlayerSizeDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '小視窗大小',
+      value: MiniPlayer.sizeIndex,
+      values: MiniPlayer.sizeLabels.indexed.toList(),
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.miniPlayerSize, res);
+    setState();
+  }
+}
 
 Future<void> _showSubtitleDialog(
   BuildContext context,

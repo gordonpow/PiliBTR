@@ -42,6 +42,7 @@ abstract final class SettingBoxKey {
       autoPiP = 'autoPiP',
       miniPlayerOnBack = 'miniPlayerOnBack',
       miniPlayerOnSwipe = 'miniPlayerOnSwipe',
+      miniPlayerSize = 'miniPlayerSize',
       enableAutoLongPressSpeed = 'enableAutoLongPressSpeed',
       useRelativeSlide = 'useRelativeSlide',
       sliderDuration = 'sliderOffset',

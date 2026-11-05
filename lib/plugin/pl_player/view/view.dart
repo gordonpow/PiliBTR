@@ -1010,7 +1010,15 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         // video page and keep playing in the mini player.
         _gestureType = .mini;
         feedBack();
-        MiniPlayer.requestFromSwipe();
+        Rect? from;
+        if (context.findRenderObject() case final RenderBox box
+            when box.hasSize) {
+          from = box.localToGlobal(Offset.zero) & box.size;
+        }
+        MiniPlayer.requestFromSwipe(
+          from: from,
+          toLeft: cumulativeDelta.dx < 0,
+        );
         Navigator.maybePop(context);
       }
       return;

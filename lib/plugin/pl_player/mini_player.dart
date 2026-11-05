@@ -33,14 +33,32 @@ abstract final class MiniPlayer {
   static bool get swipeEnabled =>
       GStorage.setting.get(SettingBoxKey.miniPlayerOnSwipe, defaultValue: true);
 
+  /// Labels of the window sizes, in the order of the stored index.
+  static const sizeLabels = ['小', '中', '大'];
+
+  /// Setting: window size, an index in [sizeLabels]. Default: medium.
+  static int get sizeIndex =>
+      (GStorage.setting.get(SettingBoxKey.miniPlayerSize, defaultValue: 1)
+              as int)
+          .clamp(0, sizeLabels.length - 1);
+
   static bool _swipeRequest = false;
+  static Rect? _swipeFrom;
+  static bool _swipeToLeft = false;
 
   /// Called by the swipe gesture before it pops the video page: the next
-  /// pop opens the mini player, also when [enabled] is false.
-  static void requestFromSwipe() {
+  /// pop opens the mini player, also when [enabled] is false. The window
+  /// flies from [from] (the global rect of the video) to the bottom left
+  /// corner if [toLeft], else to the bottom right corner.
+  static void requestFromSwipe({Rect? from, bool toLeft = false}) {
     _swipeRequest = true;
+    _swipeFrom = from;
+    _swipeToLeft = toLeft;
     // Clear the request if no video page pops.
-    Future.delayed(const Duration(seconds: 1), () => _swipeRequest = false);
+    Future.delayed(const Duration(seconds: 1), () {
+      _swipeRequest = false;
+      _swipeFrom = null;
+    });
   }
 
   /// Returns true (once) if a swipe gesture asked for the mini player.
@@ -66,8 +84,11 @@ abstract final class MiniPlayer {
     _ctr = ctr;
     _args = Map<String, dynamic>.from(args);
     _heroTag = heroTag;
+    final from = _swipeFrom;
+    final toLeft = from != null && _swipeToLeft;
+    _swipeFrom = null;
     final entry = _entry = OverlayEntry(
-      builder: (_) => _MiniPlayerView(ctr: ctr),
+      builder: (_) => _MiniPlayerView(ctr: ctr, from: from, toLeft: toLeft),
     );
     // Called from a page dispose, when the widget tree is locked: insert
     // after the current frame.
@@ -132,32 +153,177 @@ abstract final class MiniPlayer {
 }
 
 class _MiniPlayerView extends StatefulWidget {
-  const _MiniPlayerView({required this.ctr});
+  const _MiniPlayerView({
+    required this.ctr,
+    this.from,
+    this.toLeft = false,
+  });
 
   final PlPlayerController ctr;
+
+  /// Global rect of the video when the window opens with a swipe.
+  final Rect? from;
+
+  /// Open at the bottom left corner (else bottom right).
+  final bool toLeft;
 
   @override
   State<_MiniPlayerView> createState() => _MiniPlayerViewState();
 }
 
-class _MiniPlayerViewState extends State<_MiniPlayerView> {
+class _MiniPlayerViewState extends State<_MiniPlayerView>
+    with SingleTickerProviderStateMixin {
+  static const double _margin = 8;
+  static const double _barHeight = 40;
+
+  /// Width as a part of the shortest screen side, and the maximum width,
+  /// for each size in [MiniPlayer.sizeLabels].
+  static const _widthFactor = [0.42, 0.55, 0.8];
+  static const _maxWidth = [260.0, 360.0, 520.0];
+
   late bool _playing = widget.ctr.playerStatus.isPlaying;
-  Offset? _offset;
+
+  /// Current place of the window (global). Null until the first layout.
+  Rect? _rect;
+  RectTween? _tween;
+  late final AnimationController _anim;
+  late final CurvedAnimation _curve;
+
+  /// Without a swipe, opacity grows from 0 while the window opens. With a
+  /// swipe, the video stays visible while it flies to the corner.
+  late double _opacity = widget.from == null ? 0 : 1;
+  late bool _opening = widget.from == null;
 
   @override
   void initState() {
     super.initState();
     widget.ctr.addStatusLister(_onStatus);
+    _anim = AnimationController(vsync: this)..addListener(_onTick);
+    _curve = CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    final size = _windowSize(media);
+    if (_rect == null) {
+      final target = _cornerRect(media, size, widget.toLeft);
+      // Open with a swipe: fly from the video. Else grow from the corner.
+      final from =
+          widget.from ??
+          Rect.fromCenter(
+            center: target.center,
+            width: target.width * 0.6,
+            height: target.height * 0.6,
+          );
+      _rect = from;
+      _animateTo(
+        target,
+        duration: Duration(milliseconds: widget.from != null ? 380 : 240),
+      );
+    } else {
+      // The screen changed (for example rotation): keep the window inside.
+      _rect = _snapRect(media, _rect!.topLeft & size, Offset.zero);
+    }
   }
 
   @override
   void dispose() {
     widget.ctr.removeStatusLister(_onStatus);
+    _curve.dispose();
+    _anim.dispose();
     super.dispose();
   }
 
   void _onStatus(PlayerStatus status) {
     if (mounted) setState(() => _playing = status.isPlaying);
+  }
+
+  void _onTick() {
+    final tween = _tween;
+    if (tween == null) return;
+    setState(() {
+      _rect = tween.transform(_curve.value);
+      if (_opening) {
+        _opacity = _anim.value.clamp(0.0, 1.0);
+        if (_anim.isCompleted) _opening = false;
+      }
+    });
+  }
+
+  void _animateTo(Rect target, {required Duration duration}) {
+    _tween = RectTween(begin: _rect, end: target);
+    _anim
+      ..duration = duration
+      ..forward(from: 0);
+  }
+
+  Size _windowSize(MediaQueryData media) {
+    final i = MiniPlayer.sizeIndex;
+    final width = math.min(
+      media.size.shortestSide * _widthFactor[i],
+      _maxWidth[i],
+    );
+    return Size(width, width * 9 / 16 + _barHeight);
+  }
+
+  double _minTop(MediaQueryData media) => media.padding.top + _margin;
+
+  double _maxTop(MediaQueryData media, Size size) => math.max(
+    _minTop(media),
+    media.size.height - size.height - media.padding.bottom - _margin,
+  );
+
+  double _leftX(MediaQueryData media) => media.padding.left + _margin;
+
+  double _rightX(MediaQueryData media, Size size) => math.max(
+    _leftX(media),
+    media.size.width - size.width - media.padding.right - _margin,
+  );
+
+  /// Default place: a bottom corner, above the navigation bar.
+  Rect _cornerRect(MediaQueryData media, Size size, bool left) {
+    final x = left ? _leftX(media) : _rightX(media, size);
+    final y = math.max(_minTop(media), _maxTop(media, size) - 80);
+    return Offset(x, y) & size;
+  }
+
+  /// Place for [rect] after a drag: snap to the nearest side edge (also
+  /// use the fling [velocity]), and keep it inside the screen.
+  Rect _snapRect(MediaQueryData media, Rect rect, Offset velocity) {
+    final size = rect.size;
+    final leftX = _leftX(media);
+    final rightX = _rightX(media, size);
+    final projectedX = rect.left + velocity.dx * 0.15;
+    final x = (projectedX + size.width / 2) < media.size.width / 2
+        ? leftX
+        : rightX;
+    final y = (rect.top + velocity.dy * 0.1).clamp(
+      _minTop(media),
+      _maxTop(media, size),
+    );
+    return Offset(x, y) & size;
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    _anim.stop();
+    if (_opening) {
+      _opening = false;
+      _opacity = 1;
+    }
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    setState(() => _rect = _rect!.shift(details.delta));
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    final media = MediaQuery.of(context);
+    _animateTo(
+      _snapRect(media, _rect!, details.velocity.pixelsPerSecond),
+      duration: const Duration(milliseconds: 260),
+    );
   }
 
   void _seekBy(int seconds) {
@@ -168,92 +334,96 @@ class _MiniPlayerViewState extends State<_MiniPlayerView> {
   @override
   Widget build(BuildContext context) {
     final videoController = widget.ctr.videoController;
-    if (videoController == null) return const SizedBox.shrink();
-    final media = MediaQuery.of(context);
-    final size = media.size;
-    final width = math.min(size.shortestSide * 0.55, 320.0);
-    final height = width * 9 / 16 + 40;
-    // Default place: bottom right, above the navigation bar.
-    final maxX = size.width - width - 8;
-    final maxY = size.height - height - media.padding.bottom - 8;
-    final offset = _offset ?? Offset(maxX, maxY - 80);
+    final rect = _rect;
+    if (videoController == null || rect == null) {
+      return const SizedBox.shrink();
+    }
     final theme = Theme.of(context);
+    // The control bar keeps its height; the video part scales.
+    final barHeight = math.min(_barHeight, rect.height * 0.3);
 
-    return Positioned(
-      left: offset.dx.clamp(8, math.max(8, maxX)),
-      top: offset.dy.clamp(media.padding.top + 8, math.max(8, maxY)),
-      width: width,
-      height: height,
-      child: GestureDetector(
-        onPanUpdate: (d) => setState(() => _offset = offset + d.delta),
-        onTap: MiniPlayer.expand,
-        child: Material(
-          elevation: 8,
-          color: Colors.black,
-          clipBehavior: Clip.antiAlias,
-          borderRadius: BorderRadius.circular(10),
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.contain,
-                      child: SimpleVideo(controller: videoController),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: IconButton(
-                        tooltip: '關閉',
-                        iconSize: 20,
-                        color: Colors.white,
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.black38,
-                        ),
-                        icon: const Icon(Icons.close),
-                        onPressed: MiniPlayer.close,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 40,
-                child: IconTheme(
-                  data: theme.iconTheme.copyWith(color: Colors.white),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Positioned.fromRect(
+      rect: rect,
+      child: Opacity(
+        opacity: _opacity,
+        child: GestureDetector(
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: _onPanEnd,
+          onTap: MiniPlayer.expand,
+          child: Material(
+            elevation: 8,
+            color: Colors.black,
+            clipBehavior: Clip.antiAlias,
+            borderRadius: BorderRadius.circular(10),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      IconButton(
-                        tooltip: '倒退 10 秒',
-                        iconSize: 22,
-                        color: Colors.white,
-                        icon: const Icon(Icons.replay_10),
-                        onPressed: () => _seekBy(-10),
+                      FittedBox(
+                        fit: BoxFit.contain,
+                        child: SimpleVideo(controller: videoController),
                       ),
-                      IconButton(
-                        tooltip: _playing ? '暫停' : '播放',
-                        iconSize: 26,
-                        color: Colors.white,
-                        icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
-                        onPressed: () => _playing
-                            ? widget.ctr.pause()
-                            : widget.ctr.play(hideControls: false),
-                      ),
-                      IconButton(
-                        tooltip: '快轉 10 秒',
-                        iconSize: 22,
-                        color: Colors.white,
-                        icon: const Icon(Icons.forward_10),
-                        onPressed: () => _seekBy(10),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: IconButton(
+                          tooltip: '關閉',
+                          iconSize: 20,
+                          color: Colors.white,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black38,
+                          ),
+                          icon: const Icon(Icons.close),
+                          onPressed: MiniPlayer.close,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                SizedBox(
+                  height: barHeight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: IconTheme(
+                      data: theme.iconTheme.copyWith(color: Colors.white),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: '倒退 10 秒',
+                            iconSize: 22,
+                            color: Colors.white,
+                            icon: const Icon(Icons.replay_10),
+                            onPressed: () => _seekBy(-10),
+                          ),
+                          IconButton(
+                            tooltip: _playing ? '暫停' : '播放',
+                            iconSize: 26,
+                            color: Colors.white,
+                            icon: Icon(
+                              _playing ? Icons.pause : Icons.play_arrow,
+                            ),
+                            onPressed: () => _playing
+                                ? widget.ctr.pause()
+                                : widget.ctr.play(hideControls: false),
+                          ),
+                          IconButton(
+                            tooltip: '快轉 10 秒',
+                            iconSize: 22,
+                            color: Colors.white,
+                            icon: const Icon(Icons.forward_10),
+                            onPressed: () => _seekBy(10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
