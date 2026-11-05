@@ -973,6 +973,21 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       if (cumulativeDelta.distanceSquared < 1) return;
       final dx = cumulativeDelta.dx.abs();
       final dy = cumulativeDelta.dy.abs();
+      final canMini = _canSwipeToMini;
+      // A diagonal swipe often starts almost straight down. Wait until the
+      // finger moved far enough to see the real direction.
+      if (canMini &&
+          cumulativeDelta.dy > 0 &&
+          cumulativeDelta.distanceSquared < _miniDecideDistance2) {
+        return;
+      }
+      if (canMini &&
+          cumulativeDelta.dy > 0 &&
+          dx > dy * _miniMinSlope &&
+          dy > dx * _miniMinSlope) {
+        _startMiniSwipe(details, cumulativeDelta);
+        return;
+      }
       if (dx > 3 * dy) {
         _onHorizontalDragStart();
         _gestureType = .horizontal;
@@ -1006,29 +1021,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           }
           // 右边区域
           _gestureType = .right;
-        }
-      } else if (cumulativeDelta.dy > 40 && dx > 40 && _canSwipeToMini) {
-        // Diagonal swipe down (bottom left or bottom right): leave the
-        // video page and keep playing in the mini player.
-        // A preview of the video follows the finger; the page closes when
-        // the finger lifts after it went far enough.
-        if (context.findRenderObject() case final RenderBox box
-            when box.hasSize) {
-          final started = MiniPlayer.startSwipe(
-            video: plPlayerController.videoController!,
-            from: box.localToGlobal(Offset.zero) & box.size,
-            toLeft: cumulativeDelta.dx < 0,
-            onRemoved: () {
-              if (mounted) _hideForMiniSwipe.value = false;
-            },
-          );
-          if (started) {
-            _gestureType = .mini;
-            _miniSwipeStartDy = details.localFocalPoint.dy;
-            _hideForMiniSwipe.value = true;
-            plPlayerController.controls = false;
-            feedBack();
-          }
         }
       }
       return;
@@ -1126,6 +1118,38 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
         ),
       );
+    }
+  }
+
+  /// Squared finger distance before a downward move is classified.
+  static const double _miniDecideDistance2 = 24 * 24;
+
+  /// Diagonal: each of dx and dy is at least this part of the other
+  /// (about 22 to 68 degrees from vertical).
+  static const double _miniMinSlope = 0.4;
+
+  /// Diagonal swipe down (bottom left or bottom right): leave the video
+  /// page and keep playing in the mini player. A preview of the video
+  /// follows the finger; the page closes when the finger lifts after it
+  /// went far enough.
+  void _startMiniSwipe(ScaleUpdateDetails details, Offset cumulativeDelta) {
+    if (context.findRenderObject() case final RenderBox box when box.hasSize) {
+      final started = MiniPlayer.startSwipe(
+        video: plPlayerController.videoController!,
+        from: box.localToGlobal(Offset.zero) & box.size,
+        toLeft: cumulativeDelta.dx < 0,
+        onRemoved: () {
+          if (mounted) _hideForMiniSwipe.value = false;
+        },
+      );
+      if (started) {
+        _gestureType = .mini;
+        // Start from the current finger: the preview does not jump.
+        _miniSwipeStartDy = details.localFocalPoint.dy;
+        _hideForMiniSwipe.value = true;
+        plPlayerController.controls = false;
+        feedBack();
+      }
     }
   }
 

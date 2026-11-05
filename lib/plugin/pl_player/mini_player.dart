@@ -194,6 +194,8 @@ abstract final class MiniPlayer {
     final ctr = _ctr!;
     _removeEntry();
     if (ctr.playerStatus.isPlaying) ctr.pause();
+    // The new page can keep the open streams and their buffer.
+    ctr.reuseNextSource = true;
     _release(ctr);
     _clear();
   }
@@ -658,13 +660,21 @@ class _SwipePreviewState extends State<_SwipePreview>
 
   /// Returns true if the swipe opens the mini player.
   bool end(double velocityDy) {
-    final commit =
-        velocityDy > -300 &&
-        (_progress > 0.3 || (velocityDy > 700 && _progress > 0.05));
+    // The faster the finger, the shorter the distance that is enough:
+    // half the way when it stops, a small part for a fast fling.
+    final speed = (velocityDy / 1500).clamp(0.0, 1.0);
+    final threshold = 0.5 - 0.44 * speed;
+    final commit = velocityDy > -300 && _progress >= threshold;
+    // Continue at the speed of the finger: a slow swipe ends slowly.
+    final remaining = (commit ? 1 - _progress : _progress) * _travel;
+    final pxPerMs = velocityDy.abs() / 1000;
+    final ms = pxPerMs > 0.2
+        ? (remaining / pxPerMs).clamp(150.0, 450.0)
+        : (commit ? 420.0 : 260.0);
     _animate(
       progress: commit ? 1 : 0,
       scrim: commit ? 0 : 1,
-      duration: Duration(milliseconds: commit ? 240 : 200),
+      duration: Duration(milliseconds: ms.round()),
       removeWhenDone: !commit,
     );
     return commit;

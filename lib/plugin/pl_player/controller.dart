@@ -703,6 +703,33 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool _processing = false;
   bool get processing => _processing;
 
+  /// Set when the mini player gives the player to a new video page. If
+  /// that page opens the same streams, the player keeps them (and the
+  /// buffered data) instead of loading them again.
+  bool reuseNextSource = false;
+
+  static String? _streamPath(String? url) =>
+      url == null || url.isEmpty ? null : Uri.tryParse(url)?.path;
+
+  /// True if [next] is the stream of the open video. The URLs differ in
+  /// host and signature at each request, so only the paths are compared.
+  bool _canReuse(DataSource next, int? nextCid) {
+    if (!reuseNextSource) return false;
+    reuseNextSource = false;
+    final player = _videoPlayerController;
+    if (player == null || isLive || nextCid == null || nextCid != cid) {
+      return false;
+    }
+    if (dataStatus.value != DataStatus.loaded || player.current.isEmpty) {
+      return false;
+    }
+    final prev = dataSource;
+    return prev is NetworkSource &&
+        next is NetworkSource &&
+        _streamPath(prev.videoSource) == _streamPath(next.videoSource) &&
+        _streamPath(prev.audioSource) == _streamPath(next.audioSource);
+  }
+
   // offline
   bool get isFileSource => dataSource is FileSource;
 
@@ -735,6 +762,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }) async {
     try {
       _processing = true;
+      final reuse = !isLive && _canReuse(dataSource, cid);
       this.isLive = isLive;
       _videoType = videoType ?? VideoType.ugc;
       this.width = width;
@@ -762,6 +790,21 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       }
 
       if (_playerCount == 0) {
+        return;
+      }
+      if (reuse) {
+        // Same streams as the mini player: keep the open media.
+        final state = _videoPlayerController!.state;
+        if (seekTo != null &&
+            (seekTo - state.position).inMilliseconds.abs() > 2000) {
+          await _videoPlayerController!.seek(seekTo);
+        }
+        updateDuration(duration ?? state.duration);
+        position.value = state.position.inSeconds;
+        buffered.value = state.buffer.inSeconds;
+        dataStatus.value = .loaded;
+        await _initializePlayer();
+        onInit?.call();
         return;
       }
       // 配置Player 音轨、字幕等等
