@@ -378,6 +378,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
   @override
   void dispose() {
+    if (_gestureType == .mini) MiniPlayer.cancelSwipe();
+    _hideForMiniSwipe.dispose();
     removeObserverMobile(this);
     _danmakuListener?.cancel();
     _tapGestureRecognizer.dispose();
@@ -1008,23 +1010,34 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       } else if (cumulativeDelta.dy > 40 && dx > 40 && _canSwipeToMini) {
         // Diagonal swipe down (bottom left or bottom right): leave the
         // video page and keep playing in the mini player.
-        _gestureType = .mini;
-        feedBack();
-        Rect? from;
+        // A preview of the video follows the finger; the page closes when
+        // the finger lifts after it went far enough.
         if (context.findRenderObject() case final RenderBox box
             when box.hasSize) {
-          from = box.localToGlobal(Offset.zero) & box.size;
+          final started = MiniPlayer.startSwipe(
+            video: plPlayerController.videoController!,
+            from: box.localToGlobal(Offset.zero) & box.size,
+            toLeft: cumulativeDelta.dx < 0,
+            onRemoved: () {
+              if (mounted) _hideForMiniSwipe.value = false;
+            },
+          );
+          if (started) {
+            _gestureType = .mini;
+            _miniSwipeStartDy = details.localFocalPoint.dy;
+            _hideForMiniSwipe.value = true;
+            plPlayerController.controls = false;
+            feedBack();
+          }
         }
-        MiniPlayer.requestFromSwipe(
-          from: from,
-          toLeft: cumulativeDelta.dx < 0,
-        );
-        Navigator.maybePop(context);
       }
       return;
     }
 
-    if (_gestureType == .mini) return;
+    if (_gestureType == .mini) {
+      MiniPlayer.updateSwipe(details.localFocalPoint.dy - _miniSwipeStartDy);
+      return;
+    }
 
     Offset delta = details.focalPointDelta;
 
@@ -1123,9 +1136,20 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       !plPlayerController.isLive &&
       plPlayerController.videoController != null;
 
+  /// Finger y when the swipe to the mini player started.
+  double _miniSwipeStartDy = 0;
+
+  /// True while the swipe preview shows the video in its place.
+  final _hideForMiniSwipe = ValueNotifier(false);
+
   void _onPanEnd(ScaleEndDetails details) {
     if (_gestureType == .horizontal) {
       _onHorizontalDragEnd();
+    } else if (_gestureType == .mini) {
+      MiniPlayer.endSwipe(
+        details.velocity.pixelsPerSecond.dy,
+        onCommit: () => Navigator.maybePop(context),
+      );
     }
     _initialFocalPoint = null;
     _gestureType = null;
@@ -2051,23 +2075,30 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           childKey: _videoKey,
           child: RepaintBoundary(
             key: _videoKey,
-            child: Obx(
-              () {
-                final videoFit = plPlayerController.videoFit.value;
-                return Transform.flip(
-                  flipX: plPlayerController.flipX.value,
-                  flipY: plPlayerController.flipY.value,
-                  child: FittedBox(
-                    fit: videoFit.boxFit,
-                    alignment: widget.alignment,
-                    child: SimpleVideo(
-                      controller: plPlayerController.videoController!,
-                      fill: widget.fill,
-                      aspectRatio: videoFit.aspectRatio,
+            // While the swipe preview moves the video to the mini player,
+            // the video place on the page stays empty.
+            child: ValueListenableBuilder(
+              valueListenable: _hideForMiniSwipe,
+              builder: (context, hide, child) =>
+                  hide ? const SizedBox.expand() : child!,
+              child: Obx(
+                () {
+                  final videoFit = plPlayerController.videoFit.value;
+                  return Transform.flip(
+                    flipX: plPlayerController.flipX.value,
+                    flipY: plPlayerController.flipY.value,
+                    child: FittedBox(
+                      fit: videoFit.boxFit,
+                      alignment: widget.alignment,
+                      child: SimpleVideo(
+                        controller: plPlayerController.videoController!,
+                        fill: widget.fill,
+                        aspectRatio: videoFit.aspectRatio,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ),

@@ -68,6 +68,80 @@ abstract final class MiniPlayer {
     return request;
   }
 
+  // Interactive swipe: a preview of the video follows the finger.
+  static OverlayEntry? _dragEntry;
+  static GlobalKey<_SwipePreviewState>? _dragKey;
+  static VoidCallback? _onDragRemoved;
+  static Timer? _dragTimer;
+
+  /// Starts the drag of a diagonal swipe down. A preview of [video] shows
+  /// at [from] (the global rect of the video) and follows the finger to the
+  /// bottom left corner if [toLeft], else to the bottom right corner.
+  /// [onRemoved] is called when the preview goes away. Returns false if
+  /// the preview cannot show.
+  static bool startSwipe({
+    required VideoController video,
+    required Rect from,
+    required bool toLeft,
+    VoidCallback? onRemoved,
+  }) {
+    final overlay = Get.key.currentState?.overlay;
+    if (overlay == null) return false;
+    _removeDragEntry();
+    final key = _dragKey = GlobalKey<_SwipePreviewState>();
+    _onDragRemoved = onRemoved;
+    final entry = _dragEntry = OverlayEntry(
+      builder: (_) =>
+          _SwipePreview(key: key, video: video, from: from, toLeft: toLeft),
+    );
+    overlay.insert(entry);
+    return true;
+  }
+
+  /// Moves the preview: [dy] is the distance of the finger down since the
+  /// start of the swipe.
+  static void updateSwipe(double dy) => _dragKey?.currentState?.drag(dy);
+
+  /// Ends the swipe. If the preview went far enough (or the fling was fast
+  /// enough), it flies to the corner and [onCommit] is called (it must pop
+  /// the video page). Else the preview goes back and is removed.
+  static void endSwipe(double velocityDy, {required VoidCallback onCommit}) {
+    final state = _dragKey?.currentState;
+    if (state == null) {
+      _removeDragEntry();
+      return;
+    }
+    if (state.end(velocityDy)) {
+      requestFromSwipe(toLeft: state.widget.toLeft);
+      onCommit();
+      // Remove the preview if no mini player takes it over.
+      _dragTimer?.cancel();
+      _dragTimer = Timer(const Duration(seconds: 2), _removeDragEntry);
+    }
+  }
+
+  /// Cancels the swipe at once (for example, the player closed).
+  static void cancelSwipe() => _removeDragEntry();
+
+  static void _removeDragEntryOf(GlobalKey key) {
+    if (_dragKey == key) _removeDragEntry();
+  }
+
+  static void _removeDragEntry() {
+    _dragTimer?.cancel();
+    _dragTimer = null;
+    _dragKey = null;
+    final entry = _dragEntry;
+    _dragEntry = null;
+    final onRemoved = _onDragRemoved;
+    _onDragRemoved = null;
+    if (entry != null) {
+      if (entry.mounted) entry.remove();
+      entry.dispose();
+    }
+    onRemoved?.call();
+  }
+
   static bool get active => _entry != null;
 
   /// Shows the mini player for [ctr]. [args] are the arguments of the
@@ -84,9 +158,12 @@ abstract final class MiniPlayer {
     _ctr = ctr;
     _args = Map<String, dynamic>.from(args);
     _heroTag = heroTag;
-    final from = _swipeFrom;
+    // A swipe preview gives its place to the window: the window continues
+    // from there.
+    final from = _dragKey?.currentState?.rect ?? _swipeFrom;
     final toLeft = from != null && _swipeToLeft;
     _swipeFrom = null;
+    _removeDragEntry();
     final entry = _entry = OverlayEntry(
       builder: (_) => _MiniPlayerView(ctr: ctr, from: from, toLeft: toLeft),
     );
@@ -259,7 +336,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
       ..forward(from: 0);
   }
 
-  Size _windowSize(MediaQueryData media) {
+  static Size _windowSize(MediaQueryData media) {
     final i = MiniPlayer.sizeIndex;
     final width = math.min(
       media.size.shortestSide * _widthFactor[i],
@@ -268,22 +345,22 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
     return Size(width, width * 9 / 16 + _barHeight);
   }
 
-  double _minTop(MediaQueryData media) => media.padding.top + _margin;
+  static double _minTop(MediaQueryData media) => media.padding.top + _margin;
 
-  double _maxTop(MediaQueryData media, Size size) => math.max(
+  static double _maxTop(MediaQueryData media, Size size) => math.max(
     _minTop(media),
     media.size.height - size.height - media.padding.bottom - _margin,
   );
 
-  double _leftX(MediaQueryData media) => media.padding.left + _margin;
+  static double _leftX(MediaQueryData media) => media.padding.left + _margin;
 
-  double _rightX(MediaQueryData media, Size size) => math.max(
+  static double _rightX(MediaQueryData media, Size size) => math.max(
     _leftX(media),
     media.size.width - size.width - media.padding.right - _margin,
   );
 
   /// Default place: a bottom corner, above the navigation bar.
-  Rect _cornerRect(MediaQueryData media, Size size, bool left) {
+  static Rect _cornerRect(MediaQueryData media, Size size, bool left) {
     final x = left ? _leftX(media) : _rightX(media, size);
     final y = math.max(_minTop(media), _maxTop(media, size) - 80);
     return Offset(x, y) & size;
@@ -426,6 +503,144 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Preview of the video while the user swipes it down to the mini player.
+/// It moves and shrinks with the finger, from the video place to a bottom
+/// corner, and the page behind gets darker.
+class _SwipePreview extends StatefulWidget {
+  const _SwipePreview({
+    super.key,
+    required this.video,
+    required this.from,
+    required this.toLeft,
+  });
+
+  final VideoController video;
+
+  /// Global rect of the video on the page.
+  final Rect from;
+
+  /// Go to the bottom left corner (else bottom right).
+  final bool toLeft;
+
+  @override
+  State<_SwipePreview> createState() => _SwipePreviewState();
+}
+
+class _SwipePreviewState extends State<_SwipePreview>
+    with SingleTickerProviderStateMixin {
+  /// Part of the way to the corner: 0 at the video place, 1 at the corner.
+  double _progress = 0;
+
+  /// Opacity of the dark scrim: 1 while the page shows, 0 when it closes.
+  double _scrim = 1;
+
+  late Rect _target;
+
+  /// Finger distance (down) for the full way to the corner.
+  late double _travel;
+
+  late final AnimationController _anim = AnimationController(vsync: this)
+    ..addListener(_onTick)
+    ..addStatusListener(_onStatus);
+  double _progressFrom = 0, _progressTo = 0;
+  double _scrimFrom = 1, _scrimTo = 1;
+  bool _removeWhenDone = false;
+
+  /// Current global rect of the preview.
+  Rect get rect => Rect.lerp(widget.from, _target, _progress)!;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    final size = _MiniPlayerViewState._windowSize(media);
+    _target = _MiniPlayerViewState._cornerRect(media, size, widget.toLeft);
+    _travel = math.max(150, _target.top - widget.from.top);
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  void drag(double dy) {
+    if (_anim.isAnimating) _anim.stop();
+    setState(() => _progress = (dy / _travel).clamp(0.0, 1.0));
+  }
+
+  /// Returns true if the swipe opens the mini player.
+  bool end(double velocityDy) {
+    final commit =
+        velocityDy > -300 &&
+        (_progress > 0.3 || (velocityDy > 700 && _progress > 0.05));
+    _animate(
+      progress: commit ? 1 : 0,
+      scrim: commit ? 0 : 1,
+      duration: Duration(milliseconds: commit ? 240 : 200),
+      removeWhenDone: !commit,
+    );
+    return commit;
+  }
+
+  void _animate({
+    required double progress,
+    required double scrim,
+    required Duration duration,
+    required bool removeWhenDone,
+  }) {
+    _progressFrom = _progress;
+    _progressTo = progress;
+    _scrimFrom = _scrim;
+    _scrimTo = scrim;
+    _removeWhenDone = removeWhenDone;
+    _anim
+      ..duration = duration
+      ..forward(from: 0);
+  }
+
+  void _onTick() {
+    final t = Curves.easeOutCubic.transform(_anim.value);
+    setState(() {
+      _progress = _progressFrom + (_progressTo - _progressFrom) * t;
+      _scrim = _scrimFrom + (_scrimTo - _scrimFrom) * t;
+    });
+  }
+
+  void _onStatus(AnimationStatus status) {
+    if (status.isCompleted && _removeWhenDone) {
+      final key = widget.key;
+      if (key is GlobalKey) MiniPlayer._removeDragEntryOf(key);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = _progress;
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: Colors.black.withValues(alpha: 0.45 * p * _scrim)),
+          Positioned.fromRect(
+            rect: rect,
+            child: Material(
+              elevation: 8 * p,
+              color: Colors.black,
+              clipBehavior: Clip.antiAlias,
+              borderRadius: BorderRadius.circular(10 * p),
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SimpleVideo(controller: widget.video),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
