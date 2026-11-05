@@ -2,6 +2,8 @@
 
 <img src="assets/images/logo/logo.png" width="96" alt="PiliBTR icon">
 
+> **PiliBTR** is a third-party Bilibili client for Android, based on [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus). It downloads video from several Bilibili CDN nodes at the same time, so playback stutters less (especially outside mainland China) and offline downloads are faster. Traditional Chinese UI. Download the APK from [Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
+
 本版本 fork 自 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)，加入「線程撕裂者」（Bilibili Thread Ripper，BTR）的多 CDN 並行加速。設計參考 [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)（MIT），並移植到 Android 手機。
 
 ## 為什麼要做
