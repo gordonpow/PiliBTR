@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:PiliPlus/common/widgets/compact_navigation_bar.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
@@ -274,7 +275,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
 
   /// Space for the bottom navigation bar of the main page. The bar can
   /// hide when the list scrolls: then the window goes down to the edge.
-  static const double _barSpace = 80;
+  static const double _barSpace = CompactNavigationBar.height;
   Worker? _barWorker;
   bool _dragging = false;
 
