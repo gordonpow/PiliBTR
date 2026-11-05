@@ -96,7 +96,9 @@ class _MediaPageState extends CommonPageState<MinePage>
                   children: [
                     _buildUserInfo(theme, secondary),
                     _buildActions(secondary),
-                    for (final tab in controller.mineTabs)
+                    for (final tab in MineTabType.displayOrder.where(
+                      controller.mineTabs.contains,
+                    ))
                       switch (tab) {
                         .favorite => Obx(_buildFav),
                         .history => Obx(_buildHistory),

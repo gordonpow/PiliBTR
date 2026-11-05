@@ -1090,11 +1090,21 @@ abstract final class Pref {
   static bool get enableEmoteTooltip =>
       _setting.get(SettingBoxKey.enableEmoteTooltip, defaultValue: false);
 
-  static Set<MineTabType> get mineTabs =>
-      (_setting.get(SettingBoxKey.mineTabs) as List?)
-          ?.map<MineTabType>((index) => .values[index])
-          .toSet() ??
-      MineTabType.kDefault;
+  static Set<MineTabType> get mineTabs {
+    final saved = (_setting.get(SettingBoxKey.mineTabs) as List?)
+        ?.map<MineTabType>((index) => .values[index])
+        .toSet();
+    if (saved == null) return MineTabType.kDefault;
+    // Once: the watch history row became part of the defaults, so add it
+    // to a list saved before. The user can remove it again.
+    if (_setting.get(SettingBoxKey.mineTabsHistoryAdded) != true) {
+      saved.add(.history);
+      _setting
+        ..put(SettingBoxKey.mineTabs, saved.map((e) => e.index).toList())
+        ..put(SettingBoxKey.mineTabsHistoryAdded, true);
+    }
+    return saved;
+  }
 
   static bool get blockAtOnlyReply =>
       _setting.get(SettingBoxKey.blockAtOnlyReply, defaultValue: false);
