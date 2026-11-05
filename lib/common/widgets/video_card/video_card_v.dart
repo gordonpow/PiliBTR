@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
@@ -111,7 +112,8 @@ class VideoCardV extends StatelessWidget {
       VideoPreview.stop(videoItem);
       onPushDetail(preview);
     }
-    return Stack(
+
+    final card = Stack(
       clipBehavior: Clip.none,
       children: [
         Card(
@@ -202,6 +204,16 @@ class VideoCardV extends StatelessWidget {
             ),
           ),
       ],
+    );
+    if (!canPreview) return card;
+    return SwipePreviewTarget(
+      item: videoItem,
+      onPrefetch: () => VideoPreview.prefetch(
+        aid: videoItem.aid,
+        bvid: videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
+        cid: videoItem.cid,
+      ),
+      child: card,
     );
   }
 

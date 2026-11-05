@@ -23,6 +23,13 @@ List<SettingsModel> get recommendSettings => [
     setKey: SettingBoxKey.videoCardPreview,
     defaultVal: true,
   ),
+  const SwitchModel(
+    title: '滑動時預覽',
+    subtitle: '在首頁滑動時，手指停在哪張影片卡片上就預覽哪一張（需開啟長按影片預覽）',
+    leading: Icon(Icons.swipe_vertical_outlined),
+    setKey: SettingBoxKey.videoPreviewOnSwipe,
+    defaultVal: true,
+  ),
   SwitchModel(
     title: '保留首頁推薦重新整理',
     subtitle: '下拉重新整理時保留上次內容',

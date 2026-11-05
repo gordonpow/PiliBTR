@@ -457,7 +457,9 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
                   SizedBox(
                     height: dragging ? 4 : 3,
                     width: width,
-                    child: ColoredBox(color: Colors.white.withValues(alpha: .3)),
+                    child: ColoredBox(
+                      color: Colors.white.withValues(alpha: .3),
+                    ),
                   ),
                   SizedBox(
                     height: dragging ? 4 : 3,
