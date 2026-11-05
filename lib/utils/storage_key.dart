@@ -43,6 +43,8 @@ abstract final class SettingBoxKey {
       miniPlayerOnBack = 'miniPlayerOnBack',
       miniPlayerOnSwipe = 'miniPlayerOnSwipe',
       miniPlayerSize = 'miniPlayerSize',
+      videoCardPreview = 'videoCardPreview',
+      videoPreviewSubtitle = 'videoPreviewSubtitle',
       enableAutoLongPressSpeed = 'enableAutoLongPressSpeed',
       useRelativeSlide = 'useRelativeSlide',
       sliderDuration = 'sliderOffset',

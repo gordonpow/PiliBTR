@@ -16,6 +16,13 @@ List<SettingsModel> get recommendSettings => [
     defaultVal: true,
     needReboot: true,
   ),
+  const SwitchModel(
+    title: '長按影片預覽',
+    subtitle: '在首頁長按影片卡片，直接在卡片上預覽影片（預設靜音）',
+    leading: Icon(Icons.preview_outlined),
+    setKey: SettingBoxKey.videoCardPreview,
+    defaultVal: true,
+  ),
   SwitchModel(
     title: '保留首頁推薦重新整理',
     subtitle: '下拉重新整理時保留上次內容',

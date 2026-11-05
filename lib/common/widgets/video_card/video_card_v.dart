@@ -3,6 +3,7 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
@@ -30,14 +31,16 @@ class VideoCardV extends StatelessWidget {
     this.onRemove,
   });
 
-  Future<void> onPushDetail() async {
+  /// [preview]: cid and position of the preview of this card, if it
+  /// played: the video page continues from there.
+  Future<void> onPushDetail([({int cid, int ms})? preview]) async {
     switch (videoItem.goto) {
       case 'bangumi':
         PageUtils.viewPgc(epId: videoItem.param!);
         break;
       case 'av':
         var bvid = videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!);
-        var cid = videoItem.cid;
+        var cid = preview?.cid ?? videoItem.cid;
         bool isVertical = false;
         Dimension? dimension;
         if (videoItem is RcmdVideoItemAppModel) {
@@ -61,6 +64,7 @@ class VideoCardV extends StatelessWidget {
             title: videoItem.title,
             isVertical: isVertical,
             dimension: dimension,
+            progress: preview?.ms,
           );
         }
         break;
@@ -81,19 +85,49 @@ class VideoCardV extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void onLongPress() => imageSaveDialog(
+    void onMore() => imageSaveDialog(
       title: videoItem.title,
       cover: videoItem.cover,
       bvid: videoItem.bvid,
     );
+    final canPreview =
+        videoItem.goto == 'av' &&
+        (videoItem.bvid != null || videoItem.aid != null);
+    // Long press plays a preview in the card. A second long press on the
+    // playing card shows the old menu.
+    void onLongPress() =>
+        canPreview &&
+            VideoPreview.enabled &&
+            VideoPreview.active.value != videoItem
+        ? VideoPreview.start(videoItem)
+        : onMore();
+    void onTap() {
+      // Continue from the preview position (the preview knows the cid).
+      final preview = VideoPreview.active.value == videoItem
+          ? VideoPreview.progressOf(
+              videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
+            )
+          : null;
+      VideoPreview.stop(videoItem);
+      onPushDetail(preview);
+    }
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Card(
           child: InkWell(
-            onTap: onPushDetail,
+            onTap: onTap,
+            // Get the preview streams early: the long press needs about
+            // half a second more, so the preview starts faster.
+            onTapDown: canPreview
+                ? (_) => VideoPreview.prefetch(
+                    aid: videoItem.aid,
+                    bvid: videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
+                    cid: videoItem.cid,
+                  )
+                : null,
             onLongPress: onLongPress,
-            onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+            onSecondaryTap: PlatformUtils.isMobile ? null : onMore,
             borderRadius: const .all(.circular(12)),
             child: Column(
               crossAxisAlignment: .start,
@@ -121,6 +155,28 @@ class VideoCardV extends StatelessWidget {
                               type: .gray,
                               text: DurationUtils.formatDuration(
                                 videoItem.duration,
+                              ),
+                            ),
+                          if (canPreview)
+                            Positioned.fill(
+                              child: ValueListenableBuilder(
+                                valueListenable: VideoPreview.active,
+                                builder: (context, active, _) =>
+                                    active == videoItem
+                                    ? ClipRRect(
+                                        borderRadius: const .vertical(
+                                          top: .circular(12),
+                                        ),
+                                        child: InlineVideoPreview(
+                                          item: videoItem,
+                                          aid: videoItem.aid,
+                                          bvid:
+                                              videoItem.bvid ??
+                                              IdUtils.av2bv(videoItem.aid!),
+                                          cid: videoItem.cid,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
                             ),
                         ],
