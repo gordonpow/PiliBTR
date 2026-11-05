@@ -1035,6 +1035,9 @@ abstract final class Pref {
 
   static String? get downloadPath => _setting.get(SettingBoxKey.downloadPath);
 
+  /// Folder of the "download" (export) button; null is the default.
+  static String? get exportPath => _setting.get(SettingBoxKey.exportPath);
+
   static String? get imageSavePath => _setting.get(SettingBoxKey.imageSavePath);
 
   static String? get liveCdnUrl => _setting.get(SettingBoxKey.liveCdnUrl);

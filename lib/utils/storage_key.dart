@@ -153,6 +153,7 @@ abstract final class SettingBoxKey {
       enableTapDm = 'enableTapDm',
       setSystemBrightness = 'setSystemBrightness',
       downloadPath = 'downloadPath',
+      exportPath = 'exportPath',
       btrEnable = 'btrEnable',
       btrPlayback = 'btrPlayback',
       btrCdnMode = 'btrCdnMode',

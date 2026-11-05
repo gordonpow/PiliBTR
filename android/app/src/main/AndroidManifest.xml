@@ -38,6 +38,7 @@
     <application xmlns:tools="http://schemas.android.com/tools"
         android:name="${applicationName}"
         android:allowBackup="false"
+        android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="false"
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
@@ -267,7 +268,7 @@
         android:maxSdkVersion="32" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+        android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />

@@ -1,5 +1,6 @@
 import 'dart:io' show Platform, Directory;
 
+import 'package:PiliPlus/services/download/video_export.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart'
@@ -37,6 +38,12 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
 
 List<SettingsModel> get extraSettings => [
+  NormalModel(
+    title: '下載路徑',
+    getSubtitle: () => '影片「下載」按鈕的存放位置：${VideoExport.dir}',
+    leading: const Icon(Icons.save_alt),
+    onTap: _showExportPathDialog,
+  ),
   if (PlatformUtils.isDesktop) ...[
     SwitchModel(
       title: '退出時最小化',
@@ -265,6 +272,41 @@ List<SettingsModel> get extraSettings => [
     onTap: _showCacheDialog,
   ),
 ];
+
+void _showExportPathDialog(BuildContext context, VoidCallback setState) {
+  showDialog(
+    context: context,
+    builder: (context) => SimpleDialog(
+      clipBehavior: Clip.hardEdge,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      children: [
+        DialogOption(
+          onPressed: () async {
+            Get.back();
+            final current = VideoExport.dir;
+            final path = await FilePicker.getDirectoryPath(
+              initialDirectory: Directory(current).existsSync()
+                  ? current
+                  : null,
+            );
+            if (path == null || path == current) return;
+            VideoExport.dir = path;
+            setState();
+          },
+          child: const Text('設定新路徑', style: TextStyle(fontSize: 14)),
+        ),
+        DialogOption(
+          onPressed: () {
+            Get.back();
+            VideoExport.dir = null;
+            setState();
+          },
+          child: const Text('重置為 Download', style: TextStyle(fontSize: 14)),
+        ),
+      ],
+    ),
+  );
+}
 
 void _showDownPathDialog(BuildContext context, VoidCallback setState) {
   showDialog(

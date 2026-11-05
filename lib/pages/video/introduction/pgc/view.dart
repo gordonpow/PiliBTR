@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:PiliPlus/services/download/video_export.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
@@ -452,6 +453,12 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
             onTap: () => videoDetailCtr.onDownload(context),
             text: '快取',
             semanticsLabel: '快取',
+          ),
+          ActionItem(
+            icon: const Icon(Icons.save_alt),
+            onTap: () => VideoExport.start(videoDetailCtr),
+            text: '下載',
+            semanticsLabel: '下載到手機',
           ),
           Obx(
             () => ActionItem(

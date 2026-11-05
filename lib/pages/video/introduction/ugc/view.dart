@@ -1,3 +1,4 @@
+import 'package:PiliPlus/services/download/video_export.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
@@ -532,6 +533,12 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
             onTap: () => videoDetailCtr.onDownload(context),
             text: '快取',
             semanticsLabel: '快取',
+          ),
+          ActionItem(
+            icon: const Icon(Icons.save_alt),
+            onTap: () => VideoExport.start(videoDetailCtr),
+            text: '下載',
+            semanticsLabel: '下載到手機',
           ),
           Obx(
             () => ActionItem(

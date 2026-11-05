@@ -2,6 +2,7 @@ package com.example.piliplus
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,15 @@ class MainActivity : AudioServiceActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "pilibtr/update")
             .setMethodCallHandler { call, result ->
+                if (call.method == "scanFile") {
+                    // Add a downloaded video to the media library (gallery).
+                    val path = call.argument<String>("path")
+                    if (path != null) {
+                        MediaScannerConnection.scanFile(this, arrayOf(path), null, null)
+                    }
+                    result.success(null)
+                    return@setMethodCallHandler
+                }
                 if (call.method != "installApk") {
                     result.notImplemented()
                     return@setMethodCallHandler
