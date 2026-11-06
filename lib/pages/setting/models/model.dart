@@ -207,6 +207,31 @@ class SwitchModel extends SettingsModel {
   );
 }
 
+/// An item built by a custom widget builder (for example a tile that can hide
+/// itself).
+class CustomModel extends SettingsModel {
+  @override
+  final String title;
+  final Widget Function() builder;
+
+  const CustomModel({
+    required this.title,
+    required this.builder,
+    super.subtitle,
+    super.leading,
+    super.contentPadding,
+    super.titleStyle,
+  });
+
+  @override
+  String get effectiveTitle => title;
+  @override
+  String? get effectiveSubtitle => subtitle;
+
+  @override
+  Widget get widget => builder();
+}
+
 SettingsModel getBanWordModel({
   required String title,
   required String key,

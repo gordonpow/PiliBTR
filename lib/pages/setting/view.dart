@@ -1,36 +1,18 @@
-import 'package:PiliPlus/utils/update.dart';
-import 'package:PiliPlus/pages/update/view.dart';
-import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
-import 'package:PiliPlus/http/login.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/about/view.dart';
-import 'package:PiliPlus/pages/login/controller.dart';
-import 'package:PiliPlus/pages/setting/common_setting.dart';
-import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
+import 'package:PiliPlus/pages/setting/account_actions.dart';
+import 'package:PiliPlus/pages/setting/models/setting_tree.dart';
+import 'package:PiliPlus/pages/setting/setting_node_page.dart';
+import 'package:PiliPlus/pages/update/view.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
-import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
-import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:PiliPlus/utils/update.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
-
-class _SettingsModel {
-  final SettingType type;
-  final String? subtitle;
-  final Icon icon;
-
-  const _SettingsModel({
-    required this.type,
-    this.subtitle,
-    required this.icon,
-  });
-}
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -40,66 +22,27 @@ class SettingPage extends StatefulWidget {
 }
 
 class _SettingPageState extends State<SettingPage> {
-  late SettingType _type = .privacySetting;
-  final RxBool _noAccount = Accounts.account.isEmpty.obs;
+  late final SettingTree _tree;
+
+  /// Landscape: selected nodes, from a root node to a group.
+  List<SettingNode> _path = [];
+
+  /// Landscape: category whose children the left pane shows, null for roots.
+  SettingNode? _category;
+
+  /// Landscape: WebDAV or About selected instead of a node.
+  SettingType? _special;
+
   late bool _isPortrait;
   late ThemeData theme;
 
-  static const List<_SettingsModel> _items = [
-    _SettingsModel(
-      type: .privacySetting,
-      subtitle: '帳號、黑名單',
-      icon: Icon(Icons.privacy_tip_outlined),
-    ),
-    _SettingsModel(
-      type: .recommendSetting,
-      subtitle: '推薦來源（web/app）、重新整理保留內容、過濾器',
-      icon: Icon(Icons.explore_outlined),
-    ),
-    _SettingsModel(
-      type: .videoSetting,
-      subtitle: '畫質、音質、解碼、緩衝、音訊輸出等',
-      icon: Icon(Icons.video_settings_outlined),
-    ),
-    _SettingsModel(
-      type: .playSetting,
-      subtitle: '雙擊/長按、全屏、背景播放、彈幕、字幕、底部進度條等',
-      icon: Icon(Icons.touch_app_outlined),
-    ),
-    _SettingsModel(
-      type: .dmSetting,
-      subtitle: '點選彈幕、彈幕行高、彩色彈幕、合併彈幕',
-      icon: Icon(CustomIcons.dm_settings),
-    ),
-    _SettingsModel(
-      type: .replySetting,
-      subtitle: '過濾、遮蔽、記錄、預設展示等',
-      icon: Icon(Icons.comment_outlined),
-    ),
-    _SettingsModel(
-      type: .dynSetting,
-      subtitle: '過濾、遮蔽、預設展示等',
-      icon: Icon(CustomIcons.motion_photos_on_outlined),
-    ),
-    _SettingsModel(
-      type: .styleSetting,
-      subtitle: '橫屏適配（平板）、側欄、列寬、首頁、動態紅點、主題、字號、圖片、幀率等',
-      icon: Icon(Icons.style_outlined),
-    ),
-    _SettingsModel(
-      type: .extraSetting,
-      subtitle: '震動、搜尋、收藏、ai、評論、動態、代理等',
-      icon: Icon(Icons.extension_outlined),
-    ),
-    _SettingsModel(
-      type: .webdavSetting,
-      icon: Icon(MdiIcons.databaseCogOutline),
-    ),
-    _SettingsModel(
-      type: .about,
-      icon: Icon(Icons.info_outline),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _tree = SettingTree.build(accountActions: accountActionItems());
+    final account = _tree.roots.firstWhere((e) => e.id == 'account');
+    _path = [account];
+  }
 
   @override
   void didChangeDependencies() {
@@ -109,46 +52,83 @@ class _SettingPageState extends State<SettingPage> {
     _isPortrait = MediaQuery.sizeOf(context).isPortrait;
   }
 
+  String get _title {
+    if (_isPortrait) return '設定';
+    if (_special != null) return _special!.title;
+    if (_path.isEmpty) return '設定';
+    return _path.map((e) => e.title).join(' › ');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SimpleScaffold(
-      appBar: AppBar(
-        title: _isPortrait ? const Text('設定') : Text(_type.title),
-      ),
-      body: ViewSafeArea(
-        child: _isPortrait
-            ? _buildList(theme)
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: _buildList(theme),
-                  ),
-                  VerticalDivider(
-                    width: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                  ),
-                  Expanded(
-                    flex: 6,
-                    child: switch (_type) {
-                      .webdavSetting => const WebDavSettingPage(
-                        showAppBar: false,
-                      ),
-                      .about => const AboutPage(showAppBar: false),
-                      _ => CommonSetting(settingType: _type, showAppBar: false),
-                    },
-                  ),
-                ],
-              ),
+    final canPop = _isPortrait || _category == null;
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_isPortrait && _category != null) {
+          setState(() => _category = null);
+        }
+      },
+      child: SimpleScaffold(
+        appBar: AppBar(title: Text(_title)),
+        body: ViewSafeArea(
+          child: _isPortrait
+              ? _buildList(theme)
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: _buildList(theme),
+                    ),
+                    VerticalDivider(
+                      width: 1,
+                      color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: switch (_special) {
+                        .webdavSetting => const WebDavSettingPage(
+                          showAppBar: false,
+                        ),
+                        .about => const AboutPage(showAppBar: false),
+                        _ =>
+                          _path.isEmpty
+                              ? const SizedBox.shrink()
+                              : SettingNodePage(
+                                  node: _path.last,
+                                  showAppBar: false,
+                                ),
+                      },
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _noAccount.close();
-    super.dispose();
+  void _openRoot(SettingNode node) {
+    if (_isPortrait) {
+      Get.to(() => SettingNodePage(node: node));
+    } else {
+      setState(() {
+        _special = null;
+        if (node.isGroup) {
+          _path = [node];
+        } else {
+          _category = node;
+          _path = [node, node.children.first];
+        }
+      });
+    }
+  }
+
+  void _openChild(SettingNode node) {
+    setState(() {
+      _special = null;
+      _path = [node.parent!, node];
+    });
   }
 
   void _toPage(SettingType type) {
@@ -156,22 +136,20 @@ class _SettingPageState extends State<SettingPage> {
       Get.to(
         () => switch (type) {
           .webdavSetting => const WebDavSettingPage(),
-          .about => const AboutPage(),
-          _ => CommonSetting(settingType: type),
+          _ => const AboutPage(),
         },
       );
     } else {
-      _type = type;
-      setState(() {});
+      setState(() {
+        _special = type;
+        _category = null;
+      });
     }
   }
 
-  Color? _getTileColor(ThemeData theme, SettingType type) {
-    if (_isPortrait) {
-      return null;
-    } else {
-      return type == _type ? theme.colorScheme.onInverseSurface : null;
-    }
+  Color? _getTileColor(ThemeData theme, bool selected) {
+    if (_isPortrait || !selected) return null;
+    return theme.colorScheme.onInverseSurface;
   }
 
   Widget _buildList(ThemeData theme) {
@@ -180,23 +158,49 @@ class _SettingPageState extends State<SettingPage> {
     TextStyle subTitleStyle = theme.textTheme.labelMedium!.copyWith(
       color: theme.colorScheme.outline,
     );
+    final category = _isPortrait ? null : _category;
+    if (category != null) {
+      return ListView(
+        padding: EdgeInsets.only(bottom: padding.bottom + 100),
+        children: [
+          ListTile(
+            onTap: () => setState(() => _category = null),
+            leading: const Icon(Icons.chevron_left),
+            title: Text(category.title, style: titleStyle),
+          ),
+          for (final child in category.children)
+            ListTile(
+              tileColor: _getTileColor(
+                theme,
+                _special == null && _path.lastOrNull == child,
+              ),
+              onTap: () => _openChild(child),
+              leading: Icon(child.icon),
+              title: Text(child.title, style: titleStyle),
+              subtitle: child.subtitle == null
+                  ? null
+                  : Text(child.subtitle!, style: subTitleStyle),
+            ),
+        ],
+      );
+    }
     return ListView(
       padding: EdgeInsets.only(bottom: padding.bottom + 100),
       children: [
         _buildSearchItem(theme),
-        ..._items
-            .take(_items.length - 1)
-            .map(
-              (item) => ListTile(
-                tileColor: _getTileColor(theme, item.type),
-                onTap: () => _toPage(item.type),
-                leading: item.icon,
-                title: Text(item.type.title, style: titleStyle),
-                subtitle: item.subtitle == null
-                    ? null
-                    : Text(item.subtitle!, style: subTitleStyle),
-              ),
+        for (final node in _tree.roots)
+          ListTile(
+            tileColor: _getTileColor(
+              theme,
+              _special == null && _path.firstOrNull == node,
             ),
+            onTap: () => _openRoot(node),
+            leading: Icon(node.icon),
+            title: Text(node.title, style: titleStyle),
+            subtitle: node.subtitle == null
+                ? null
+                : Text(node.subtitle!, style: subTitleStyle),
+          ),
         ListTile(
           onTap: () => Get.to(() => const UpdatePage()),
           leading: Obx(
@@ -218,107 +222,18 @@ class _SettingPageState extends State<SettingPage> {
           ),
         ),
         ListTile(
-          onTap: () => LoginPageController.switchAccountDialog(context),
-          leading: const Icon(Icons.switch_account_outlined),
-          title: Text('切換帳號', style: titleStyle),
-        ),
-        Obx(
-          () => _noAccount.value
-              ? const SizedBox.shrink()
-              : ListTile(
-                  leading: const Icon(Icons.logout_outlined),
-                  onTap: () => _logoutDialog(context),
-                  title: Text('退出登入', style: titleStyle),
-                ),
+          tileColor: _getTileColor(theme, _special == .webdavSetting),
+          onTap: () => _toPage(.webdavSetting),
+          leading: const Icon(MdiIcons.databaseCogOutline),
+          title: Text(SettingType.webdavSetting.title, style: titleStyle),
         ),
         ListTile(
-          tileColor: _getTileColor(theme, _items.last.type),
-          onTap: () => _toPage(_items.last.type),
-          leading: _items.last.icon,
-          title: Text(_items.last.type.title, style: titleStyle),
+          tileColor: _getTileColor(theme, _special == .about),
+          onTap: () => _toPage(.about),
+          leading: const Icon(Icons.info_outline),
+          title: Text(SettingType.about.title, style: titleStyle),
         ),
       ],
-    );
-  }
-
-  Future<void> _removeAccounts(Set<LoginAccount> accounts) async {
-    await Accounts.deleteAll(accounts);
-    if (mounted) _noAccount.value = Accounts.account.isEmpty;
-  }
-
-  static Future<LoginAccount?> _logoutWrapper(LoginAccount account) async {
-    try {
-      final res = await LoginHttp.logout(account);
-      return res.isSuccess ? account : null;
-    } catch (e, s) {
-      Utils.reportError(e, s);
-      return null;
-    }
-  }
-
-  Future<void> _logoutDialog(BuildContext context) async {
-    final result = await showDialog<Set<LoginAccount>>(
-      context: context,
-      builder: (context) => MultiSelectDialog<LoginAccount>(
-        title: '選擇要登出的帳號uid',
-        initValues: const Iterable.empty(),
-        values: {
-          for (final i in Accounts.account.values) i: i.mid.toString(),
-        },
-      ),
-    );
-    if (!context.mounted || result == null || result.isEmpty) return;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('提示'),
-          content: Text(
-            "確認要退出以下帳號登入嗎\n\n${result.map((i) => i.mid).join('\n')}",
-          ),
-          actions: [
-            TextButton(
-              onPressed: Get.back,
-              child: Text(
-                '點錯了',
-                style: TextStyle(color: theme.colorScheme.outline),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Get.back();
-                _removeAccounts(result);
-              },
-              child: Text(
-                '僅登出',
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                SmartDialog.showLoading();
-                final res = await Future.wait(result.map(_logoutWrapper));
-                SmartDialog.dismiss();
-                final logoutAccounts = res.nonNulls.toSet();
-                if (logoutAccounts.isEmpty) {
-                  SmartDialog.showToast('所選帳號均退出登入失敗');
-                } else {
-                  Get.back();
-                  _removeAccounts(logoutAccounts);
-                  if (logoutAccounts.length != result.length) {
-                    result.removeWhere(logoutAccounts.contains);
-                    SmartDialog.showToast(
-                      '帳號 ${result.map((i) => i.mid).join(",")} 退出登入失敗',
-                    );
-                  }
-                }
-              },
-              child: const Text('確認'),
-            ),
-          ],
-        );
-      },
     );
   }
 

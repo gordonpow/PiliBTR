@@ -282,7 +282,8 @@ abstract final class LocalCacheKey {
       blackMids = 'blackMids',
       danmakuFilterRules = 'danmakuFilterRules',
       mixinKey = 'mixinKey',
-      timeStamp = 'timeStamp';
+      timeStamp = 'timeStamp',
+      settingsSearchHistory = 'settingsSearchHistory';
 }
 
 abstract final class VideoBoxKey {
