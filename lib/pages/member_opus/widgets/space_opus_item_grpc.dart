@@ -6,7 +6,7 @@ import 'package:PiliPlus/grpc/bilibili/app/dynamic/v2.pb.dart'
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SpaceOpusItemGrpc extends StatelessWidget {
   const SpaceOpusItemGrpc({

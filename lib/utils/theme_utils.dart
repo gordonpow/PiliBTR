@@ -4,7 +4,7 @@ import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoThemeData;
 import 'package:flutter/foundation.dart' show PlatformDispatcher;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 abstract final class ThemeUtils {
   static late ThemeData lightTheme;

@@ -4,7 +4,7 @@ import 'package:PiliPlus/common/widgets/stat/stat.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/article/article_list/article.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class ArticleListItem extends StatelessWidget {
   const ArticleListItem({

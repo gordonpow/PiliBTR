@@ -11,7 +11,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class LaterViewChildPage extends StatefulWidget {
   const LaterViewChildPage({

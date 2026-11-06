@@ -7,7 +7,7 @@ import 'package:PiliPlus/models_new/later/stat.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:material_ui/material_ui.dart'
+import 'package:PiliPlus/common/widgets/zh_material.dart'
     show ColorScheme, Widget, Positioned;
 
 class LaterItemModel with MultiSelectData {

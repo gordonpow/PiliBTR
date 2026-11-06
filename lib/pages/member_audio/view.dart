@@ -9,7 +9,7 @@ import 'package:PiliPlus/pages/member_audio/controller.dart';
 import 'package:PiliPlus/pages/member_audio/widgets/item.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberAudio extends StatefulWidget {
   const MemberAudio({

@@ -15,6 +15,7 @@ import 'package:flutter/rendering.dart'
         PaintingContext,
         BoxHitTestResult,
         RenderComparison;
+import 'package:PiliPlus/utils/zh_convert.dart';
 
 class RenderParagraphMore extends RenderParagraph {
   RenderParagraphMore(
@@ -52,7 +53,7 @@ class RenderParagraphMore extends RenderParagraph {
 
   TextSpan _moreTextSpan([TextStyle? style]) => TextSpan(
     style: (style ?? text.style!).copyWith(color: _primary),
-    text: '檢視更多',
+    text: ZhConvert.convert('檢視更多'),
     recognizer: _tapGestureRecognizer,
   );
   TextPainter? _morePainter;

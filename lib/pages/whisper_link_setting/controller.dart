@@ -12,7 +12,7 @@ import 'package:PiliPlus/models_new/msg/msg_dnd/uid_setting.dart';
 import 'package:PiliPlus/models_new/msg/session_ss/data.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:fixnum/fixnum.dart';
-import 'package:flutter/widgets.dart' show Text;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Text;
 import 'package:get/get.dart';
 
 class WhisperLinkSettingController extends GetxController {

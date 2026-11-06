@@ -2,7 +2,7 @@ import 'package:PiliPlus/models/search/search_esports.dart';
 import 'package:PiliPlus/pages/match_info/widgets/match_info_item.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SearchEsportsItem extends StatelessWidget {
   const SearchEsportsItem({

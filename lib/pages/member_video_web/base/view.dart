@@ -16,7 +16,7 @@ import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 abstract class BaseVideoWebState<
   S extends StatefulWidget,

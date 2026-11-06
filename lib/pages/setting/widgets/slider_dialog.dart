@@ -1,5 +1,5 @@
 import 'package:PiliPlus/utils/extension/num_ext.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SliderDialog extends StatefulWidget {
   const SliderDialog({

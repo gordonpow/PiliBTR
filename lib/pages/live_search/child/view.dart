@@ -11,7 +11,7 @@ import 'package:PiliPlus/pages/live_search/widgets/live_search_room.dart';
 import 'package:PiliPlus/pages/live_search/widgets/live_search_user.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart'
+import 'package:PiliPlus/common/widgets/zh_material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 
 class LiveSearchChildPage extends StatefulWidget {

@@ -8,7 +8,7 @@ import 'package:PiliPlus/pages/live_emote/view.dart';
 import 'package:PiliPlus/pages/live_room/controller.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide TextField;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide TextField;
 
 class LiveSendDmPanel extends CommonRichTextPubPage {
   final LiveRoomController liveRoomController;

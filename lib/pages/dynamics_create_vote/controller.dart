@@ -5,7 +5,7 @@ import 'package:PiliPlus/http/msg.dart';
 import 'package:PiliPlus/models/dynamics/vote_model.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter/widgets.dart' show Text;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Text;
 import 'package:get/get.dart';
 
 class CreateVoteController extends GetxController {

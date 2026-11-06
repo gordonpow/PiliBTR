@@ -1,5 +1,5 @@
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:flutter/widgets.dart'
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
     show WidgetsBinding, WidgetsBindingObserver;
 
 void addObserverMobile(WidgetsBindingObserver observer) {

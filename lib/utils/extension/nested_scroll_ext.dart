@@ -1,6 +1,6 @@
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
     show ExtendedNestedScrollViewState;
-import 'package:flutter/widgets.dart' show Element, Curves;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Element, Curves;
 
 extension ExtendedNestedScrollViewStateExt on ExtendedNestedScrollViewState {
   void refresh() {

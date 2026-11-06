@@ -1,6 +1,6 @@
 import 'package:PiliPlus/pages/common/page_order/page_order_mixin.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 mixin PageOrderBtnMixin<S extends StatefulWidget, R, T> on State<S> {
   PageOrderMixin<R, T> get controller;

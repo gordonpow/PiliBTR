@@ -1,5 +1,5 @@
 import 'package:PiliPlus/pages/setting/widgets/checkbox_num.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class OrderedCheckboxListTile extends StatelessWidget {
   /// Creates a combination of a list tile and a checkbox.

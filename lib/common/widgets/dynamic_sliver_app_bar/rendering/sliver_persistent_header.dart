@@ -21,7 +21,7 @@ import 'package:PiliPlus/common/widgets/dynamic_sliver_app_bar/sliver_persistent
 import 'package:PiliPlus/common/widgets/only_layout_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart' hide LayoutCallback;
-import 'package:flutter/widgets.dart'
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
     hide SliverPersistentHeader, SliverPersistentHeaderDelegate;
 
 /// ref [SliverPersistentHeader]

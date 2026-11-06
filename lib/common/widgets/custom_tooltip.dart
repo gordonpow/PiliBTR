@@ -11,7 +11,7 @@ import 'package:flutter/rendering.dart'
         BoxHitTestEntry,
         HitTestEntry,
         RenderObjectWithChildMixin;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 // ignore: camel_case_types
 enum TriggerMode_ { longPress, tap, mouse }

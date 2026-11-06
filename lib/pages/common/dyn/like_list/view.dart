@@ -10,7 +10,7 @@ import 'package:PiliPlus/pages/common/dyn/common_dyn_page.dart';
 import 'package:PiliPlus/pages/common/dyn/like_list/controller.dart';
 import 'package:PiliPlus/pages/common/dyn/like_list/widgets/item.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
 
 class DynLikePage extends StatelessWidget {
   const DynLikePage({

@@ -22,7 +22,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/rendering.dart' show BoxHitTestEntry;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
+import 'package:PiliPlus/utils/zh_convert.dart';
 
 @immutable
 sealed class BaseSegment {
@@ -208,7 +209,7 @@ class RenderViewPointProgressBar
             ),
           )
           ..pushStyle(.new(color: Colors.white, fontSize: size, height: 1))
-          ..addText(title);
+          ..addText(ZhConvert.convert(title));
     return builder.build()
       ..layout(const ui.ParagraphConstraints(width: double.infinity));
   }

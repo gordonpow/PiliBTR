@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/search_panel/pgc/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart'
+import 'package:PiliPlus/common/widgets/zh_material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 
 class SearchPgcPanel extends CommonSearchPanel {

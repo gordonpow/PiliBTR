@@ -17,7 +17,7 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
 
 class AtMePage extends StatefulWidget {
   const AtMePage({super.key});

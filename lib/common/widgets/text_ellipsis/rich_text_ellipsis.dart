@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/text_ellipsis/paragraph_ellipsis.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class RichTextEllipsis extends RichText {
   RichTextEllipsis({

@@ -9,7 +9,7 @@ import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/permission_handler.dart';
 import 'package:dlna_dart/dlna.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class DLNAPage extends StatefulWidget {
   const DLNAPage({super.key});

@@ -47,7 +47,8 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
+import 'package:PiliPlus/utils/zh_convert.dart';
 
 const int _kMaxChatCount = 500;
 const int _kTrimCount = _kMaxChatCount + 50;
@@ -628,7 +629,7 @@ class LiveRoomController extends GetxController {
                   : null,
             ),
             DanmakuContentItem(
-              msg,
+              ZhConvert.convert(msg),
               color: DanmakuOptions.blockColorful
                   ? Colors.white
                   : DmUtils.decimalToColor(extra['color']),

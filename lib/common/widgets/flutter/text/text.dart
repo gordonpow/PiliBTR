@@ -16,6 +16,7 @@ library;
 
 import 'dart:ui' as ui show TextHeightBehavior;
 
+import 'package:PiliPlus/utils/zh_convert.dart';
 import 'package:material_ui/material_ui.dart' hide Text;
 
 /// A run of text with a single style.
@@ -388,9 +389,12 @@ abstract class BaseText extends StatelessWidget {
           wordSpacing: wordSpacing,
           textSpan: TextSpan(
             style: effectiveTextStyle,
-            text: data,
+            // PiliBTR: show the text in the script of the language setting.
+            text: data == null ? null : ZhConvert.convert(data!),
             locale: locale,
-            children: textSpan != null ? <InlineSpan>[textSpan!] : null,
+            children: textSpan != null
+                ? <InlineSpan>[ZhConvert.span(textSpan!)]
+                : null,
           ),
         );
     final StrutStyle? effectiveStrutStyle = strutStyle?.merge(

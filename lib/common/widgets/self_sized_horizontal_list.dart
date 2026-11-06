@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/only_layout_widget.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SelfSizedHorizontalList extends StatefulWidget {
   const SelfSizedHorizontalList({

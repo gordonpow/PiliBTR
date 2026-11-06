@@ -7,7 +7,7 @@ import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/rendering.dart' show SliverConstraints;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart'
     show SliverSimpleGridDelegate;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 mixin DynMixin {
   late final dynGridDelegate = SliverSimpleGridDelegateWithMaxCrossAxisExtent_(

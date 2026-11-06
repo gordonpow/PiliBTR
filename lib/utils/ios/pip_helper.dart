@@ -1,7 +1,8 @@
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
+    show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 /// Picture-in-Picture on iOS, implemented in `ios/Runner/PipPlugin.swift`.

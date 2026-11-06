@@ -1,5 +1,5 @@
 import 'package:flutter/rendering.dart' show RenderProxyBox;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class SimpleColoredBox extends ColoredBox {
   const SimpleColoredBox({

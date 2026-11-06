@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' show Color;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Color;
 
 abstract final class BiliColors {
   static const pinkLight = Color(0xFFFF6699);

@@ -11,7 +11,7 @@ import 'package:PiliPlus/pages/member_season_series/widget/season_series_card.da
 import 'package:PiliPlus/pages/member_video/view.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SeasonSeriesPage extends StatefulWidget {
   const SeasonSeriesPage({

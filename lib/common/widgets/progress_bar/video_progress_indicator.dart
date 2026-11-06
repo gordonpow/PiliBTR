@@ -15,7 +15,7 @@
  * along with PiliPlus.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class VideoProgressIndicator extends LeafRenderObjectWidget {
   const VideoProgressIndicator({

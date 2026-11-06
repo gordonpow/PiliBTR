@@ -4,7 +4,7 @@ import 'dart:ui' show PointerDataPacket;
 
 import 'package:flutter/gestures.dart' show PointerEventConverter;
 import 'package:flutter/rendering.dart' show RenderView, ViewConfiguration;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 /// ref https://github.com/LastMonopoly/scaled_app
 

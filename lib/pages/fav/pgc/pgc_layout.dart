@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/slotted_layout_helper.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 enum PgcType { toolbar, body }
 

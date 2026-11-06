@@ -20,7 +20,7 @@ import 'dart:math' as math;
 import 'package:PiliPlus/common/widgets/slotted_layout_helper.dart';
 import 'package:flutter/rendering.dart'
     show BoxHitTestResult, TransformLayer, BoxParentData;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 enum PlayerBarType { left, right, title }
 

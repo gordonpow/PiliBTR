@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/member_article/controller.dart';
 import 'package:PiliPlus/pages/member_article/widget/item.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberArticle extends StatefulWidget {
   const MemberArticle({

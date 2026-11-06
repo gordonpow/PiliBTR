@@ -7,7 +7,7 @@
 import 'package:PiliPlus/pages/article/widgets/sliver_to_box_adapter.dart'
     show ArticleRenderSliverMixin;
 import 'package:flutter/rendering.dart' show RenderSliverList;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class ArticleSliverList extends SliverList {
   const ArticleSliverList({

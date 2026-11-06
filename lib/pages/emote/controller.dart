@@ -3,7 +3,7 @@ import 'package:PiliPlus/http/reply.dart';
 import 'package:PiliPlus/models_new/emote/package.dart';
 import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class EmotePanelController extends CommonListController<List<Package>?, Package>
     with GetSingleTickerProviderStateMixin {

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:PiliPlus/common/widgets/zh_flutter_material.dart';
 import 'package:webview_all_linux/webview_all_linux.dart';
 import 'package:webview_platform_interface/webview_platform_interface.dart';
 

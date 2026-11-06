@@ -4,7 +4,7 @@ import 'package:material_color_utilities/dynamiccolor/dynamic_scheme.dart';
 import 'package:material_color_utilities/dynamiccolor/variant.dart';
 import 'package:material_color_utilities/palettes/core_palettes.dart';
 import 'package:material_color_utilities/palettes/tonal_palette.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 extension CorePalettesExt on CorePalettes {
   static CorePalettes fromList(List<int> colors) {

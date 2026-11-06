@@ -2,7 +2,7 @@ import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:flutter/services.dart'
     show LengthLimitingTextInputFormatter, FilteringTextInputFormatter;
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SlideColorPicker extends StatefulWidget {
   const SlideColorPicker({

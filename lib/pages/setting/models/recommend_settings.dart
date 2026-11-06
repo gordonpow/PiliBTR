@@ -5,7 +5,7 @@ import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide StatefulBuilder;
 
 List<SettingsModel> get recommendSettings => [
   const SwitchModel(

@@ -8,7 +8,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide PopupMenuItemSelected;
+import 'package:PiliPlus/common/widgets/zh_material.dart'
+    hide PopupMenuItemSelected;
 
 @immutable
 sealed class SettingsModel {

@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
-import 'package:material_ui/material_ui.dart' show BoxFit;
+import 'package:PiliPlus/common/widgets/zh_material.dart' show BoxFit;
 
 enum VideoFitType {
   fill('拉伸', boxFit: BoxFit.fill),

@@ -13,7 +13,7 @@ import 'package:PiliPlus/utils/scroll_offset_helper.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class EpisodePanel extends StatefulWidget {
   const EpisodePanel({

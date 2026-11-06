@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/video/reply_search_item/child/view.dart';
 import 'package:PiliPlus/pages/video/reply_search_item/controller.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class ReplySearchPage extends StatefulWidget {
   const ReplySearchPage({

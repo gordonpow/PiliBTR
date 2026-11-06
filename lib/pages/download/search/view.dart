@@ -9,7 +9,7 @@ import 'package:PiliPlus/pages/download/search/controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart'
+import 'package:PiliPlus/common/widgets/zh_material.dart'
     hide SliverGridDelegateWithMaxCrossAxisExtent;
 
 class DownloadSearchPage extends StatefulWidget {

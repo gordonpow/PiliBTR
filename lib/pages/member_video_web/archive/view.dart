@@ -7,7 +7,7 @@ import 'package:PiliPlus/pages/member_video_web/archive/controller.dart';
 import 'package:PiliPlus/pages/member_video_web/base/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberVideoWeb extends StatefulWidget {
   const MemberVideoWeb({super.key});

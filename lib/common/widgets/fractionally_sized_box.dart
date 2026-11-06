@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart' show RenderFractionallySizedOverflowBox;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class CustomFractionallySizedBox extends FractionallySizedBox {
   const CustomFractionallySizedBox({

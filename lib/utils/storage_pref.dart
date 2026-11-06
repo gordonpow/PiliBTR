@@ -45,7 +45,7 @@ import 'package:flex_seed_scheme/flex_seed_scheme.dart' show FlexSchemeVariant;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 abstract final class Pref {
   static final Box _setting = GStorage.setting;
@@ -199,6 +199,10 @@ abstract final class Pref {
   /// 0: automatic (from [recommendCardWidth]).
   static int get videoCardColumnsLandscape =>
       _setting.get(SettingBoxKey.videoCardColumnsLandscape, defaultValue: 0);
+
+  /// Chinese script: 0 follows the system, 1 Traditional, 2 Simplified.
+  static int get appLanguage =>
+      _setting.get(SettingBoxKey.appLanguage, defaultValue: 0);
 
   static UpPanelPosition get upPanelPosition =>
       UpPanelPosition.values[_setting.get(

@@ -80,7 +80,7 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
@@ -742,28 +742,34 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           initialValue: plPlayerController.playbackSpeed,
           color: Colors.black.withValues(alpha: 0.8),
           itemBuilder: (context) {
-            return plPlayerController.speedList
-                .map(
-                  (double speed) => PopupMenuItem<double>(
-                    height: 35,
-                    padding: const EdgeInsets.only(left: 30),
-                    value: speed,
-                    onTap: () => plPlayerController.setPlaybackSpeed(speed),
-                    child: Text(
-                      "${speed}X",
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                      semanticsLabel: "$speed倍速",
-                    ),
+            return <PopupMenuEntry<double>>[
+              _SpeedSliderEntry(
+                initialSpeed: plPlayerController.playbackSpeed,
+                onChanged: plPlayerController.setPlaybackSpeed,
+                enabled: !plPlayerController.longPressStatus.value,
+              ),
+              // Common speeds; other speeds are set with the slider.
+              for (final speed in const [1.0, 1.25, 1.5, 2.0])
+                PopupMenuItem<double>(
+                  height: 35,
+                  padding: const EdgeInsets.only(left: 16),
+                  value: speed,
+                  onTap: () => plPlayerController.setPlaybackSpeed(speed),
+                  child: Text(
+                    "${_formatSpeed(speed)}X",
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    semanticsLabel: "${_formatSpeed(speed)}倍速",
                   ),
-                )
-                .toList();
+                ),
+            ];
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              "${plPlayerController.playbackSpeed}X",
+              "${_formatSpeed(plPlayerController.playbackSpeed)}X",
               style: const TextStyle(color: Colors.white, fontSize: 13),
-              semanticsLabel: "${plPlayerController.playbackSpeed}倍速",
+              semanticsLabel:
+                  "${_formatSpeed(plPlayerController.playbackSpeed)}倍速",
             ),
           ),
         ),
@@ -2479,6 +2485,94 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             ],
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Format speed with up to 2 decimals, trimming trailing zeros (keep one).
+String _formatSpeed(double speed) {
+  var s = speed.toStringAsFixed(2);
+  if (s.endsWith('0')) s = s.substring(0, s.length - 1);
+  return s;
+}
+
+/// Popup menu entry holding a speed slider (0.25X - 4.0X, step 0.05).
+class _SpeedSliderEntry extends PopupMenuEntry<double> {
+  const _SpeedSliderEntry({
+    required this.initialSpeed,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  final double initialSpeed;
+
+  /// False during a long-press speed-up.
+  final bool enabled;
+  final ValueChanged<double> onChanged;
+
+  @override
+  double get height => 40;
+
+  @override
+  bool represents(double? value) => false;
+
+  @override
+  State<_SpeedSliderEntry> createState() => _SpeedSliderEntryState();
+}
+
+class _SpeedSliderEntryState extends State<_SpeedSliderEntry> {
+  late double _value = widget.initialSpeed.clamp(0.25, 4.0);
+
+  static double _snap(double v) => double.parse(
+    ((v / 0.05).round() * 0.05).toStringAsFixed(2),
+  ).clamp(0.25, 4.0);
+
+  @override
+  Widget build(BuildContext context) {
+    // One compact row: a thin slider and the value.
+    return SizedBox(
+      height: 40,
+      width: 168,
+      child: Row(
+        children: [
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: Colors.white,
+                overlayColor: Colors.white24,
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                trackShape: const RoundedRectSliderTrackShape(),
+                tickMarkShape: SliderTickMarkShape.noTickMark,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: Slider(
+                min: 0.25,
+                max: 4.0,
+                divisions: 75,
+                value: _value,
+                // Show the value while dragging; set the speed once, when
+                // the drag ends, so lastPlaybackSpeed (restored after a
+                // long press) is not overwritten on every step.
+                onChanged: widget.enabled
+                    ? (v) => setState(() => _value = _snap(v))
+                    : null,
+                onChangeEnd: (v) => widget.onChanged(_snap(v)),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(
+              '${_formatSpeed(_value)}X',
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -11,7 +11,7 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/video_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SelectDialog<T> extends StatelessWidget {
   final T? value;
@@ -246,7 +246,7 @@ class _CdnSelectDialogState extends State<CdnSelectDialog> {
   @override
   Widget build(BuildContext context) {
     return SelectDialog<CDNService>(
-      title: 'CDN 設定',
+      title: 'CDN 節點',
       values: CDNService.values.map((i) => (i, i.desc)).toList(),
       value: VideoUtils.cdnService,
       subtitleBuilder: _cdnSpeedTest

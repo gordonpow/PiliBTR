@@ -1,15 +1,14 @@
 import 'dart:io';
 
 import 'package:PiliPlus/models/common/video/base_quality.dart';
-import 'package:PiliPlus/models/common/video/cdn_type.dart';
 import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
-import 'package:PiliPlus/pages/setting/widgets/btr_settings_dialog.dart';
-import 'package:PiliPlus/services/download/btr_config.dart';
+import 'package:PiliPlus/pages/setting/widgets/cdn_settings_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/ordered_multi_select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_output_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
+import 'package:PiliPlus/utils/cdn_choice.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -20,7 +19,7 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 List<SettingsModel> get videoSettings => [
   const SwitchModel(
@@ -58,8 +57,7 @@ List<SettingsModel> get videoSettings => [
   NormalModel(
     title: 'CDN 設定',
     leading: const Icon(MdiIcons.cloudPlusOutline),
-    getSubtitle: () =>
-        '當前使用：${VideoUtils.cdnService.desc}，部分 CDN 可能失效，如無法播放請嘗試切換',
+    getSubtitle: () => '當前使用：${cdnChoiceLabel()}，部分 CDN 可能失效，如無法播放請嘗試切換',
     onTap: _showCDNDialog,
   ),
   NormalModel(
@@ -82,27 +80,6 @@ List<SettingsModel> get videoSettings => [
     setKey: SettingBoxKey.disableAudioCDN,
     defaultVal: false,
     onChanged: (value) => VideoUtils.disableAudioCDN = value,
-  ),
-  NormalModel(
-    title: '線程撕裂者（多 CDN 加速）',
-    leading: const Icon(Icons.download_for_offline_outlined),
-    getSubtitle: () {
-      final parts = [
-        if (BtrConfig.playback) '播放',
-        if (BtrConfig.enable) '下載',
-      ];
-      if (parts.isEmpty) return '已關閉';
-      final threads = BtrConfig.autoThreads ? '自動' : '${BtrConfig.threads}';
-      return '加速：${parts.join('、')}，CDN：${BtrConfig.cdnMode.label}，'
-          '執行緒數：$threads';
-    },
-    onTap: (context, setState) async {
-      final res = await showDialog<bool>(
-        context: context,
-        builder: (context) => const BtrSettingsDialog(),
-      );
-      if (res == true) setState();
-    },
   ),
   NormalModel(
     title: '預設畫質',
@@ -215,15 +192,11 @@ List<SettingsModel> get videoSettings => [
 ];
 
 Future<void> _showCDNDialog(BuildContext context, VoidCallback setState) async {
-  final res = await showDialog<CDNService>(
+  await showDialog<void>(
     context: context,
-    builder: (context) => const CdnSelectDialog(),
+    builder: (context) => const CdnSettingsDialog(),
   );
-  if (res != null) {
-    VideoUtils.cdnService = res;
-    await GStorage.setting.put(SettingBoxKey.CDNService, res.name);
-    setState();
-  }
+  setState();
 }
 
 Future<void> _showLiveCDNDialog(

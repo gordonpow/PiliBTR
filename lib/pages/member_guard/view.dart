@@ -12,7 +12,7 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
 
 class MemberGuard extends StatefulWidget {
   const MemberGuard({super.key});

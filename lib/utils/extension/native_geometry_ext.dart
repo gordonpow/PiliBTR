@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' show Orientation;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Orientation;
 import 'package:nativeapi/nativeapi.dart' as nativeapi show Size, Rectangle;
 
 extension SizeExt on nativeapi.Size {

@@ -9,7 +9,7 @@ import 'package:flutter/rendering.dart'
         MultiChildLayoutParentData,
         RenderBoxContainerDefaultsMixin,
         BoxHitTestResult;
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SliverHotKeyword extends StatelessWidget {
   final List<SearchTrendingItemModel> hotSearchList;

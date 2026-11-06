@@ -16,7 +16,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 const _kItemWidth = 140.0;
 const _kItemHeight = _kItemWidth / Style.aspectRatio16x9;

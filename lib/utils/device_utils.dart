@@ -2,7 +2,8 @@ import 'dart:io' show Platform, exit;
 
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:flutter/widgets.dart' show WidgetsBinding, Size;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
+    show WidgetsBinding, Size;
 import 'package:nativeapi/nativeapi.dart' as nativeapi show Size;
 import 'package:win32/win32.dart' as kernel32;
 

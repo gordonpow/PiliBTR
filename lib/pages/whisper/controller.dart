@@ -7,7 +7,7 @@ import 'package:PiliPlus/pages/common/common_whisper_controller.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:protobuf/protobuf.dart' show PbMap;
 
 typedef MsgFeedTopItem = ({

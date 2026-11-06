@@ -15,7 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:material_ui/material_ui.dart' hide showTimePicker;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide showTimePicker;
 
 class CreateVotePage extends StatefulWidget {
   const CreateVotePage({super.key, this.voteId});

@@ -10,7 +10,7 @@ import 'package:PiliPlus/pages/music/widget/music_video_card_h.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MusicRecommendPage extends StatefulWidget {
   const MusicRecommendPage({super.key});

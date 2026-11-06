@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/member_cheese/controller.dart';
 import 'package:PiliPlus/pages/member_cheese/widgets/item.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberCheese extends StatefulWidget {
   const MemberCheese({

@@ -17,7 +17,7 @@
 
 import 'package:flutter/rendering.dart'
     show BoxHitTestResult, RenderFlex, FlexParentData;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class TranslucentRow extends Flex {
   const TranslucentRow({

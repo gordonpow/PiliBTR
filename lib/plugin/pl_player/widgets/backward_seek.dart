@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class BackwardSeekIndicator extends StatefulWidget {
   final ValueChanged<Duration> onSubmitted;

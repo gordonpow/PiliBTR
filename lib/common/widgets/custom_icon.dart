@@ -1,6 +1,6 @@
 // ignore_for_file: constant_identifier_names
 
-import 'package:flutter/widgets.dart' show IconData;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show IconData;
 
 // dart format off
 abstract final class CustomIcons {

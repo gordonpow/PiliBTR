@@ -1,6 +1,6 @@
 import 'package:PiliPlus/common/widgets/custom_arc.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class LoadingWidget extends StatelessWidget {
   const LoadingWidget({

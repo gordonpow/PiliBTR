@@ -18,9 +18,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:PiliPlus/utils/zh_convert.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -384,7 +385,7 @@ class _LoginPageState extends State<LoginPage> {
                       padding: EdgeInsets.zero,
                       tooltip:
                           '選擇國際冠碼，'
-                          '當前為${_loginPageCtr.selectedCountryCodeId.cname}，'
+                          '當前為${_regionName(_loginPageCtr.selectedCountryCodeId)}，'
                           '+${_loginPageCtr.selectedCountryCodeId.countryId}',
                       onSelected: (item) {
                         _loginPageCtr.selectedCountryCodeId = item;
@@ -396,22 +397,47 @@ class _LoginPageState extends State<LoginPage> {
                           value: item,
                           child: Row(
                             children: [
-                              Text(item.cname),
+                              Text(_regionName(item)),
                               const Spacer(),
                               Text("+${item.countryId}"),
                             ],
                           ),
                         );
                       }).toList(),
+                      // Region and calling code, with an arrow so it is
+                      // clear that it can be changed (for example +886).
                       child: Row(
                         children: [
                           Icon(
                             Icons.phone,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            "+${_loginPageCtr.selectedCountryCodeId.countryId}",
+                          const SizedBox(width: 8),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 96),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "+${_loginPageCtr.selectedCountryCodeId.countryId}",
+                                ),
+                                Text(
+                                  _regionName(
+                                    _loginPageCtr.selectedCountryCodeId,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ],
                       ),
@@ -618,3 +644,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+/// Region name in the SMS login picker. In Traditional mode Taiwan is
+/// shown as 台灣 (the server list says 中國臺灣).
+String _regionName(({int id, String cname, int countryId}) item) =>
+    ZhConvert.script == ZhScript.traditional && item.countryId == 886
+    ? '臺灣'
+    : item.cname;

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:PiliPlus/common/dial_prefix.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
@@ -19,7 +20,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class LoginPageController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -38,7 +39,33 @@ class LoginPageController extends GetxController
   late final RxInt qrCodeLeftTime = 180.obs;
   late final RxString statusQRCode = ''.obs;
 
-  late var selectedCountryCodeId = Login.dialPrefix.first;
+  /// Calling code for SMS login. Starts from the system region, so a
+  /// Taiwan phone starts with +886 (mainland +86 otherwise).
+  late var selectedCountryCodeId = _defaultCountryCode();
+
+  static ({int id, String cname, int countryId}) _defaultCountryCode() {
+    final countryId = switch (PlatformDispatcher.instance.locale.countryCode) {
+      'TW' => 886,
+      'HK' => 852,
+      'MO' => 853,
+      _ => 86,
+    };
+    return Login.dialPrefix.firstWhere(
+      (e) => e.countryId == countryId,
+      orElse: () => Login.dialPrefix.first,
+    );
+  }
+
+  /// Phone number to send: outside mainland China the number is written
+  /// without its leading trunk 0 (Taiwan 0912 345 678 -> 912345678).
+  String get _tel {
+    final tel = telTextController.text.trim();
+    if (selectedCountryCodeId.countryId != 86 && tel.startsWith('0')) {
+      return tel.replaceFirst(RegExp(r'^0+'), '');
+    }
+    return tel;
+  }
+
   late String captchaKey = '';
   late final RxInt smsSendCooldown = 0.obs;
   late int smsSendTimestamp = 0;
@@ -468,7 +495,7 @@ class LoginPageController extends GetxController
     }
     String key = webKeyRes['data']['key'];
     final res = await LoginHttp.loginBySms(
-      tel: telTextController.text,
+      tel: _tel,
       code: smsCodeTextController.text,
       captchaKey: captchaKey,
       cid: selectedCountryCodeId.countryId,
@@ -533,7 +560,7 @@ class LoginPageController extends GetxController
     // captchaKey = safeCenterSendSmsCodeRes['data']['captcha_key'];
 
     final res = await LoginHttp.sendSmsCode(
-      tel: telTextController.text,
+      tel: _tel,
       cid: selectedCountryCodeId.countryId,
       // deviceTouristId: guestId,
       geeValidate: captchaData.validate,

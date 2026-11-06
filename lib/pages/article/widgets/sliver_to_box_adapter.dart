@@ -1,6 +1,6 @@
 import 'package:flutter/rendering.dart'
     show RenderSliverToBoxAdapter, RenderSliver;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 mixin ArticleRenderSliverMixin on RenderSliver {
   @override

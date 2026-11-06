@@ -7,7 +7,7 @@ import 'package:PiliPlus/models_new/space/space_cheese/item.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberCheeseItem extends StatelessWidget {
   const MemberCheeseItem({

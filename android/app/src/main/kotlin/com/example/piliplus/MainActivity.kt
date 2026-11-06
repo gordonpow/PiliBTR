@@ -28,6 +28,20 @@ class MainActivity : AudioServiceActivity() {
                     result.success(null)
                     return@setMethodCallHandler
                 }
+                if (call.method == "restart") {
+                    // Start a fresh task, then end this process so all
+                    // Dart state (settings caches, players) starts again.
+                    val launch = packageManager.getLaunchIntentForPackage(packageName)
+                    val component = launch?.component
+                    if (component == null) {
+                        result.error("restart", "no launch activity", null)
+                        return@setMethodCallHandler
+                    }
+                    result.success(null)
+                    startActivity(Intent.makeRestartActivityTask(component))
+                    Runtime.getRuntime().exit(0)
+                    return@setMethodCallHandler
+                }
                 if (call.method != "installApk") {
                     result.notImplemented()
                     return@setMethodCallHandler

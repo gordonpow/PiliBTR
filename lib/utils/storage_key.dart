@@ -252,6 +252,7 @@ abstract final class SettingBoxKey {
       recommendCardWidth = 'recommendCardWidth',
       videoCardColumnsPortrait = 'videoCardColumnsPortrait',
       videoCardColumnsLandscape = 'videoCardColumnsLandscape',
+      appLanguage = 'appLanguage',
       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
       upPanelPosition = 'upPanelPosition',
       dynamicsShowAllFollowedUp = 'dynamicsShowAllFollowedUp',

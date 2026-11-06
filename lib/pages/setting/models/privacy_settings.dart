@@ -8,7 +8,7 @@ import 'package:PiliPlus/utils/accounts/api_type.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide StatefulBuilder;
 
 List<SettingsModel> get privacySettings => [
   NormalModel(

@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/common/multi_select/base.dart'
 import 'package:PiliPlus/pages/common/search/common_search_controller.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
-import 'package:flutter/widgets.dart' show Text;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Text;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 

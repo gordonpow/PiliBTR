@@ -7,7 +7,7 @@ import 'package:PiliPlus/models/user/danmaku_block.dart';
 import 'package:archive/archive.dart' show getCrc32;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class DanmakuBlockController extends GetxController
     with GetSingleTickerProviderStateMixin {

@@ -10,7 +10,7 @@ import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/route_manager.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 int downloadEntrySort(BiliDownloadEntryInfo a, BiliDownloadEntryInfo b) {
   return a.sortKey.compareTo(b.sortKey);

@@ -2,7 +2,7 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show FoldCard;
 import 'package:PiliPlus/pages/common/reply/fold/reply_fold_mixin.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 mixin ReplyFooterMixin<T extends StatefulWidget, R> on State<T> {
   late EdgeInsets padding;

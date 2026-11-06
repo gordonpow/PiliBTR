@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:PiliPlus/models_new/space/space/tab2.dart';
 import 'package:PiliPlus/pages/member/controller.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberContributeCtr extends GetxController
     with GetSingleTickerProviderStateMixin {

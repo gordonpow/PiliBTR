@@ -17,7 +17,7 @@ import 'package:PiliPlus/utils/extension/dimension_ext.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:flutter/widgets.dart' show GlobalKey;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show GlobalKey;
 import 'package:get/get.dart';
 
 class MemberVideoCtr

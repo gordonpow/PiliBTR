@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 /// A video card that can play a preview when the finger rests on it after
 /// a swipe. It registers itself so [SwipePreviewDetector] can find the

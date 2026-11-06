@@ -11,7 +11,7 @@ import 'package:PiliPlus/pages/member_season_series/view.dart';
 import 'package:PiliPlus/pages/member_video/view.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MemberContribute extends StatefulWidget {
   const MemberContribute({

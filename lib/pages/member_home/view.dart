@@ -32,7 +32,7 @@ import 'package:flutter/services.dart'
         PointerExitEventListener;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 part 'package:PiliPlus/pages/member_home/widgets/live_item.dart';
 

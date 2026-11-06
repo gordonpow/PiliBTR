@@ -15,6 +15,7 @@ import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/utils/zh_convert.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/desktop/calc_window_position.dart';
@@ -42,7 +43,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -91,12 +92,23 @@ Future<void> _initAppPath() async {
   appSupportDirPath = (await getApplicationSupportDirectory()).path;
 }
 
-// PiliBTR shows its UI in Traditional Chinese (Taiwan).
+// PiliBTR shows its UI in Traditional Chinese (Taiwan) or, when set in
+// the language setting, Simplified Chinese.
 const _zhTW = Locale.fromSubtags(
   languageCode: 'zh',
   scriptCode: 'Hant',
   countryCode: 'TW',
 );
+
+const _zhCN = Locale.fromSubtags(
+  languageCode: 'zh',
+  scriptCode: 'Hans',
+  countryCode: 'CN',
+);
+
+/// Locale for the script chosen in the language setting.
+Locale get _appLocale =>
+    ZhConvert.script == ZhScript.simplified ? _zhCN : _zhTW;
 
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
@@ -114,6 +126,7 @@ void main() async {
     _initDownPath(),
     _initTmpPath(),
     CacheManager.ensureInitialized(),
+    ZhConvert.init(),
     ?FontUtils.init(),
   ]);
   Get
@@ -306,9 +319,9 @@ class MyApp extends StatelessWidget {
       darkTheme: dark,
       themeMode: ThemeUtils.themeMode = Pref.themeMode,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      locale: _zhTW,
-      fallbackLocale: _zhTW,
-      supportedLocales: const [_zhTW, Locale("zh", "CN"), Locale("en", "US")],
+      locale: _appLocale,
+      fallbackLocale: _appLocale,
+      supportedLocales: const [_zhTW, _zhCN, Locale("en", "US")],
       initialRoute: '/',
       getPages: Routes.getPages,
       defaultTransition: Pref.pageTransition,

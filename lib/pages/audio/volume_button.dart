@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/audio/controller.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/rendering.dart' show RenderProxyBox, BoxHitTestResult;
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class VolumeButton extends StatefulWidget {
   const VolumeButton({

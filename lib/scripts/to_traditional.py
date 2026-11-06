@@ -38,6 +38,8 @@ PROTECT = {
     'lib/utils/login_utils.dart': ["errMsg == '账号未登录'"],
     'lib/pages/video/controller.dart': ["contains('试看')"],
     'lib/pages/video/introduction/ugc/view.dart': ["replaceFirst('发现'"],
+    # Language option name, Simplified on purpose (not server data).
+    'lib/pages/setting/models/style_settings.dart': ["2 => '简体中文'"],
     'lib/pages/whisper_detail/widget/chat_item.dart': ["['source'] == '直播'"],
     'lib/pages/whisper_settings/view.dart': ["title == '黑名单'", "title == '消息屏蔽词'"],
     'lib/utils/num_utils.dart': ['[千万亿]', "case '千'", "case '万'", "case '亿'"],

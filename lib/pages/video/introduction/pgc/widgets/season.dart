@@ -1,6 +1,6 @@
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
 import 'package:PiliPlus/utils/scroll_offset_helper.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SeasonPanel extends StatelessWidget {
   const SeasonPanel({

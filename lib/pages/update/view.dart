@@ -8,7 +8,7 @@ import 'package:PiliPlus/utils/update.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 /// Update settings: automatic or manual check, and the new version with
 /// its release notes and an install button.

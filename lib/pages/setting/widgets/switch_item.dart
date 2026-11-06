@@ -2,8 +2,8 @@ import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
+import 'package:PiliPlus/utils/app_restart.dart';
 
 class SetSwitchItem extends StatefulWidget {
   final String title;
@@ -73,8 +73,8 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
     await GStorage.setting.put(widget.setKey, val);
 
     widget.onChanged?.call(val);
-    if (widget.needReboot) SmartDialog.showToast('重啟生效');
     if (mounted) setState(() {});
+    if (widget.needReboot) AppRestart.ask();
   }
 
   @override

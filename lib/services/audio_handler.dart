@@ -27,6 +27,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:jni/jni.dart' show JStringExtension;
 import 'package:path/path.dart' as path;
+import 'package:PiliPlus/utils/zh_convert.dart';
 
 Future<VideoPlayerServiceHandler> initAudioService() {
   if (Platform.isLinux) {
@@ -145,6 +146,13 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
 
   void setMediaItem(MediaItem newMediaItem) {
     if (!enableBackgroundPlay) return;
+    // Notification text in the script of the language setting.
+    newMediaItem = newMediaItem.copyWith(
+      title: ZhConvert.convert(newMediaItem.title),
+      artist: newMediaItem.artist == null
+          ? null
+          : ZhConvert.convert(newMediaItem.artist!),
+    );
     // if (kDebugMode) {
     //   debugPrint("此时调用栈为：");
     //   debugPrint(newMediaItem);

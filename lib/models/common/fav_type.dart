@@ -4,7 +4,7 @@ import 'package:PiliPlus/pages/fav/note/view.dart';
 import 'package:PiliPlus/pages/fav/pgc/view.dart';
 import 'package:PiliPlus/pages/fav/topic/view.dart';
 import 'package:PiliPlus/pages/fav/video/view.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 enum FavTabType {
   video('影片', FavVideoPage()),

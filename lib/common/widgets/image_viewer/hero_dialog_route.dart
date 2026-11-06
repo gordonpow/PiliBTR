@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 /// https://github.com/qq326646683/interactiveviewer_gallery
 

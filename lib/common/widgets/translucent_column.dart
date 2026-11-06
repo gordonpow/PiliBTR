@@ -19,7 +19,7 @@ import 'package:PiliPlus/common/widgets/animated_height.dart'
     show RenderAnimatedHeight;
 import 'package:flutter/rendering.dart'
     show RenderProxyBox, BoxHitTestResult, RenderFlex, FlexParentData;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class TranslucentColumn extends Flex {
   const TranslucentColumn({

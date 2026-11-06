@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
-import 'package:material_ui/material_ui.dart' hide ListTile;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide ListTile;
 
 class NormalItem extends StatefulWidget {
   final String? title;

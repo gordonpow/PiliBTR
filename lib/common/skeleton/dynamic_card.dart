@@ -1,6 +1,6 @@
 import 'package:PiliPlus/common/skeleton/skeleton.dart';
 import 'package:PiliPlus/utils/global_data.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class DynamicCardSkeleton extends StatelessWidget {
   const DynamicCardSkeleton({super.key});

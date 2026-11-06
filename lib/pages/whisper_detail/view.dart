@@ -28,7 +28,7 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:material_ui/material_ui.dart' hide TextField;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide TextField;
 import 'package:mime/mime.dart';
 
 const _kMaxExtent = 625.0;

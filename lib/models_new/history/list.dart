@@ -4,7 +4,7 @@ import 'package:PiliPlus/models_new/history/history.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
-import 'package:material_ui/material_ui.dart'
+import 'package:PiliPlus/common/widgets/zh_material.dart'
     show ColorScheme, Widget, Positioned;
 
 class HistoryItemModel with MultiSelectData {

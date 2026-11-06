@@ -20,7 +20,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/rendering.dart'
     show RenderSliverSingleBoxAdapter, SliverGeometry;
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 /// ref [SliverPersistentHeader]
 class SliverPinnedHeader extends SingleChildRenderObjectWidget {

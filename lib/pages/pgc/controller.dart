@@ -9,7 +9,7 @@ import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter/widgets.dart' show ScrollController;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show ScrollController;
 import 'package:get/get.dart';
 
 class PgcController

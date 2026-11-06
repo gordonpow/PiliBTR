@@ -14,7 +14,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:PiliPlus/http/init.dart';
-import 'package:PiliPlus/services/download/btr_cdn.dart' show BtrNodePool, btrDio;
+import 'package:PiliPlus/services/download/btr_cdn.dart'
+    show BtrNodePool, btrDio;
 import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:dio/dio.dart';
@@ -27,6 +28,13 @@ abstract final class BtrProxy {
   static final Map<String, _BtrSource> _sources = {};
   static final Map<String, String> _idByUrl = {};
   static int _seq = 0;
+
+  /// Clears cached sources so a changed CDN mode applies to the same video.
+  /// The server stays up and in-flight requests are not affected.
+  static void reset() {
+    _sources.clear();
+    _idByUrl.clear();
+  }
 
   /// Max number of media URLs kept. Older ones are removed first.
   static const int _maxSources = 32;
@@ -197,8 +205,7 @@ class _BtrSource {
         final slash = contentRange?.lastIndexOf('/') ?? -1;
         if (response.statusCode == 206 && slash != -1) {
           _total = int.tryParse(contentRange!.substring(slash + 1).trim());
-          _contentType =
-              response.headers.value('content-type') ?? _contentType;
+          _contentType = response.headers.value('content-type') ?? _contentType;
           if (_total != null) break;
         }
       } catch (e) {
@@ -260,7 +267,9 @@ class _BtrSource {
         );
         if (cancel.isCancelled) rethrow;
         lastError = e;
-        if (kDebugMode) debugPrint('BTR: piece $start retry on ${node.host}: $e');
+        if (kDebugMode) {
+          debugPrint('BTR: piece $start retry on ${node.host}: $e');
+        }
       }
       await Future.delayed(Duration(milliseconds: 150 * (attempt + 1)));
     }

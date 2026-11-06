@@ -3,7 +3,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/sub/sub/list.dart';
 import 'package:PiliPlus/pages/subscription/widgets/item.dart' show onPushSub;
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class MineSubItem extends StatelessWidget {
   const MineSubItem({

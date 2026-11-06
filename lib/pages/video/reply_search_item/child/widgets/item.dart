@@ -9,7 +9,7 @@ import 'package:PiliPlus/models/common/reply/reply_search_type.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class ReplySearchItem extends StatelessWidget {
   const ReplySearchItem({

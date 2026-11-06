@@ -6,7 +6,7 @@ import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' show TabController;
+import 'package:PiliPlus/common/widgets/zh_material.dart' show TabController;
 
 class LiveAreaController extends CommonListController<List<AreaList>?, AreaList>
     with GetSingleTickerProviderStateMixin {

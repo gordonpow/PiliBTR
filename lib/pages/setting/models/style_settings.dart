@@ -31,6 +31,7 @@ import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/ordered_multi_select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
+import 'package:PiliPlus/utils/app_restart.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
@@ -47,7 +48,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide StatefulBuilder;
 import 'package:path/path.dart' as path;
 
 List<SettingsModel> get styleSettings => [
@@ -68,6 +69,12 @@ List<SettingsModel> get styleSettings => [
     ),
   ],
   if (Platform.isLinux) _useSSDModel(),
+  NormalModel(
+    leading: const Icon(Icons.translate),
+    title: '語言',
+    getSubtitle: () => _languageLabel(Pref.appLanguage),
+    onTap: _showLanguageDialog,
+  ),
   SwitchModel(
     title: '橫屏適配',
     subtitle: '啟用橫屏佈局與邏輯，平板、摺疊屏等可開啟；建議全屏方向設為【不改變當前方向】',
@@ -726,6 +733,35 @@ Future<void> _showCardWidthDialog(
 
 String _columnsLabel(int columns) => columns > 0 ? '$columns 排' : '自動';
 
+String _languageLabel(int value) => switch (value) {
+  1 => '繁體中文',
+  // Shown in Simplified so a Simplified reader can find it. In Traditional
+  // mode the Text widget converts it to Traditional.
+  2 => '简体中文',
+  _ => '跟隨系統',
+};
+
+/// Chinese script of the app: follow the system, Traditional or Simplified.
+Future<void> _showLanguageDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final old = Pref.appLanguage;
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '語言',
+      value: old,
+      values: [for (var i = 0; i < 3; i++) (i, _languageLabel(i))],
+    ),
+  );
+  if (res != null && res != old) {
+    await GStorage.setting.put(SettingBoxKey.appLanguage, res);
+    setState();
+    AppRestart.ask();
+  }
+}
+
 /// Fixed columns of the video card grid, set for portrait and landscape
 /// separately.
 Future<void> _showCardColumnsDialog(
@@ -734,11 +770,19 @@ Future<void> _showCardColumnsDialog(
 ) async {
   final landscape = await showDialog<bool>(
     context: context,
-    builder: (context) => SelectDialog<bool>(
-      title: '影片卡片排數',
-      values: [
-        (false, '直向：${_columnsLabel(Pref.videoCardColumnsPortrait)}'),
-        (true, '橫向：${_columnsLabel(Pref.videoCardColumnsLandscape)}'),
+    // A menu (which orientation to change), not a choice: no radio.
+    builder: (context) => SimpleDialog(
+      title: const Text('影片卡片排數'),
+      children: [
+        for (final (value, label, columns) in [
+          (false, '直向', Pref.videoCardColumnsPortrait),
+          (true, '橫向', Pref.videoCardColumnsLandscape),
+        ])
+          ListTile(
+            title: Text(label),
+            trailing: Text(_columnsLabel(columns)),
+            onTap: () => Navigator.of(context).pop(value),
+          ),
       ],
     ),
   );
@@ -757,7 +801,10 @@ Future<void> _showCardColumnsDialog(
       ],
     ),
   );
-  if (res != null) {
+  final old = landscape
+      ? Pref.videoCardColumnsLandscape
+      : Pref.videoCardColumnsPortrait;
+  if (res != null && res != old) {
     await GStorage.setting.put(
       landscape
           ? SettingBoxKey.videoCardColumnsLandscape
@@ -765,6 +812,7 @@ Future<void> _showCardColumnsDialog(
       res,
     );
     setState();
+    AppRestart.ask();
   }
 }
 

@@ -1,6 +1,6 @@
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 enum ThemeType implements EnumWithLabel {
   light('淺色'),

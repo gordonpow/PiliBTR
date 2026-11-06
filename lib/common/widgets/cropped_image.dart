@@ -17,7 +17,7 @@
 
 import 'dart:ui' as ui;
 
-import 'package:flutter/widgets.dart';
+import 'package:PiliPlus/common/widgets/zh_widgets.dart';
 
 class CroppedImage extends LeafRenderObjectWidget {
   const CroppedImage({

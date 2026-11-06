@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/widgets/svg/level_icon.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 abstract final class BiliUtils {
   static bool isDefaultFav(int? attr) {

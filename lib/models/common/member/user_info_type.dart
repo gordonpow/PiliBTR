@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart' show Alignment;
+import 'package:PiliPlus/common/widgets/zh_material.dart' show Alignment;
 
 enum UserInfoType {
   fan('粉絲', .centerLeft),

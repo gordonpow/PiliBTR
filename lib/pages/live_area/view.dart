@@ -15,7 +15,7 @@ import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:flutter_sortable_wrap/sortable_wrap.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class LiveAreaPage extends StatefulWidget {
   const LiveAreaPage({super.key});

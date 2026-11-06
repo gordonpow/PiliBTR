@@ -1,10 +1,13 @@
 import 'package:PiliPlus/services/download/btr_config.dart';
+import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
-/// Settings for multi-thread download (BTR): CDN mode and thread count.
+/// Settings of BTR (multi-CDN): CDN mode, threads, download acceleration.
+/// Playback acceleration is the switch in the CDN settings
+/// (cdn_settings_dialog.dart).
 class BtrSettingsDialog extends StatefulWidget {
   const BtrSettingsDialog({super.key});
 
@@ -14,7 +17,6 @@ class BtrSettingsDialog extends StatefulWidget {
 
 class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
   late bool _enable;
-  late bool _playback;
   late BtrCdnMode _cdnMode;
   late bool _autoThreads;
   late int _threadIndex;
@@ -24,7 +26,6 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
   void initState() {
     super.initState();
     _enable = BtrConfig.enable;
-    _playback = BtrConfig.playback;
     _cdnMode = BtrConfig.cdnMode;
     _autoThreads = BtrConfig.autoThreads;
     final threads = BtrConfig.threads;
@@ -41,7 +42,7 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
 
   Future<void> _save() async {
     final hosts = BtrConfig.parseHosts(_customCdn.text);
-    if ((_enable || _playback) &&
+    if ((_enable || BtrConfig.playback) &&
         _cdnMode == BtrCdnMode.custom &&
         hosts.isEmpty) {
       SmartDialog.showToast('請至少輸入一個 CDN 節點');
@@ -49,12 +50,13 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
     }
     await GStorage.setting.putAll({
       SettingBoxKey.btrEnable: _enable,
-      SettingBoxKey.btrPlayback: _playback,
       SettingBoxKey.btrCdnMode: _cdnMode.index,
       SettingBoxKey.btrCustomCdn: hosts,
       SettingBoxKey.btrAutoThreads: _autoThreads,
       SettingBoxKey.btrThreads: BtrConfig.threadSteps[_threadIndex],
     });
+    // Forget proxy sources built with the old node list.
+    BtrProxy.reset();
     SmartDialog.showToast('已儲存，下一個影片或下載任務生效');
     if (mounted) Navigator.of(context).pop(true);
   }
@@ -78,22 +80,15 @@ class _BtrSettingsDialogState extends State<BtrSettingsDialog> {
           children: [
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('播放加速'),
-              subtitle: const Text('觀看時由多個 CDN 同時緩衝，減少卡頓'),
-              value: _playback,
-              onChanged: (v) => setState(() => _playback = v),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
               title: const Text('下載加速'),
               subtitle: const Text('離線快取使用多執行緒下載'),
               value: _enable,
               onChanged: (v) => setState(() => _enable = v),
             ),
             IgnorePointer(
-              ignoring: !_enable && !_playback,
+              ignoring: !_enable && !BtrConfig.playback,
               child: AnimatedOpacity(
-                opacity: _enable || _playback ? 1 : 0.4,
+                opacity: _enable || BtrConfig.playback ? 1 : 0.4,
                 duration: const Duration(milliseconds: 150),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

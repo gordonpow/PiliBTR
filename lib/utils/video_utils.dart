@@ -4,6 +4,7 @@ import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/models/video/play/url.dart'
     show AudioItem, VideoItem, FormatItem;
 import 'package:PiliPlus/models_new/live/live_room_play_info/codec.dart';
+import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -28,7 +29,11 @@ abstract final class VideoUtils {
     CDNService? defaultCDNService,
     bool isAudio = false,
   }) {
-    defaultCDNService ??= cdnService;
+    // With BTR playback the proxy rotates nodes itself, so start from the
+    // backup URL: akamai signatures and PCDN URLs would break that rotation.
+    defaultCDNService ??= BtrConfig.playback
+        ? CDNService.backupUrl
+        : cdnService;
 
     if (defaultCDNService == CDNService.baseUrl) {
       return urls.first;

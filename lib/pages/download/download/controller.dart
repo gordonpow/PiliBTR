@@ -9,7 +9,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart' show Text;
+import 'package:PiliPlus/common/widgets/zh_material.dart' show Text;
 
 class DownloadController extends GetxController
     with BaseMultiSelectMixin<DownloadSeasonInfo> {

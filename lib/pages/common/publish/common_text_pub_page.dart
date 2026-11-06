@@ -1,6 +1,6 @@
 import 'package:PiliPlus/pages/common/publish/common_publish_page.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 abstract class CommonTextPubPage extends CommonPublishPage<String> {
   const CommonTextPubPage({

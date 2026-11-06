@@ -7,7 +7,7 @@ import 'package:PiliPlus/pages/follow/controller.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class FollowTagSortPage extends StatefulWidget {
   const FollowTagSortPage({super.key, required this.controller});

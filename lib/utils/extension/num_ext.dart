@@ -1,6 +1,7 @@
 import 'dart:math' show pow;
 
-import 'package:flutter/widgets.dart' show BuildContext, MediaQuery;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
+    show BuildContext, MediaQuery;
 
 const unitArr = ['B', 'K', 'M', 'G', 'T', 'P'];
 

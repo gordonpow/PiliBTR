@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 const double _kMaxLabelTextScaleFactor = 1.3;
 

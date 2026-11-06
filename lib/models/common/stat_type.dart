@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart' show IconData, Icons;
+import 'package:PiliPlus/common/widgets/zh_material.dart' show IconData, Icons;
 
 enum StatType {
   view(Icons.remove_red_eye_outlined, '觀看'),

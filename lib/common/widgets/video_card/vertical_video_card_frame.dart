@@ -1,5 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 /// The layout of a vertical video card, the same as the home page card
 /// ([VideoCardV]): a 16:10 cover with rounded top corners, then the title

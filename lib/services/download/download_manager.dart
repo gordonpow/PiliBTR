@@ -227,10 +227,11 @@ class DownloadManager {
       await _ioQueue;
 
       if (_cancelToken.isCancelled || _fatalError != null) {
-        throw _fatalError ?? DioException.requestCancelled(
-          requestOptions: RequestOptions(path: url),
-          reason: 'cancelled',
-        );
+        throw _fatalError ??
+            DioException.requestCancelled(
+              requestOptions: RequestOptions(path: url),
+              reason: 'cancelled',
+            );
       }
 
       // 4. Finish.
@@ -370,9 +371,7 @@ class DownloadManager {
         }
         await for (final data in response.data!.stream) {
           final remain = length - written;
-          final bytes = data.length > remain
-              ? data.sublist(0, remain)
-              : data;
+          final bytes = data.length > remain ? data.sublist(0, remain) : data;
           await _write(chunkStart + written, bytes);
           written += bytes.length;
           got += bytes.length;

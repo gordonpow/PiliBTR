@@ -1,5 +1,5 @@
 import 'package:PiliPlus/utils/extension/selectable_region_ext.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class SelectionText extends StatelessWidget {
   const SelectionText(

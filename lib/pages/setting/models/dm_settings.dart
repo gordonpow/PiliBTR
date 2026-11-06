@@ -11,7 +11,7 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
+import 'package:PiliPlus/common/widgets/zh_material.dart' hide RefreshIndicator;
 
 List<SettingsModel> get dmSettings => [
   const SwitchModel(

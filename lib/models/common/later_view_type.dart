@@ -1,5 +1,5 @@
 import 'package:PiliPlus/pages/later/child_view.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 enum LaterViewType {
   all(0, '全部'),

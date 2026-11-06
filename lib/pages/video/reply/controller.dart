@@ -11,7 +11,7 @@ import 'package:PiliPlus/pages/video/reply_reply/view.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/widgets.dart' show BoxConstraints, WidgetsBinding;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart' show BoxConstraints, WidgetsBinding;
 import 'package:get/get.dart';
 
 class VideoReplyController extends ReplyController<MainListReply>
