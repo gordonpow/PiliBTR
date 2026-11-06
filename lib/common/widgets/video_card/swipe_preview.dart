@@ -5,9 +5,9 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A video card that can play a preview when the finger scrolls over it.
-/// It registers itself so [SwipePreviewDetector] can find the card under
-/// the finger.
+/// A video card that can play a preview when the finger rests on it after
+/// a swipe. It registers itself so [SwipePreviewDetector] can find the
+/// card under the finger.
 class SwipePreviewTarget extends StatefulWidget {
   const SwipePreviewTarget({
     super.key,
@@ -50,10 +50,10 @@ class _SwipePreviewTargetState extends State<SwipePreviewTarget> {
   Widget build(BuildContext context) => widget.child;
 }
 
-/// Plays a preview of the card under the finger while the finger scrolls
-/// the list, so the user does not have to long press. The card must stay
-/// under the finger for [_dwell] first: cards that pass quickly do not
-/// start a player.
+/// Plays a preview of the card under the finger after a swipe, so the user
+/// does not have to long press. The preview starts only when the finger
+/// rests: while the finger keeps moving (scrolling), no player starts, so
+/// the scroll stays smooth.
 class SwipePreviewDetector extends StatefulWidget {
   const SwipePreviewDetector({super.key, required this.child});
 
@@ -74,6 +74,10 @@ class SwipePreviewDetector extends StatefulWidget {
 class _SwipePreviewDetectorState extends State<SwipePreviewDetector> {
   static const _dwell = Duration(milliseconds: 250);
 
+  /// The finger counts as resting while it stays this close to the point
+  /// where the dwell timer started.
+  static const double _still2 = 12 * 12;
+
   /// Squared distance the finger must move before it counts as a swipe
   /// (a still finger is a tap or a long press).
   static const double _slop2 = 18 * 18;
@@ -82,7 +86,9 @@ class _SwipePreviewDetectorState extends State<SwipePreviewDetector> {
   Offset _down = Offset.zero;
   Offset _position = Offset.zero;
   bool _swiping = false;
-  Object? _candidate;
+
+  /// Where the finger was when the dwell timer started.
+  Offset _anchor = Offset.zero;
   Timer? _timer;
 
   bool get _active => VideoPreview.enabled && SwipePreviewDetector.enabled;
@@ -98,41 +104,48 @@ class _SwipePreviewDetectorState extends State<SwipePreviewDetector> {
     if (e.pointer != _pointer) return;
     _position = e.position;
     if (!_swiping) {
-      if ((_position - _down).distanceSquared < _slop2 || !_active) return;
+      final delta = _position - _down;
+      if (delta.distanceSquared < _slop2 || !_active) return;
+      // Only a vertical swipe scrolls the list. A horizontal swipe changes
+      // the home tab: it must not start a preview.
+      if (delta.dx.abs() >= delta.dy.abs()) {
+        _pointer = null;
+        return;
+      }
       _swiping = true;
+      _restart();
+      return;
     }
-    _check();
+    // The finger moved on: wait until it rests again.
+    if ((_position - _anchor).distanceSquared > _still2) _restart();
+  }
+
+  void _restart() {
+    _anchor = _position;
+    _timer?.cancel();
+    _timer = Timer(_dwell, _onRest);
   }
 
   void _onEnd(PointerEvent e) {
     if (e.pointer != _pointer) return;
     _pointer = null;
     _swiping = false;
-    _candidate = null;
     _timer?.cancel();
   }
 
-  /// Finds the card under the finger and starts the dwell timer when it
-  /// changes.
-  void _check() {
-    _SwipePreviewTargetState? hit;
+  /// The finger rested for [_dwell]: preview the card under it.
+  void _onRest() {
+    if (!_swiping || !mounted) return;
     for (final t in SwipePreviewDetector._targets) {
       if (t._globalRect?.contains(_position) ?? false) {
-        hit = t;
-        break;
+        final item = t.widget.item;
+        if (VideoPreview.active.value != item) {
+          t.widget.onPrefetch();
+          VideoPreview.start(item);
+        }
+        return;
       }
     }
-    final item = hit?.widget.item;
-    if (item == _candidate) return;
-    _candidate = item;
-    _timer?.cancel();
-    if (hit == null || item == null || VideoPreview.active.value == item) {
-      return;
-    }
-    hit.widget.onPrefetch();
-    _timer = Timer(_dwell, () {
-      if (_swiping && _candidate == item) VideoPreview.start(item);
-    });
   }
 
   @override

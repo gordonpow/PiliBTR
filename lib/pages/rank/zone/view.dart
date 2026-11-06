@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/rank/zone/controller.dart';
@@ -20,7 +21,7 @@ class ZonePage extends StatefulWidget {
 }
 
 class _ZonePageState extends State<ZonePage>
-    with AutomaticKeepAliveClientMixin, GridMixin {
+    with AutomaticKeepAliveClientMixin, GridMixin, VideoGridMixin {
   late final ZoneController controller;
 
   @override
@@ -55,30 +56,44 @@ class _ZonePageState extends State<ZonePage>
 
   Widget _buildBody(LoadingState<List<dynamic>?> loadingState) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() =>
+        widget.seasonType == null
+            ? SliverPadding(
+                padding: VideoCardStyle.sidePadding,
+                sliver: videoGridSkeleton,
+              )
+            : gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
-                itemBuilder: (context, index) {
-                  final item = response[index];
-                  if (item is HotVideoItemModel) {
-                    return VideoCardH(
-                      videoItem: item,
-                      onRemove: () => controller.loadingState
-                        ..value.data!.removeAt(index)
-                        ..refresh(),
-                    );
-                  }
-                  return PgcRankItem(item: item);
-                },
-                itemCount: response.length,
-              )
+            ? _buildGrid(response)
             : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(
         errMsg: errMsg,
         onReload: controller.onReload,
       ),
     };
+  }
+
+  Widget _buildGrid(List<dynamic> response) {
+    final isVideo = response.first is HotVideoItemModel;
+    final grid = SliverGrid.builder(
+      gridDelegate: isVideo ? videoGridDelegate : gridDelegate,
+      itemBuilder: (context, index) {
+        final item = response[index];
+        if (item is HotVideoItemModel) {
+          return VideoCardH(
+            videoItem: item,
+            vertical: true,
+            onRemove: () => controller.loadingState
+              ..value.data!.removeAt(index)
+              ..refresh(),
+          );
+        }
+        return PgcRankItem(item: item);
+      },
+      itemCount: response.length,
+    );
+    if (!isVideo) return grid;
+    return SliverPadding(padding: VideoCardStyle.sidePadding, sliver: grid);
   }
 }

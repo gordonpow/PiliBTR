@@ -7,12 +7,12 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show ReloadScrollPhysics;
 import 'package:PiliPlus/common/widgets/sliver/sliver_pinned_header.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
 import 'package:PiliPlus/models/horizontal_video_model.dart';
 import 'package:PiliPlus/pages/member_video_web/base/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
-import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -25,7 +25,7 @@ abstract class BaseVideoWebState<
   V extends EnumWithLabel
 >
     extends State<S>
-    with GridMixin {
+    with VideoGridMixin {
   late final String name;
   BaseVideoWebCtr<R, T, V> get controller;
 
@@ -86,23 +86,32 @@ abstract class BaseVideoWebState<
     LoadingState<List<T>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => SliverPadding(
+        padding: VideoCardStyle.sidePadding,
+        sliver: videoGridSkeleton,
+      ),
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverMainAxisGroup(
                 slivers: [
                   buildHeader(colorScheme),
                   ?buildTags(colorScheme),
-                  SliverGrid.builder(
-                    gridDelegate: gridDelegate,
-                    itemCount: response.length,
-                    itemBuilder: (context, index) {
-                      if (index == response.length - 1) {
-                        controller.onLoadMore();
-                      }
-                      // TODO: dimension
-                      return VideoCardH(videoItem: response[index]);
-                    },
+                  SliverPadding(
+                    padding: VideoCardStyle.sidePadding,
+                    sliver: SliverGrid.builder(
+                      gridDelegate: videoGridDelegate,
+                      itemCount: response.length,
+                      itemBuilder: (context, index) {
+                        if (index == response.length - 1) {
+                          controller.onLoadMore();
+                        }
+                        // TODO: dimension
+                        return VideoCardH(
+                          videoItem: response[index],
+                          vertical: true,
+                        );
+                      },
+                    ),
                   ),
                 ],
               )

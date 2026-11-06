@@ -7,13 +7,13 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show ReloadScrollPhysics;
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/models_new/popular/popular_series_one/config.dart';
 import 'package:PiliPlus/pages/popular_series/controller.dart';
-import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -25,7 +25,8 @@ class PopularSeriesPage extends StatefulWidget {
   State<PopularSeriesPage> createState() => _PopularSeriesPageState();
 }
 
-class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
+class _PopularSeriesPageState extends State<PopularSeriesPage>
+    with VideoGridMixin {
   final _controller = Get.put(PopularSeriesController());
 
   @override
@@ -57,35 +58,42 @@ class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
   Widget _buildBody(LoadingState<List<HotVideoItemModel>?> value) {
     switch (value) {
       case Loading():
-        return gridSkeleton;
+        return SliverPadding(
+          padding: VideoCardStyle.sidePadding,
+          sliver: videoGridSkeleton,
+        );
       case Success<List<HotVideoItemModel>?>(:final response):
         Widget sliver;
         if (response != null && response.isNotEmpty) {
-          sliver = SliverGrid.builder(
-            gridDelegate: gridDelegate,
-            itemCount: response.length,
-            itemBuilder: (context, index) {
-              final item = response[index];
-              return VideoCardH(
-                videoItem: item,
-                onTap: () {
-                  final config = _controller.config.value;
-                  PageUtils.toVideoPage(
-                    bvid: item.bvid,
-                    cid: item.cid!,
-                    dimension: item.dimension,
-                    extraArguments: {
-                      'sourceType': SourceType.playlist,
-                      'favTitle': '每週必看 ${config?.label ?? ''}',
-                      'mediaId': config?.mediaId,
-                      'desc': true,
-                      'oid': item.aid,
-                      'isContinuePlaying': index != 0,
-                    },
-                  );
-                },
-              );
-            },
+          sliver = SliverPadding(
+            padding: VideoCardStyle.sidePadding,
+            sliver: SliverGrid.builder(
+              gridDelegate: videoGridDelegate,
+              itemCount: response.length,
+              itemBuilder: (context, index) {
+                final item = response[index];
+                return VideoCardH(
+                  videoItem: item,
+                  vertical: true,
+                  onTap: () {
+                    final config = _controller.config.value;
+                    PageUtils.toVideoPage(
+                      bvid: item.bvid,
+                      cid: item.cid!,
+                      dimension: item.dimension,
+                      extraArguments: {
+                        'sourceType': SourceType.playlist,
+                        'favTitle': '每週必看 ${config?.label ?? ''}',
+                        'mediaId': config?.mediaId,
+                        'desc': true,
+                        'oid': item.aid,
+                        'isContinuePlaying': index != 0,
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           );
         } else {
           sliver = HttpError(onReload: _controller.onReload);

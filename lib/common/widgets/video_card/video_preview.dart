@@ -49,6 +49,79 @@ abstract final class VideoPreview {
     if (item == null || active.value == item) active.value = null;
   }
 
+  /// One player for all previews. Creating and disposing an mpv player
+  /// and its video texture for every card drops frames while the list
+  /// scrolls, so the player stays and only the media changes.
+  static Future<(Player, VideoController)>? _shared;
+
+  /// The preview that uses the shared player now. A new card starts
+  /// (initState) before the old card goes away (dispose), so only the
+  /// owner may stop the player.
+  static Object? _owner;
+  static Timer? _idleTimer;
+
+  /// The shared player is disposed after this time without a preview.
+  static const _idleTime = Duration(seconds: 30);
+
+  static Future<(Player, VideoController)> _acquire(Object owner) {
+    _idleTimer?.cancel();
+    final hadOwner = _owner != null;
+    _owner = owner;
+    final shared = _shared;
+    if (shared != null) {
+      // Stop the media of the previous card at once.
+      if (hadOwner) shared.then((p) => p.$1.stop()).ignore();
+      return shared;
+    }
+    final created = _createPlayer();
+    _shared = created;
+    // A failed player is not kept: the next preview tries again.
+    created.then(
+      (_) {},
+      onError: (Object _) {
+        if (_shared == created) _shared = null;
+      },
+    );
+    return created;
+  }
+
+  static void _release(Object owner) {
+    if (_owner != owner) return;
+    _owner = null;
+    _shared?.then((p) => p.$1.stop()).ignore();
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleTime, () {
+      if (_owner != null) return;
+      final shared = _shared;
+      _shared = null;
+      shared?.then((p) => p.$1.dispose()).ignore();
+    });
+  }
+
+  static Future<(Player, VideoController)> _createPlayer() async {
+    final player = await Player.create(
+      configuration: const PlayerConfiguration(
+        logLevel: .error,
+        options: {
+          // Start as soon as possible, and keep little data.
+          'cache-pause-initial': 'no',
+          'demuxer-max-bytes': '16MiB',
+          'demuxer-readahead-secs': '10',
+        },
+      ),
+    );
+    try {
+      final controller = await VideoController.create(player);
+      player
+        ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl)
+        ..setPlaylistMode(.single);
+      return (player, controller);
+    } catch (e) {
+      player.dispose();
+      rethrow;
+    }
+  }
+
   /// Place of the playing preview: its bvid, cid and position.
   static ({String bvid, int cid, int ms})? _progress;
 
@@ -191,7 +264,28 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
   bool _disposed = false;
 
   int? _cid;
-  Duration _position = Duration.zero;
+
+  /// True after this card's media opened: earlier position events belong
+  /// to the previous card of the shared player.
+  bool _opened = false;
+
+  /// Media of this card. Events of the shared player count only while it
+  /// plays this media, not a late event of the previous card.
+  String? _media;
+
+  bool get _isMine {
+    if (!_opened) return false;
+    final playlist = _player?.state.playlist;
+    if (playlist == null || playlist.medias.isEmpty) return false;
+    return playlist.medias[playlist.index.clamp(0, playlist.medias.length - 1)]
+            .uri ==
+        _media;
+  }
+
+  /// Position and subtitle text change many times a second: only the
+  /// progress bar and the subtitle rebuild, not the whole preview.
+  final _position = ValueNotifier(Duration.zero);
+  final _cueText = ValueNotifier<String?>(null);
   Duration _duration = Duration.zero;
 
   /// Part of the video (0 to 1) while the finger drags the progress bar.
@@ -200,7 +294,6 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
   /// CC subtitles: on/off, the cues (seconds), and the current text.
   bool _subtitleOn = VideoPreview.subtitle;
   List<({double from, double to, String text})>? _cues;
-  String? _cueText;
 
   @override
   void initState() {
@@ -233,7 +326,10 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     for (final sub in _subs) {
       sub.cancel();
     }
-    _player?.dispose();
+    _position.dispose();
+    _cueText.dispose();
+    // The player is shared: stop it only if this card still owns it.
+    VideoPreview._release(this);
     // The card went away (for example, it scrolled out of the list).
     _stopLater();
     super.dispose();
@@ -243,30 +339,9 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     if (mounted) setState(() => _error = '無法預覽此影片');
   }
 
-  /// Creates the player while the streams load: both run at the same time.
-  Future<(Player, VideoController)> _createPlayer() async {
-    final player = await Player.create(
-      configuration: const PlayerConfiguration(
-        logLevel: .error,
-        options: {
-          // Start as soon as possible, and keep little data.
-          'cache-pause-initial': 'no',
-          'demuxer-max-bytes': '16MiB',
-          'demuxer-readahead-secs': '10',
-        },
-      ),
-    );
-    try {
-      final controller = await VideoController.create(player);
-      return (player, controller);
-    } catch (e) {
-      player.dispose();
-      rethrow;
-    }
-  }
-
   Future<void> _load() async {
-    final playerFuture = _createPlayer();
+    // The player gets ready while the streams load.
+    final playerFuture = VideoPreview._acquire(this);
     final source = await VideoPreview.source(
       aid: widget.aid,
       bvid: widget.bvid,
@@ -280,19 +355,13 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
       if (kDebugMode) debugPrint('VideoPreview player: $e');
       return _fail();
     }
-    if (_disposed) {
-      player.dispose();
-      return;
-    }
+    if (_disposed) return;
     _player = player;
     if (source == null) return _fail();
     _cid = source.cid;
     _loadSubtitle(source.cid);
     try {
-      player
-        ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl)
-        ..setVolume(0)
-        ..setPlaylistMode(.single);
+      player.setVolume(0);
       // BTR: fetch from several CDN nodes in parallel.
       final video = await BtrProxy.wrap(source.video);
       final audio = source.audio == null
@@ -306,20 +375,22 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
       _subs
         ..add(
           player.stream.playing.listen((playing) {
-            if (mounted) setState(() => _playing = playing);
+            if (_isMine && mounted) setState(() => _playing = playing);
           }),
         )
         ..add(player.stream.position.listen(_onPosition))
         ..add(
           player.stream.duration.listen((duration) {
-            if (mounted) setState(() => _duration = duration);
+            if (_isMine && mounted) setState(() => _duration = duration);
           }),
         );
       setState(() => _video = controller);
-      controller.waitUntilFirstFrameRendered.then((_) {
-        if (mounted) setState(() => _firstFrame = true);
-      });
-      await player.open(Media(media));
+      final item = Media(media);
+      // Compare with the uri as Media keeps it (it can normalize it).
+      _media = item.uri;
+      await player.open(item);
+      if (_disposed) return;
+      _opened = true;
     } catch (e) {
       if (kDebugMode) debugPrint('VideoPreview: $e');
       _fail();
@@ -376,7 +447,12 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
   }
 
   void _onPosition(Duration position) {
-    if (!mounted) return;
+    if (!mounted || !_isMine) return;
+    // The shared player renders frames of every card: show the video
+    // only after this card's media plays (no frame of the previous card).
+    if (!_firstFrame && position > Duration.zero) {
+      setState(() => _firstFrame = true);
+    }
     String? text;
     final cues = _cues;
     if (_subtitleOn && cues != null) {
@@ -396,17 +472,13 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
         ms: position.inMilliseconds,
       );
     }
-    setState(() {
-      _position = position;
-      _cueText = text;
-    });
+    _position.value = position;
+    _cueText.value = text;
   }
 
   void _toggleSubtitle() {
-    setState(() {
-      _subtitleOn = !_subtitleOn;
-      if (!_subtitleOn) _cueText = null;
-    });
+    setState(() => _subtitleOn = !_subtitleOn);
+    if (!_subtitleOn) _cueText.value = null;
     VideoPreview.subtitle = _subtitleOn;
   }
 
@@ -425,11 +497,16 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     _player?.seek(Duration(milliseconds: ms));
   }
 
-  Widget _progressBar() {
+  Widget _progressBar() => ValueListenableBuilder(
+    valueListenable: _position,
+    builder: (context, position, _) => _progressBarAt(position),
+  );
+
+  Widget _progressBarAt(Duration position) {
     final total = _duration.inMilliseconds;
     final value =
         _dragValue ??
-        (total > 0 ? (_position.inMilliseconds / total).clamp(0.0, 1.0) : 0.0);
+        (total > 0 ? (position.inMilliseconds / total).clamp(0.0, 1.0) : 0.0);
     final dragging = _dragValue != null;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -533,31 +610,39 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
               ),
             ),
           ),
-        if (_subtitleOn && _cueText != null)
+        if (_subtitleOn)
           Positioned(
             left: 8,
             right: 8,
             bottom: 12,
-            child: Center(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  child: Text(
-                    _cueText!,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ),
+            child: ValueListenableBuilder(
+              valueListenable: _cueText,
+              builder: (context, cue, _) => cue == null
+                  ? const SizedBox.shrink()
+                  : Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            cue,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           ),
         if (video != null && _duration > Duration.zero)

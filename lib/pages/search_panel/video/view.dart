@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/models/common/search/video_search_type.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
@@ -28,7 +29,7 @@ class _SearchVideoPanelState
           SearchVideoData,
           SearchVideoItemModel
         >
-    with GridMixin, SearchVideoPanelMixin<SearchVideoPanel> {
+    with GridMixin, VideoGridMixin, SearchVideoPanelMixin<SearchVideoPanel> {
   @override
   late final SearchVideoController controller;
 
@@ -49,7 +50,7 @@ class _SearchVideoPanelState
 mixin SearchVideoPanelMixin<S extends SearchVideoPanel>
     on
         CommonSearchPanelState<S, SearchVideoData, SearchVideoItemModel>,
-        GridMixin {
+        VideoGridMixin<S> {
   @override
   SearchVideoController get controller;
 
@@ -111,23 +112,27 @@ mixin SearchVideoPanelMixin<S extends SearchVideoPanel>
 
   @override
   Widget buildList(List<SearchVideoItemModel> list) {
-    return SliverGrid.builder(
-      gridDelegate: gridDelegate,
-      itemBuilder: (context, index) {
-        if (index == list.length - 1) {
-          controller.onLoadMore();
-        }
-        return VideoCardH(
-          videoItem: list[index],
-          onRemove: () => controller.loadingState
-            ..value.data!.removeAt(index)
-            ..refresh(),
-        );
-      },
-      itemCount: list.length,
+    return SliverPadding(
+      padding: VideoCardStyle.sidePadding,
+      sliver: SliverGrid.builder(
+        gridDelegate: videoGridDelegate,
+        itemBuilder: (context, index) {
+          if (index == list.length - 1) {
+            controller.onLoadMore();
+          }
+          return VideoCardH(
+            videoItem: list[index],
+            vertical: true,
+            onRemove: () => controller.loadingState
+              ..value.data!.removeAt(index)
+              ..refresh(),
+          );
+        },
+        itemCount: list.length,
+      ),
     );
   }
 
   @override
-  Widget get buildLoading => gridSkeleton;
+  Widget get buildLoading => videoGridSkeleton;
 }

@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/music/bgm_recommend_list.dart';
@@ -19,7 +20,7 @@ class MusicRecommendPage extends StatefulWidget {
 }
 
 class _MusicRecommendPageState extends State<MusicRecommendPage>
-    with GridMixin {
+    with GridMixin, VideoGridMixin {
   final MusicRecommendController _controller = Get.putOrFind(
     MusicRecommendController.new,
     tag: (Get.arguments as MusicRecommendArgs).id,
@@ -56,14 +57,22 @@ class _MusicRecommendPageState extends State<MusicRecommendPage>
 
   Widget _buildBody(LoadingState<List<BgmRecommend>?> loadingState) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => SliverPadding(
+        padding: VideoCardStyle.sidePadding,
+        sliver: videoGridSkeleton,
+      ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
-                itemBuilder: (context, index) =>
-                    MusicVideoCardH(videoItem: response[index]),
-                itemCount: response.length,
+            ? SliverPadding(
+                padding: VideoCardStyle.sidePadding,
+                sliver: SliverGrid.builder(
+                  gridDelegate: videoGridDelegate,
+                  itemBuilder: (context, index) => MusicVideoCardH(
+                    videoItem: response[index],
+                    vertical: true,
+                  ),
+                  itemCount: response.length,
+                ),
               )
             : HttpError(onReload: _controller.onReload),
       Error(:final errMsg) => HttpError(

@@ -156,7 +156,7 @@ List<SettingsModel> get styleSettings => [
     leading: const Icon(Icons.calendar_view_week_outlined),
     title: '列表寬度（dp）限制',
     getSubtitle: () =>
-        '當前: 主頁${Pref.recommendCardWidth.toInt()}dp 其他${Pref.smallCardWidth.toInt()}dp，螢幕寬度:${MediaQuery.widthOf(Get.context!).toPrecision(2)}dp。寬度越小列數越多。',
+        '當前: 影片卡片${Pref.recommendCardWidth.toInt()}dp 其他列表${Pref.smallCardWidth.toInt()}dp，螢幕寬度:${MediaQuery.widthOf(Get.context!).toPrecision(2)}dp。寬度越小列數越多。',
     onTap: _showCardWidthDialog,
   ),
   const SwitchModel(
@@ -694,11 +694,11 @@ Future<void> _showCardWidthDialog(
   final res = await showDialog<(double, double)>(
     context: context,
     builder: (context) => DualSliderDialog(
-      title: const Text('列表最大列寬度（預設240dp）'),
+      title: const Text('列表最大列寬度'),
       value1: Pref.recommendCardWidth,
       value2: Pref.smallCardWidth,
-      description1: const Text('主頁推薦流'),
-      description2: const Text('其他'),
+      description1: const Text('影片卡片（首頁與影片列表，預設 300dp）'),
+      description2: const Text('其他列表（直播、番劇、歷史、稍後再看等，預設 240dp）'),
       min: 150.0,
       max: 500.0,
       divisions: 35,

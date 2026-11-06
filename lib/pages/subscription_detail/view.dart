@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/sub/sub/list.dart';
 import 'package:PiliPlus/models_new/sub/sub_detail/data.dart';
@@ -39,6 +40,7 @@ class SubDetailPage extends StatefulWidget {
 class _SubDetailPageState extends State<SubDetailPage>
     with
         GridMixin,
+        VideoGridMixin,
         PageOrderBtnMixin<SubDetailPage, SubDetailData, SubDetailItemModel> {
   @override
   late final SubDetailController controller;
@@ -84,20 +86,27 @@ class _SubDetailPageState extends State<SubDetailPage>
 
   Widget _buildBody(LoadingState<List<SubDetailItemModel>?> loadingState) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => SliverPadding(
+        padding: VideoCardStyle.sidePadding,
+        sliver: videoGridSkeleton,
+      ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
-                itemBuilder: (context, index) {
-                  if (index == response.length - 1) {
-                    controller.onLoadMore();
-                  }
-                  return SubVideoCardH(
-                    videoItem: response[index],
-                  );
-                },
-                itemCount: response.length,
+            ? SliverPadding(
+                padding: VideoCardStyle.sidePadding,
+                sliver: SliverGrid.builder(
+                  gridDelegate: videoGridDelegate,
+                  itemBuilder: (context, index) {
+                    if (index == response.length - 1) {
+                      controller.onLoadMore();
+                    }
+                    return SubVideoCardH(
+                      videoItem: response[index],
+                      vertical: true,
+                    );
+                  },
+                  itemCount: response.length,
+                ),
               )
             : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(

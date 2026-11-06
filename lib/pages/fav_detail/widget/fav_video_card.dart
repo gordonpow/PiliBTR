@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/vertical_video_card_frame.dart';
 import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pbenum.dart'
     show PlaylistSource;
 import 'package:PiliPlus/models/common/badge_type.dart';
@@ -25,11 +26,15 @@ class FavVideoCardH extends StatelessWidget {
   final int? index;
   final BaseFavController? ctr;
 
+  /// Use the vertical layout (the same as the home card).
+  final bool vertical;
+
   const FavVideoCardH({
     super.key,
     required this.item,
     this.index,
     this.ctr,
+    this.vertical = false,
   }) : assert(ctr == null || index != null);
 
   bool get isSort => ctr == null;
@@ -80,15 +85,45 @@ class FavVideoCardH extends StatelessWidget {
             cover: item.cover,
             bvid: item.bvid,
           );
+    final onTap = isSort
+        ? null
+        : enableMultiSelect
+        ? () => ctr!.onSelect(item)
+        : _onTap;
+
+    if (vertical) {
+      final textTheme = TextTheme.of(context);
+      return VerticalVideoCardFrame(
+        cover: _cover(colorScheme),
+        title: Text(
+          item.title!,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: VerticalVideoCardFrame.titleStyle.copyWith(
+            fontSize: textTheme.bodyMedium!.fontSize,
+          ),
+        ),
+        stats: _verticalStats(textTheme, colorScheme),
+        footer: Text(
+          item.upper?.name ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: textTheme.labelMedium!.fontSize,
+            color: colorScheme.outline,
+          ),
+        ),
+        action: isOwner ? _cancelFavButton(context, colorScheme, 29, 17) : null,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+      );
+    }
 
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: isSort
-            ? null
-            : enableMultiSelect
-            ? () => ctr!.onSelect(item)
-            : _onTap,
+        onTap: onTap,
         onLongPress: onLongPress,
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
         child: Padding(
@@ -101,55 +136,138 @@ class FavVideoCardH extends StatelessWidget {
             children: [
               AspectRatio(
                 aspectRatio: Style.aspectRatio,
-                child: LayoutBuilder(
-                  builder: (context, boxConstraints) {
-                    double maxWidth = boxConstraints.maxWidth;
-                    double maxHeight = boxConstraints.maxHeight;
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        NetworkImgLayer(
-                          src: item.cover,
-                          width: maxWidth,
-                          height: maxHeight,
-                        ),
-                        PBadge(
-                          text: DurationUtils.formatDuration(item.duration),
-                          right: 6.0,
-                          bottom: 6.0,
-                          type: PBadgeType.gray,
-                        ),
-                        if (item.type == 12)
-                          const PBadge(
-                            text: '音訊',
-                            top: 6.0,
-                            right: 6.0,
-                            type: PBadgeType.gray,
-                          )
-                        else
-                          PBadge(
-                            text: item.ogv?.typeName,
-                            top: 6.0,
-                            right: 6.0,
-                            bottom: null,
-                            left: null,
-                          ),
-                        if (!isSort)
-                          Positioned.fill(
-                            child: selectMask(
-                              colorScheme,
-                              item.checked,
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
+                child: _cover(colorScheme),
               ),
               const SizedBox(width: 10),
               content(context, colorScheme, isOwner),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Cover with badges and the multi-select mask, shared by both layouts.
+  Widget _cover(ColorScheme colorScheme) {
+    return LayoutBuilder(
+      builder: (context, boxConstraints) {
+        double maxWidth = boxConstraints.maxWidth;
+        double maxHeight = boxConstraints.maxHeight;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            NetworkImgLayer(
+              src: item.cover,
+              width: maxWidth,
+              height: maxHeight,
+            ),
+            PBadge(
+              text: DurationUtils.formatDuration(item.duration),
+              right: 6.0,
+              bottom: 6.0,
+              type: PBadgeType.gray,
+            ),
+            if (item.type == 12)
+              const PBadge(
+                text: '音訊',
+                top: 6.0,
+                right: 6.0,
+                type: PBadgeType.gray,
+              )
+            else
+              PBadge(
+                text: item.ogv?.typeName,
+                top: 6.0,
+                right: 6.0,
+                bottom: null,
+                left: null,
+              ),
+            if (!isSort)
+              Positioned.fill(
+                child: selectMask(
+                  colorScheme,
+                  item.checked,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _verticalStats(TextTheme textTheme, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        // In a narrow card the counts shrink instead of running into the
+        // date.
+        Expanded(
+          child: FittedBox(
+            fit: .scaleDown,
+            alignment: .centerLeft,
+            child: Row(
+              children: [
+                StatWidget(
+                  type: StatType.play,
+                  value: item.cntInfo?.play,
+                ),
+                if (item.type != 24) ...[
+                  const SizedBox(width: 4),
+                  StatWidget(
+                    type: StatType.danmaku,
+                    value: item.cntInfo?.danmaku,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          DateFormatUtils.dateFormat(item.favTime),
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: textTheme.labelSmall!.fontSize,
+            color: colorScheme.outline.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(width: 2),
+      ],
+    );
+  }
+
+  Widget _cancelFavButton(
+    BuildContext context,
+    ColorScheme colorScheme,
+    double size,
+    double iconSize,
+  ) {
+    return iconButton(
+      size: size,
+      iconSize: iconSize,
+      icon: const Icon(Icons.clear),
+      tooltip: '取消收藏',
+      iconColor: colorScheme.outline,
+      onPressed: () => showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('提示'),
+          content: const Text('要取消收藏嗎?'),
+          actions: [
+            TextButton(
+              onPressed: Get.back,
+              child: Text(
+                '取消',
+                style: TextStyle(color: colorScheme.outline),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Get.back();
+                ctr!.onCancelFav(index!, item.id!, item.type!);
+              },
+              child: const Text('確定取消'),
+            ),
+          ],
         ),
       ),
     );
@@ -214,34 +332,7 @@ class FavVideoCardH extends StatelessWidget {
             Positioned(
               right: 0,
               bottom: -8,
-              child: iconButton(
-                icon: const Icon(Icons.clear),
-                tooltip: '取消收藏',
-                iconColor: colorScheme.outline,
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('提示'),
-                    content: const Text('要取消收藏嗎?'),
-                    actions: [
-                      TextButton(
-                        onPressed: Get.back,
-                        child: Text(
-                          '取消',
-                          style: TextStyle(color: colorScheme.outline),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Get.back();
-                          ctr!.onCancelFav(index!, item.id!, item.type!);
-                        },
-                        child: const Text('確定取消'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _cancelFavButton(context, colorScheme, 36, 18),
             ),
         ],
       ),

@@ -4,6 +4,8 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/vertical_video_card_frame.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/horizontal_video_model.dart';
@@ -22,11 +24,15 @@ class VideoCardH extends StatelessWidget {
     this.onTap,
     this.onViewLater,
     this.onRemove,
+    this.vertical = false,
   });
   final HorizontalVideoModel videoItem;
   final VoidCallback? onTap;
   final ValueChanged<int>? onViewLater;
   final VoidCallback? onRemove;
+
+  /// Vertical layout (cover above the title), like the home page card.
+  final bool vertical;
 
   void onLongPress() => imageSaveDialog(
     bvid: videoItem.bvid,
@@ -37,6 +43,7 @@ class VideoCardH extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (vertical) return _buildVertical(theme);
     return Material(
       type: .transparency,
       child: Stack(
@@ -56,66 +63,7 @@ class VideoCardH extends StatelessWidget {
                 children: [
                   AspectRatio(
                     aspectRatio: Style.aspectRatio,
-                    child: LayoutBuilder(
-                      builder: (context, boxConstraints) {
-                        final double maxWidth = boxConstraints.maxWidth;
-                        final double maxHeight = boxConstraints.maxHeight;
-
-                        final progress = videoItem.progress;
-
-                        return Stack(
-                          clipBehavior: .none,
-                          children: [
-                            NetworkImgLayer(
-                              src: videoItem.cover,
-                              width: maxWidth,
-                              height: maxHeight,
-                            ),
-                            if (videoItem.badge case final badge?)
-                              PBadge(
-                                text: badge,
-                                top: 6.0,
-                                right: 6.0,
-                                type: switch (badge) {
-                                  '充電專屬' => .error,
-                                  _ => .primary,
-                                },
-                              ),
-                            if (progress != null && progress != 0) ...[
-                              PBadge(
-                                text: progress == -1
-                                    ? '已看完'
-                                    : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(videoItem.duration)}',
-                                right: 6,
-                                bottom: 8,
-                                type: .gray,
-                              ),
-                              Positioned(
-                                left: 0,
-                                bottom: 0,
-                                right: 0,
-                                child: VideoProgressIndicator(
-                                  color: theme.colorScheme.primary,
-                                  backgroundColor:
-                                      theme.colorScheme.secondaryContainer,
-                                  progress: progress == -1
-                                      ? 1
-                                      : progress / videoItem.duration,
-                                ),
-                              ),
-                            ] else if (videoItem.duration > 0)
-                              PBadge(
-                                text: DurationUtils.formatDuration(
-                                  videoItem.duration,
-                                ),
-                                right: 6.0,
-                                bottom: 6.0,
-                                type: .gray,
-                              ),
-                          ],
-                        );
-                      },
-                    ),
+                    child: _buildCover(theme),
                   ),
                   const SizedBox(width: 10),
                   content(theme),
@@ -136,6 +84,162 @@ class VideoCardH extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVertical(ThemeData theme) {
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
+    final titleList = videoItem.titleList;
+    final Widget title;
+    if (titleList != null && titleList.isNotEmpty) {
+      title = Text.rich(
+        maxLines: 2,
+        overflow: .ellipsis,
+        TextSpan(
+          children: titleList
+              .map(
+                (e) => TextSpan(
+                  text: e.text,
+                  style: VerticalVideoCardFrame.titleStyle.copyWith(
+                    fontSize: textTheme.bodyMedium!.fontSize,
+                    color: e.isEm ? colorScheme.primary : colorScheme.onSurface,
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      );
+    } else {
+      title = Text(
+        videoItem.title,
+        maxLines: 2,
+        overflow: .ellipsis,
+        style: VerticalVideoCardFrame.titleStyle.copyWith(
+          fontSize: textTheme.bodyMedium!.fontSize,
+        ),
+      );
+    }
+    // Live items have no play count: keep the stats size, hide the content.
+    final stats = Row(
+      children: [
+        // In a narrow card the counts shrink instead of running into the
+        // date.
+        Expanded(
+          child: FittedBox(
+            fit: .scaleDown,
+            alignment: .centerLeft,
+            child: Visibility.maintain(
+              visible: videoItem.isLive != true,
+              child: Row(
+                spacing: 4,
+                children: [
+                  StatWidget(type: .play, value: videoItem.stat.view),
+                  StatWidget(type: .danmaku, value: videoItem.stat.danmu),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          DateFormatUtils.dateFormat(
+            videoItem.pubdate,
+            short: VideoCardV.shortFormat,
+            long: VideoCardV.longFormat,
+          ),
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: textTheme.labelSmall!.fontSize,
+            color: colorScheme.outline.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(width: 2),
+      ],
+    );
+    return VerticalVideoCardFrame(
+      cover: _buildCover(theme),
+      title: title,
+      stats: stats,
+      footer: Text(
+        videoItem.owner.name.toString(),
+        maxLines: 1,
+        overflow: .ellipsis,
+        style: TextStyle(
+          height: 1.5,
+          fontSize: textTheme.labelMedium!.fontSize,
+          color: colorScheme.outline,
+        ),
+      ),
+      action: VideoPopupMenu(
+        iconSize: 17,
+        videoItem: videoItem,
+        onRemove: onRemove,
+      ),
+      onTap: onTap ?? () => pushVideoH(videoItem),
+      onLongPress: onLongPress,
+      onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+    );
+  }
+
+  Widget _buildCover(ThemeData theme) {
+    return LayoutBuilder(
+      builder: (context, boxConstraints) {
+        final double maxWidth = boxConstraints.maxWidth;
+        final double maxHeight = boxConstraints.maxHeight;
+
+        final progress = videoItem.progress;
+
+        return Stack(
+          clipBehavior: .none,
+          children: [
+            NetworkImgLayer(
+              src: videoItem.cover,
+              width: maxWidth,
+              height: maxHeight,
+              borderRadius: vertical ? .zero : Style.mdRadius,
+            ),
+            if (videoItem.badge case final badge?)
+              PBadge(
+                text: badge,
+                top: 6.0,
+                right: 6.0,
+                type: switch (badge) {
+                  '充電專屬' => .error,
+                  _ => .primary,
+                },
+              ),
+            if (progress != null && progress != 0) ...[
+              PBadge(
+                text: progress == -1
+                    ? '已看完'
+                    : '${DurationUtils.formatDuration(progress)}/${DurationUtils.formatDuration(videoItem.duration)}',
+                right: 6,
+                bottom: 8,
+                type: .gray,
+              ),
+              Positioned(
+                left: 0,
+                bottom: 0,
+                right: 0,
+                child: VideoProgressIndicator(
+                  color: theme.colorScheme.primary,
+                  backgroundColor: theme.colorScheme.secondaryContainer,
+                  progress: progress == -1 ? 1 : progress / videoItem.duration,
+                ),
+              ),
+            ] else if (videoItem.duration > 0)
+              PBadge(
+                text: DurationUtils.formatDuration(
+                  videoItem.duration,
+                ),
+                right: 6.0,
+                bottom: 6.0,
+                type: .gray,
+              ),
+          ],
+        );
+      },
     );
   }
 

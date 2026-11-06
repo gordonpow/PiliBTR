@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/data.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
@@ -21,7 +22,7 @@ class FavSearchPage extends StatefulWidget {
 class _FavSearchPageState
     extends
         CommonSearchPageState<FavSearchPage, FavDetailData, FavDetailItemModel>
-    with GridMixin {
+    with GridMixin, VideoGridMixin {
   @override
   final FavSearchController controller = Get.put(
     FavSearchController(),
@@ -87,20 +88,24 @@ class _FavSearchPageState
 
   @override
   Widget buildList(List<FavDetailItemModel> list) {
-    return SliverGrid.builder(
-      gridDelegate: gridDelegate,
-      itemBuilder: (context, index) {
-        if (index == list.length - 1) {
-          controller.onLoadMore();
-        }
-        final item = list[index];
-        return FavVideoCardH(
-          item: item,
-          index: index,
-          ctr: controller,
-        );
-      },
-      itemCount: list.length,
+    return SliverPadding(
+      padding: VideoCardStyle.sidePadding,
+      sliver: SliverGrid.builder(
+        gridDelegate: videoGridDelegate,
+        itemBuilder: (context, index) {
+          if (index == list.length - 1) {
+            controller.onLoadMore();
+          }
+          final item = list[index];
+          return FavVideoCardH(
+            item: item,
+            index: index,
+            ctr: controller,
+            vertical: true,
+          );
+        },
+        itemCount: list.length,
+      ),
     );
   }
 }

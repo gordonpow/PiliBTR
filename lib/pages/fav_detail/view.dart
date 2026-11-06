@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
@@ -34,6 +35,7 @@ class FavDetailPage extends StatefulWidget {
 class _FavDetailPageState extends State<FavDetailPage>
     with
         GridMixin,
+        VideoGridMixin,
         PageOrderBtnMixin<FavDetailPage, FavDetailData, FavDetailItemModel> {
   @override
   late final FavDetailController controller;
@@ -476,34 +478,49 @@ class _FavDetailPageState extends State<FavDetailPage>
     LoadingState<List<FavDetailItemModel>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => SliverPadding(
+        padding: VideoCardStyle.sidePadding,
+        sliver: videoGridSkeleton,
+      ),
       Success(:final response) =>
         response != null && response.isNotEmpty
-            ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
-                itemBuilder: (context, index) {
-                  if (index == response.length) {
-                    controller.onLoadMore();
-                    return Container(
-                      height: 60,
-                      alignment: Alignment.center,
-                      child: Text(
-                        controller.isEnd ? '沒有更多了' : '載入中...',
-                        style: TextStyle(
-                          color: theme.colorScheme.outline,
-                          fontSize: 13,
-                        ),
-                      ),
-                    );
-                  }
-                  FavDetailItemModel item = response[index];
-                  return FavVideoCardH(
-                    item: item,
-                    index: index,
-                    ctr: controller,
-                  );
-                },
-                itemCount: response.length + 1,
+            ? SliverMainAxisGroup(
+                slivers: [
+                  SliverPadding(
+                    padding: VideoCardStyle.sidePadding,
+                    sliver: SliverGrid.builder(
+                      gridDelegate: videoGridDelegate,
+                      itemBuilder: (context, index) {
+                        FavDetailItemModel item = response[index];
+                        return FavVideoCardH(
+                          item: item,
+                          index: index,
+                          ctr: controller,
+                          vertical: true,
+                        );
+                      },
+                      itemCount: response.length,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Builder(
+                      builder: (context) {
+                        controller.onLoadMore();
+                        return Container(
+                          height: 60,
+                          alignment: Alignment.center,
+                          child: Text(
+                            controller.isEnd ? '沒有更多了' : '載入中...',
+                            style: TextStyle(
+                              color: theme.colorScheme.outline,
+                              fontSize: 13,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               )
             : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(

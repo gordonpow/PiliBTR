@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/models/search/search_esports.dart';
 import 'package:PiliPlus/pages/search_panel/all/controller.dart';
@@ -31,7 +32,7 @@ class _SearchAllPanelState
           SearchVideoData,
           SearchVideoItemModel
         >
-    with GridMixin, SearchVideoPanelMixin<SearchAllPanel> {
+    with GridMixin, VideoGridMixin, SearchVideoPanelMixin<SearchAllPanel> {
   @override
   late final SearchAllController controller;
 
