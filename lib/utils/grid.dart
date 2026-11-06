@@ -43,10 +43,16 @@ class SliverGridDelegateWithExtentAndRatio extends SliverGridDelegate {
     this.crossAxisSpacing = 0.0,
     this.childAspectRatio = 1.0,
     this.mainAxisExtent = 0.0,
+    this.fixedCrossAxisCount,
   }) : assert(maxCrossAxisExtent > 0),
        assert(mainAxisSpacing >= 0),
        assert(crossAxisSpacing >= 0),
        assert(childAspectRatio > 0);
+
+  /// Returns a fixed number of columns, or 0 to compute the number from
+  /// [maxCrossAxisExtent]. It is read at each layout, so a changed setting
+  /// applies at the next layout.
+  final ValueGetter<int>? fixedCrossAxisCount;
 
   /// The maximum extent of tiles in the cross axis.
   ///
@@ -85,23 +91,30 @@ class SliverGridDelegateWithExtentAndRatio extends SliverGridDelegate {
 
   SliverGridLayout? layoutCache;
   double? crossAxisExtentCache;
+  int? _fixedCountCache;
 
   @override
   SliverGridLayout getLayout(SliverConstraints constraints) {
     // invoked before each frame
     assert(_debugAssertIsValid(constraints.crossAxisExtent));
+    final fixedCount = fixedCrossAxisCount?.call() ?? 0;
     if (layoutCache != null &&
-        constraints.crossAxisExtent == crossAxisExtentCache) {
+        constraints.crossAxisExtent == crossAxisExtentCache &&
+        fixedCount == _fixedCountCache) {
       return layoutCache!;
     }
     crossAxisExtentCache = constraints.crossAxisExtent;
+    _fixedCountCache = fixedCount;
     // Ensure a minimum count of 1, can be zero and result in an infinite extent
     // below when the window size is 0.
-    final crossAxisCount = max(
-      1,
-      (constraints.crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing))
-          .ceil(),
-    );
+    final crossAxisCount = fixedCount > 0
+        ? fixedCount
+        : max(
+            1,
+            (constraints.crossAxisExtent /
+                    (maxCrossAxisExtent + crossAxisSpacing))
+                .ceil(),
+          );
     final double usableCrossAxisExtent = max(
       0.0,
       constraints.crossAxisExtent - crossAxisSpacing * (crossAxisCount - 1),

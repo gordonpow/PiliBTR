@@ -159,6 +159,15 @@ List<SettingsModel> get styleSettings => [
         '當前: 影片卡片${Pref.recommendCardWidth.toInt()}dp 其他列表${Pref.smallCardWidth.toInt()}dp，螢幕寬度:${MediaQuery.widthOf(Get.context!).toPrecision(2)}dp。寬度越小列數越多。',
     onTap: _showCardWidthDialog,
   ),
+  NormalModel(
+    leading: const Icon(Icons.view_column_outlined),
+    title: '影片卡片排數',
+    getSubtitle: () =>
+        '直向：${_columnsLabel(Pref.videoCardColumnsPortrait)}，'
+        '橫向：${_columnsLabel(Pref.videoCardColumnsLandscape)}。'
+        '自動時依上方的影片卡片寬度計算',
+    onTap: _showCardColumnsDialog,
+  ),
   const SwitchModel(
     title: '播放頁移除安全邊距',
     leading: Icon(Icons.fit_screen_outlined),
@@ -711,6 +720,50 @@ Future<void> _showCardWidthDialog(
       SettingBoxKey.smallCardWidth: res.$2,
     });
     SmartDialog.showToast('重啟生效');
+    setState();
+  }
+}
+
+String _columnsLabel(int columns) => columns > 0 ? '$columns 排' : '自動';
+
+/// Fixed columns of the video card grid, set for portrait and landscape
+/// separately.
+Future<void> _showCardColumnsDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final landscape = await showDialog<bool>(
+    context: context,
+    builder: (context) => SelectDialog<bool>(
+      title: '影片卡片排數',
+      values: [
+        (false, '直向：${_columnsLabel(Pref.videoCardColumnsPortrait)}'),
+        (true, '橫向：${_columnsLabel(Pref.videoCardColumnsLandscape)}'),
+      ],
+    ),
+  );
+  if (landscape == null || !context.mounted) return;
+  final maxColumns = landscape ? 8 : 6;
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: landscape ? '橫向排數' : '直向排數',
+      value: landscape
+          ? Pref.videoCardColumnsLandscape
+          : Pref.videoCardColumnsPortrait,
+      values: [
+        (0, '自動（依影片卡片寬度）'),
+        for (var i = 1; i <= maxColumns; i++) (i, '$i 排'),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(
+      landscape
+          ? SettingBoxKey.videoCardColumnsLandscape
+          : SettingBoxKey.videoCardColumnsPortrait,
+      res,
+    );
     setState();
   }
 }

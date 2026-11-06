@@ -250,6 +250,8 @@ abstract final class SettingBoxKey {
       displayMode = 'displayMode',
       smallCardWidth = 'smallCardWidth',
       recommendCardWidth = 'recommendCardWidth',
+      videoCardColumnsPortrait = 'videoCardColumnsPortrait',
+      videoCardColumnsLandscape = 'videoCardColumnsLandscape',
       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
       upPanelPosition = 'upPanelPosition',
       dynamicsShowAllFollowedUp = 'dynamicsShowAllFollowedUp',

@@ -190,6 +190,16 @@ abstract final class Pref {
   static double get recommendCardWidth =>
       _setting.get(SettingBoxKey.recommendCardWidth, defaultValue: 300.0);
 
+  /// Columns of the video card grid when the window is taller than wide.
+  /// 0: automatic (from [recommendCardWidth]).
+  static int get videoCardColumnsPortrait =>
+      _setting.get(SettingBoxKey.videoCardColumnsPortrait, defaultValue: 0);
+
+  /// Columns of the video card grid when the window is wider than tall.
+  /// 0: automatic (from [recommendCardWidth]).
+  static int get videoCardColumnsLandscape =>
+      _setting.get(SettingBoxKey.videoCardColumnsLandscape, defaultValue: 0);
+
   static UpPanelPosition get upPanelPosition =>
       UpPanelPosition.values[_setting.get(
         SettingBoxKey.upPanelPosition,
