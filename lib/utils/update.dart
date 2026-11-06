@@ -1,9 +1,11 @@
+import 'dart:async' show Timer;
 import 'dart:io' show Directory, File, Platform;
 
 import 'package:PiliPlus/btr_version.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:collection/collection.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
@@ -67,10 +69,38 @@ abstract final class Update {
     return false;
   }
 
+  /// Start time of the last check (automatic or manual).
+  static DateTime? _lastCheck;
+  static Timer? _timer;
+
+  /// Starts or updates the automatic check. If the last check is older
+  /// than [Pref.updateIntervalHours] (or there was no check since the app
+  /// started), it checks now. Then it checks again after each interval.
+  /// Call it when the app starts, when the app comes back to the
+  /// foreground (timers do not run while the app is in the background),
+  /// and when the settings change. If [Pref.autoUpdate] is off, it stops.
+  static void startAuto() {
+    _timer?.cancel();
+    _timer = null;
+    if (!Pref.autoUpdate) return;
+    final interval = Duration(hours: Pref.updateIntervalHours);
+    final last = _lastCheck;
+    final wait = last == null
+        ? Duration.zero
+        : last.add(interval).difference(DateTime.now());
+    if (wait <= Duration.zero) {
+      check();
+      _timer = Timer(interval, startAuto);
+    } else {
+      _timer = Timer(wait, startAuto);
+    }
+  }
+
   /// Checks for a new release. With [silent], it shows no message.
   static Future<void> check({bool silent = true}) async {
     if (checking.value) return;
     checking.value = true;
+    _lastCheck = DateTime.now();
     try {
       final res = await _dio.get(Api.latestApp);
       final data = res.data;

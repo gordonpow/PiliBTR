@@ -5,6 +5,8 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/update.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -19,11 +21,79 @@ class UpdatePage extends StatefulWidget {
 
 class _UpdatePageState extends State<UpdatePage> {
   bool _auto = Pref.autoUpdate;
+  int _hours = Pref.updateIntervalHours;
+
+  static const _presetHours = [1, 6, 12, 24, 48, 72];
 
   void _setAuto(bool value) {
     setState(() => _auto = value);
     GStorage.setting.put(SettingBoxKey.autoUpdate, value);
     if (value) Update.check();
+    Update.startAuto();
+  }
+
+  void _setHours(int value) {
+    setState(() => _hours = value);
+    GStorage.setting.put(SettingBoxKey.updateIntervalHours, value);
+    Update.startAuto();
+  }
+
+  Future<void> _pickHours() async {
+    final text = TextEditingController(text: '$_hours');
+    final value = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('檢查間隔'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final h in _presetHours)
+                  ActionChip(
+                    label: Text('$h 小時'),
+                    onPressed: () => Navigator.pop(context, h),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: text,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: '自訂（小時）',
+                helperText: '1 到 720 小時',
+                suffixText: '小時',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              final h = int.tryParse(text.text);
+              if (h == null || h < 1 || h > 720) {
+                SmartDialog.showToast('請輸入 1 到 720 的整數');
+                return;
+              }
+              Navigator.pop(context, h);
+            },
+            child: const Text('確定'),
+          ),
+        ],
+      ),
+    );
+    text.dispose();
+    if (value != null && value != _hours) _setHours(value);
   }
 
   @override
@@ -40,11 +110,18 @@ class _UpdatePageState extends State<UpdatePage> {
             leading: const Icon(Icons.autorenew),
             title: const Text('自動檢查更新'),
             subtitle: const Text(
-              '每次開啟 App 時在背景檢查，有新版本時在「我的」與「設定」顯示紅點。'
+              '開啟 App 時和每隔一段時間在背景檢查，有新版本時在「我的」與「設定」顯示紅點。'
               '關閉後只在手動檢查時更新',
             ),
             trailing: Switch(value: _auto, onChanged: _setAuto),
             onTap: () => _setAuto(!_auto),
+          ),
+          ListTile(
+            enabled: _auto,
+            leading: const Icon(Icons.schedule),
+            title: const Text('檢查間隔'),
+            subtitle: Text('每 $_hours 小時檢查一次'),
+            onTap: _pickHours,
           ),
           ListTile(
             leading: const Icon(Icons.info_outline),
@@ -89,7 +166,10 @@ class _UpdatePageState extends State<UpdatePage> {
           ListTile(
             leading: Badge(
               smallSize: 8,
-              child: Icon(Icons.new_releases_outlined, color: colorScheme.primary),
+              child: Icon(
+                Icons.new_releases_outlined,
+                color: colorScheme.primary,
+              ),
             ),
             title: Text('發現新版本 ${info.tag}'),
             subtitle: const Text('確認後下載並開啟系統安裝程式'),

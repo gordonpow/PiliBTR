@@ -99,6 +99,7 @@ class _MainAppState extends PopScopeState<MainApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      Update.startAuto();
       _mainController
         ..checkUnreadDynamic()
         ..checkDefaultSearch(true)

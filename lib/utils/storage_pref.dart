@@ -448,6 +448,11 @@ abstract final class Pref {
   static bool get autoUpdate =>
       _setting.get(SettingBoxKey.autoUpdate, defaultValue: true);
 
+  /// Hours between automatic update checks (1 to 720). Default: 24.
+  static int get updateIntervalHours =>
+      (_setting.get(SettingBoxKey.updateIntervalHours, defaultValue: 24) as int)
+          .clamp(1, 720);
+
   static bool get horizontalPreview =>
       _setting.get(SettingBoxKey.horizontalPreview, defaultValue: false);
 

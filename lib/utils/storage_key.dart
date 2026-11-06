@@ -62,6 +62,7 @@ abstract final class SettingBoxKey {
       banWordForRecommend = 'banWordForRecommend',
       applyFilterToRelatedVideos = 'applyFilterToRelatedVideos',
       autoUpdate = 'autoUpdate',
+      updateIntervalHours = 'updateIntervalHours',
       maxCacheSize = 'maxCacheSize',
       defaultShowComment = 'defaultShowComment',
       replySortType = 'replySortType',
