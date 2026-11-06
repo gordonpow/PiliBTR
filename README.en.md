@@ -1,60 +1,34 @@
-<div align="center">
-    <img width="200" height="200" src="assets/images/logo/logo.png" alt="PiliPlus logo">
-    <h1>PiliPlus</h1>
-</div>
+# PiliBTR
 
-<div align="center">
+<img src="assets/images/logo/logo.png" width="96" alt="PiliBTR icon">
 
 [中文](README.md) | English
 
-![GitHub repo size](https://img.shields.io/github/repo-size/bggRGjQaUbCoE/PiliPlus)
-![GitHub Repo stars](https://img.shields.io/github/stars/bggRGjQaUbCoE/PiliPlus)
-![GitHub all releases](https://img.shields.io/github/downloads/bggRGjQaUbCoE/PiliPlus/total)
+PiliBTR is a third-party Bilibili client for Android. It is a modified version of [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus).
 
-</div>
+PiliBTR adds BTR (Bilibili Thread Ripper) multi-CDN acceleration, based on [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop) (MIT):
 
-<div align="center">
-    <p>A third-party Bilibili client built with Flutter</p>
+- Playback: a local proxy splits each player request into small pieces and downloads them from several CDN nodes at the same time. When one node is slow or stops, other nodes continue, so playback stutters less.
+- Offline download: files download in parallel pieces, with pause and resume.
 
-<img src="assets/screenshots/510shots_so.png" width="32%" alt="PiliPlus mobile screenshot" />
-<img src="assets/screenshots/174shots_so.png" width="32%" alt="PiliPlus mobile screenshot" />
-<img src="assets/screenshots/850shots_so.png" width="32%" alt="PiliPlus mobile screenshot" />
-<br/>
-<img src="assets/screenshots/main_screen.png" width="96%" alt="PiliPlus desktop screenshot" />
-<br/>
-</div>
+Other changes: Traditional Chinese (Taiwan) UI, in-app mini player, swipe down to shrink the video, long-press preview on the home page.
 
-<br/>
+## Speed: without BTR and with BTR
+
+Test on 2026-11-06, home network in Taiwan, Windows PC, 480P video, overseas mode (4 nodes, 8 threads, 512 KB pieces), 7 rounds of 17.7 MB each.
+
+| | Without BTR | With BTR |
+|---|---|---|
+| Median speed | 11.38 MB/s | 12.58 MB/s (about +10%) |
+| Range (lowest to highest) | 8.56 to 13.27 MB/s | 8.63 to 17.15 MB/s |
+
+The difference in download speed is small and not stable in this test. BTR is designed to keep playback going when one node becomes slow: other nodes fill in the missing pieces. Playback smoothness has no measured data yet; on the author's real phone, playback feels smooth. Results on other networks can be different. See [README.md](README.md) for details.
 
 ## Download
 
-Download a build from [Releases](https://github.com/bggRGjQaUbCoE/PiliPlus/releases), or clone the repository and build it locally.
+Download the APK from [Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
 
-## Disclaimer
+## License
 
-PiliPlus is a personal project developed for educational purposes, intended only for learning and testing. Please delete it within 24 hours of downloading.
-All APIs used were collected from the official website. This project does not provide any cracked content.
-
-Credit to the original project: [guozhigq/pilipala](https://github.com/guozhigq/pilipala).
-Credit to the upstream project: [orz12/PiliPalaX](https://github.com/orz12/PiliPalaX).
-This repository makes more extensive changes. Thank you to the original authors for sharing their work as open source.
-
-Thank you for using PiliPlus.
-
-## Acknowledgements
-
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
-- [media-kit](https://github.com/media-kit/media-kit)
-- [dio](https://pub.dev/packages/dio)
-- And others
-
-## Star History
-
-<a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
- </picture>
-</a>
+- GPL v3, the same as PiliPlus.
+- For learning and testing only. Do not use it for commercial purposes.

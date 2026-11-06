@@ -1,10 +1,12 @@
-# PiliBTR（PiliPlus 線程撕裂者版）
+# PiliBTR
 
 <img src="assets/images/logo/logo.png" width="96" alt="PiliBTR icon">
 
+[English](README.en.md)
+
 > **PiliBTR** is a third-party Bilibili client for Android, based on [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus). It downloads video from several Bilibili CDN nodes at the same time, so playback stutters less (especially outside mainland China) and offline downloads are faster. Traditional Chinese UI. Download the APK from [Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
 
-本版本 fork 自 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)，加入「線程撕裂者」（Bilibili Thread Ripper，BTR）的多 CDN 並行加速。設計參考 [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)（MIT），並移植到 Android 手機。
+基於 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 修改，加入「線程撕裂者」（Bilibili Thread Ripper，BTR）的多 CDN 並行加速。設計參考 [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)（MIT），並移植到 Android 手機。
 
 ## 為什麼要做
 
@@ -26,13 +28,36 @@
 | 繁體中文介面 | 全部介面文字改為繁體中文（台灣用語），系統元件使用 zh_TW 語系 |
 | App 名稱與圖示 | App 名稱改為 PiliBTR，新圖示：撕成 4 條線程的播放鍵 |
 | 迷你播放器 | 離開影片頁時，影片縮成小視窗繼續播放；可拖曳並吸附四個角落，旋轉螢幕後留在同一角落，底部導覽列收起時貼齊螢幕邊緣 |
-| 斜滑縮小 | 在播放器上往左下或右下斜滑，視窗跟著手指縮小；放開後變成迷你播放器，距離不夠則彈回 |
+| 斜滑縮小 | 在播放器上往左下或右下斜滑，視窗跟著手指縮小；放開後變成迷你播放器，距離不夠則彈回。從推薦影片連續點進多個影片頁時，斜滑後小窗播放目前的影片，主畫面回到點進第一個影片頁之前的頁面（例如首頁、搜尋、觀看紀錄）；按返回則回到上一個影片頁 |
 | 長按預覽 | 首頁長按影片卡片，直接在卡片上播放預覽（預設靜音），有進度條與 CC 字幕開關；點卡片會從預覽位置接著播放 |
 | 推薦帳號切換 | 登入、登出或切換推薦帳號後，首頁推薦立即重新載入，不再顯示遊客推薦 |
 
 設定位置：**設定 → 播放設定**（迷你播放器、斜滑縮小、視窗大小）、**設定 → 推薦設定**（長按影片預覽）
 
 設定位置：**設定 → 影片設定 → 線程撕裂者（多 CDN 加速）**
+
+## 網速比較：無 BTR 與有 BTR
+
+| 項目 | 無 BTR | 有 BTR |
+|---|---|---|
+| 連線方式 | 1 條連線，只連原始 CDN 節點 | 8 條連線，每塊 512 KB，分散到 4 個海外節點 |
+| 節點變慢或斷線時 | 播放器只能等，畫面緩衝、卡頓 | 自動改用較快的節點，慢的那塊在別的節點補抓 |
+| 實測下載速度（中位數） | 11.38 MB/s | 12.58 MB/s（約 +10%） |
+| 實測範圍（7 輪最低～最高） | 8.56～13.27 MB/s | 8.63～17.15 MB/s |
+| 播放順暢度 | — | 作者在實體手機上使用，體感順暢（尚無量測數據） |
+
+下載速度的測試條件：
+
+- 時間與地點：2026-11-06，台灣家用網路，Windows 電腦（不是手機）。
+- 影片：熱門影片 `BV1mpxR6KESh`，480P（未登入），原始節點 `upos-sz-mirrorcosov.bilivideo.com`。
+- 方法：用 Python 腳本模擬 App 的做法（海外模式 4 個節點、8 線程、512 KB 分塊、依「實測速度 ÷ 進行中請求數」選節點、連線重用）。每輪各下載一段 17.7 MB、彼此不重複的資料，兩種方式交替先後，共 7 輪。
+
+結果解讀：
+
+- 這次測試中，原始節點本身就很快，所以平均速度只差約 10%，而且單一連線的速度波動比較大。7 輪中也有單一連線比較快的時候（第 2 輪 12.12 對 8.63 MB/s），所以這個差距不算穩定。
+- 480P 影片只需要約 0.62 Mbps（約 0.08 MB/s），兩種方式都遠高於這個數字。BTR 的設計目的是原始節點變慢或卡住時，改由其他節點補上，讓播放不跟著停下來。
+- 網路環境不同，結果可能不同（例如手機行動網路、原始節點分配到較慢的主機時）。
+- 播放順暢度目前只有作者在實體手機上的使用體感，還沒有量測數據。Android 模擬器的 debug 版不適合拿來比較：播放資料要經過 Dart 寫的本機代理，debug 版沒有最佳化，可能讓開啟 BTR 時明顯變慢，關閉時則不受影響。
 
 ## 架構
 
@@ -143,263 +168,3 @@ python lib/scripts/to_traditional.py
 - 本專案沿用 PiliPlus 的 **GPL v3** 授權。
 - 加速規則參考 Bilibili-thread-ripper-desktop（MIT，作者 MrTangLuyao）。
 - 本專案僅供學習和測試，請勿用於商業用途。
-
----
-
-以下為上游 PiliPlus 原始說明。
-
-<div align="center">
-    <img width="200" height="200" src="assets/images/logo/logo.png">
-</div>
-
-
-
-<div align="center">
-    <h1>PiliPlus</h1>
-<div align="center">
-
-中文 | [English](README.en.md)
-
-![GitHub repo size](https://img.shields.io/github/repo-size/bggRGjQaUbCoE/PiliPlus) 
-![GitHub Repo stars](https://img.shields.io/github/stars/bggRGjQaUbCoE/PiliPlus) 
-![GitHub all releases](https://img.shields.io/github/downloads/bggRGjQaUbCoE/PiliPlus/total) 
-</div>
-    <p>使用Flutter開發的BiliBili第三方客戶端</p>
-    
-<img src="assets/screenshots/510shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/174shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/850shots_so.png" width="32%" alt="home" />
-<br/>
-<img src="assets/screenshots/main_screen.png" width="96%" alt="home" />
-<br/>
-</div>
-
-
-<br/>
-
-## 適配平台
-
-- [x] Android
-- [x] iOS
-- [x] Pad
-- [x] Windows
-- [x] Linux
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/piliplus.svg)](https://repology.org/project/piliplus/versions)
-
-## refactor
-
-- [ ] gRPC [wip]
-- [x] 使用者介面
-- [x] 其他
-
-## feat
-
-- [x] 編輯動態
-- [x] DLNA 投屏
-- [x] 離線快取/播放
-- [x] 移動端支援點選彈幕懸停，點贊、複製、舉報 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 播放音訊
-- [x] 跳過番劇片頭/片尾
-- [x] 安卓端 `loudnorm` 適配 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] Win/Mac 支援極驗、簡訊登入 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 影片擷取動圖 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] AI 原聲翻譯
-- [x] SuperChat
-- [x] 播放課堂影片
-- [x] 發起投票
-- [x] 釋出動態/評論支援`富文本編輯`/`表情顯示`/`@使用者`
-- [x] 修改訊息設定
-- [x] 修改聊天設定
-- [x] 展示摺疊訊息
-- [x] 檢視使用者圖文
-- [x] 動態話題
-- [x] 直播分割槽
-- [x] 分享`影片`/`番劇`/`動態`/`專欄`/`直播`至訊息
-- [x] 建立/修改/刪除關注分組
-- [x] 移除粉絲
-- [x] 直播彈幕傳送表情
-- [x] 收藏夾排序
-- [x] 稍後再看 ~~`未看`~~ / `未看完` / ~~`已看完`~~ 分類
-- [x] WebDAV 備份/恢復設定
-- [x] 儲存評論/動態
-- [x] 高階彈幕 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 取消/置頂評論
-- [x] 記筆記
-- [x] 多賬號支援 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 遮蔽帶貨動態/評論
-- [x] 互動影片
-- [x] 發評/動態反詐
-- [x] 高能進度條
-- [x] 滑動跳轉預覽影片縮圖
-- [x] Live Photo
-- [x] 複製/移動/排序收藏夾/稍後再看影片
-- [x] 超解析度
-- [x] 合併彈幕
-- [x] 會員彩色彈幕
-- [x] 播放全部/繼續播放/倒序播放
-- [x] Cookie登入
-- [x] 顯示影片分段資訊
-- [x] 調節字幕大小
-- [x] 調節全屏彈幕大小
-- [x] 收藏夾/稍後再看多選刪除
-- [x] 搜尋使用者動態
-- [x] 直播彈幕
-- [x] 修改頭像/使用者名稱/簽名/性別/生日
-- [x] 建立/編輯/刪除收藏夾
-- [x] 評論樓中樓檢視對話
-- [x] 評論樓中樓定位點選檢視的評論
-- [x] 評論樓中樓按熱度/時間排序
-- [x] 評論點踩
-- [x] 私信發圖
-- [x] 投幣動畫
-- [x] 取消/追番，更新追番狀態
-- [x] 取消/訂閱合集
-- [x] SponsorBlock
-- [x] 顯示影片完整合集
-- [x] 三連動畫
-- [x] 番劇三連
-- [x] 帶圖評論
-- [x] 影片TAG
-- [x] 篩選搜尋
-- [x] 轉發動態
-- [x] 合集圖片
-- [x] 刪除/置頂/撤回私信
-- [x] 舉報使用者/評論/影片/動態
-- [x] 刪除/釋出/置頂文本/圖片動態
-- [x] 其他
-
-## opt
-
-- [x] 專欄介面
-- [x] 私信介面
-- [x] 收藏面板
-- [x] PIP
-- [x] 影片封面
-- [x] 回覆介面
-- [x] 系統通知
-- [x] 評論顯示
-- [x] 亮度調節
-- [x] 影片播放
-- [x] 影片staff
-- [x] 防止bottomsheet遮擋全屏影片
-- [x] 其他
-
-## fix
-
-- [x] 番劇分集點贊/投幣/收藏
-- [x] bugs
-
-<br/>
-
-## 功能
-
-- [x] 推薦影片列表(app端)
-- [x] 最熱影片列表
-- [x] 熱門直播
-- [x] 番劇列表
-- [x] 遮蔽黑名單內使用者影片
-- [x] 無痕模式（播放視為未登入）
-- [x] 遊客模式（推薦視為未登入）
-
-- [x] 使用者相關
-  - [x] 粉絲、關注使用者、拉黑使用者檢視
-  - [x] 使用者主頁檢視
-  - [x] 關注/取關使用者
-  - [x] 離線快取
-  - [x] 稍後再看
-  - [x] 觀看記錄
-  - [x] 我的收藏
-  - [x] 站內私信
-  
-- [x] 動態相關
-  - [x] 全部、投稿、番劇分類檢視
-  - [x] 動態評論檢視
-  - [x] 動態評論回覆功能
-
-- [x] 影片播放相關
-  - [x] 雙擊快進/快退
-  - [x] 雙擊播放/暫停
-  - [x] 垂直方向調節亮度/音量
-  - [x] 垂直方向上滑全屏、下滑退出全屏
-  - [x] 水平方向手勢快進/快退
-  - [x] 全屏方向設定
-  - [x] 倍速選擇/長按2倍速
-  - [x] 硬體加速（視機型而定）
-  - [x] 畫質選擇（高畫質畫質未解鎖）
-  - [x] 音質選擇（視影片而定）
-  - [x] 解碼格式選擇（視影片而定）
-  - [x] 彈幕
-  - [x] 字幕
-  - [x] 記憶播放
-  - [x] 影片比例：高度/寬度適應、填充、包含等
-     
-- [x] 搜尋相關
-  - [x] 熱搜
-  - [x] 搜尋歷史
-  - [x] 預設搜尋詞
-  - [x] 投稿、番劇、直播間、使用者搜尋
-  - [x] 影片搜尋排序、按時長篩選
-    
-- [x] 影片詳情頁相關
-  - [x] 影片選集(分p)切換
-  - [x] 點贊、投幣、收藏/取消收藏
-  - [x] 相關影片檢視
-  - [x] 評論使用者身份標識
-  - [x] 評論(排序)檢視、二樓評論檢視
-  - [x] 主樓、二樓評論回覆功能
-  - [x] 評論點贊
-  - [x] 評論筆記圖片檢視、儲存
-
-- [x] 設定相關
-  - [x] 畫質、音質、解碼方式預設      
-  - [x] 圖片質量設定
-  - [x] 主題模式：亮色/暗色/跟隨系統
-  - [x] 震動反饋(可選)
-  - [x] 高幀率
-  - [x] 自動全屏
-  - [x] 橫屏適配
-- [ ] 等等
-
-<br/>
-
-## 下載
-
-可以從 [Releases](https://github.com/bggRGjQaUbCoE/PiliPlus/releases) 下載，或克隆倉庫拉取程式碼後在本地編譯。
-
-<br/>
-
-## 宣告
-
-此專案（PiliPlus）是個人為了興趣而開發，僅用於學習和測試，請於下載後24小時內刪除。
-所用API皆從官方網站收集，不提供任何破解內容。
-在此致敬原作者：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
-在此致敬上游作者：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
-本倉庫做了更激進的修改，感謝原作者的開源精神。
-
-感謝使用
-
-
-<br/>
-
-## 致謝
-
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
-- [media-kit](https://github.com/media-kit/media-kit)
-- [dio](https://pub.dev/packages/dio)
-- 等等
-
-<br/>
-<br/>
-<br/>
-
-## Star History
-
-<a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
- </picture>
-</a>
