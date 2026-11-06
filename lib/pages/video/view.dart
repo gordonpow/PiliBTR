@@ -339,8 +339,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void _onPopInvokedWithResult(bool didPop, Object? result) {
     final ctr = videoDetailController.plPlayerController;
     final fromSwipe = MiniPlayer.takeSwipeRequest();
+    // Back to another video page (it takes the player again), or this page
+    // is below a swiped page that closes too: no mini player.
+    final backToMini =
+        MiniPlayer.enabled &&
+        !MiniPlayer.poppingPlayerPages &&
+        !ctr.sharedByOtherPage;
     if (didPop &&
-        (MiniPlayer.enabled || fromSwipe) &&
+        (fromSwipe || backToMini) &&
         plPlayerController != null &&
         ctr.videoController != null &&
         !ctr.isCloseAll) {
@@ -432,7 +438,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void didPopNext() {
     super.didPopNext();
 
-    if (videoDetailController.plPlayerController.isCloseAll) {
+    // The swiped page above closes and keeps playing in the mini
+    // player: this page closes too and must not load its video.
+    if (videoDetailController.plPlayerController.isCloseAll ||
+        MiniPlayer.poppingPlayerPages) {
       return;
     }
 

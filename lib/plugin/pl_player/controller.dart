@@ -110,6 +110,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   int _playerCount = 0;
 
+  /// True if another player page (for example a video page below this one)
+  /// also holds the player.
+  bool get sharedByOtherPage => _playerCount > 1;
+
   late double lastPlaybackSpeed = 1.0;
   final RxDouble _playbackSpeed = Pref.playSpeedDefault.obs;
   late final RxDouble _longPressSpeed = Pref.longPressSpeedDefault.obs;
@@ -350,10 +354,11 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     if (routing.route is! GetPageRoute) {
       return false;
     }
-    return _isVideoPage(routing.current);
+    return isVideoPage(routing.current);
   }
 
-  static bool _isVideoPage(String routeName) {
+  /// True if [routeName] is a player page (video or live room).
+  static bool isVideoPage(String? routeName) {
     return routeName == '/videoV' || routeName == '/liveRoom';
   }
 

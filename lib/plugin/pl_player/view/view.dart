@@ -1172,7 +1172,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     } else if (_gestureType == .mini) {
       MiniPlayer.endSwipe(
         details.velocity.pixelsPerSecond.dy,
-        onCommit: () => Navigator.maybePop(context),
+        onCommit: () => MiniPlayer.popPlayerPages(context),
       );
     }
     _initialFocalPoint = null;

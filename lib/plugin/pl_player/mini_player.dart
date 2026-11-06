@@ -40,10 +40,10 @@ abstract final class MiniPlayer {
   static const sizeLabels = ['小', '中', '大'];
 
   /// Setting: window size, an index in [sizeLabels]. Default: medium.
-  static int get sizeIndex =>
-      (GStorage.setting.get(SettingBoxKey.miniPlayerSize, defaultValue: 1)
-              as int)
-          .clamp(0, sizeLabels.length - 1);
+  static int get sizeIndex => (GStorage.setting.get(
+    SettingBoxKey.miniPlayerSize,
+    defaultValue: 1,
+  ) as int).clamp(0, sizeLabels.length - 1);
 
   static bool _swipeRequest = false;
   static Rect? _swipeFrom;
@@ -120,6 +120,36 @@ abstract final class MiniPlayer {
       // Remove the preview if no mini player takes it over.
       _dragTimer?.cancel();
       _dragTimer = Timer(const Duration(seconds: 2), _removeDragEntry);
+    }
+  }
+
+  static bool _poppingPlayerPages = false;
+
+  /// True while [popPlayerPages] pops the pages. A player page below the
+  /// swiped one must not load its own video into the shared player and
+  /// must not open the mini player.
+  static bool get poppingPlayerPages => _poppingPlayerPages;
+
+  /// Called when a swipe commits: pops the swiped page and the player pages
+  /// below it, down to the page that opened the first of them (for example
+  /// home, search or history). The swiped video continues in the mini
+  /// player. If the page cannot pop now, or it is the first page, do the
+  /// usual pop.
+  static void popPlayerPages(BuildContext context) {
+    final route = ModalRoute.of(context);
+    if (route == null ||
+        route.isFirst ||
+        route.popDisposition == RoutePopDisposition.doNotPop) {
+      Navigator.maybePop(context);
+      return;
+    }
+    _poppingPlayerPages = true;
+    try {
+      Navigator.of(context).popUntil(
+        (r) => r.isFirst || !PlPlayerController.isVideoPage(r.settings.name),
+      );
+    } finally {
+      _poppingPlayerPages = false;
     }
   }
 
@@ -319,6 +349,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
       setState(() => _rect = target);
     }
   }
+
   RectTween? _tween;
   late final AnimationController _anim;
   late final CurvedAnimation _curve;

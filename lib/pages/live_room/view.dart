@@ -29,6 +29,7 @@ import 'package:PiliPlus/pages/live_room/widgets/chat_panel.dart';
 import 'package:PiliPlus/pages/live_room/widgets/header_control.dart';
 import 'package:PiliPlus/pages/video/widgets/player_focus.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
@@ -135,6 +136,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   @override
   void didPopNext() {
+    // A video page above closes with a swipe and keeps playing in the mini
+    // player: this page closes too and must not load its stream.
+    if (MiniPlayer.poppingPlayerPages) {
+      super.didPopNext();
+      return;
+    }
     addObserverMobile(this);
     _onPopNext();
     super.didPopNext();
