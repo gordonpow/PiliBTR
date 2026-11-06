@@ -76,13 +76,21 @@ List<SettingsModel> get styleSettings => [
     onTap: _showLanguageDialog,
   ),
   SwitchModel(
-    title: '橫屏適配',
-    subtitle: '啟用橫屏佈局與邏輯，平板、摺疊屏等可開啟；建議全屏方向設為【不改變當前方向】',
+    title: '橫向螢幕適配',
+    subtitle: '啟用橫向螢幕佈局與邏輯，平板、摺疊螢幕等可開啟；建議全螢幕方向設為【不改變當前方向】',
     leading: const Icon(Icons.phonelink_outlined),
     setKey: SettingBoxKey.horizontalScreen,
     defaultVal: Pref.horizontalScreen,
     onChanged: _onHorizontalScreenChanged,
   ),
+  if (PlatformUtils.isMobile)
+    NormalModel(
+      leading: const Icon(Icons.view_column_outlined),
+      title: '全螢幕中間區塊寬度',
+      getSubtitle: () =>
+          '當前：${(Pref.fullscreenCenterRatio * 100).round()}%',
+      onTap: _showFullscreenCenterRatioDialog,
+    ),
   const SwitchModel(
     title: '改用側邊欄',
     subtitle: '開啟後底欄與頂欄被替換，且相關設定失效',
@@ -450,6 +458,166 @@ void _showQualityDialog({
       onChanged(result.toInt());
     }
   });
+}
+
+// Dialog with a live 16:9 preview of the three fullscreen gesture zones.
+void _showFullscreenCenterRatioDialog(
+  BuildContext context,
+  VoidCallback setState,
+) {
+  const defaultPercent = 34;
+  int percent = (Pref.fullscreenCenterRatio * 100).round().clamp(20, 60);
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('全螢幕中間區塊寬度'),
+      content: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final colorScheme = ColorScheme.of(context);
+          final sidePercent = (100 - percent) / 2;
+          final sideText = sidePercent == sidePercent.roundToDouble()
+              ? sidePercent.toInt().toString()
+              : sidePercent.toStringAsFixed(1);
+
+          Widget zone(
+            int flex,
+            String label,
+            String pct,
+            Color color,
+            bool showRightLine,
+          ) {
+            return Expanded(
+              flex: flex,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: color,
+                  border: showRightLine
+                      ? Border(
+                          right: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        )
+                      : null,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        pct,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // flex in tenths of percent so that odd splits stay exact
+          final sideFlex = (1000 - percent * 10) ~/ 2;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: ColoredBox(
+                    color: Colors.black87,
+                    child: Row(
+                      children: [
+                        zone(
+                          sideFlex,
+                          '亮度',
+                          '$sideText%',
+                          colorScheme.primary.withValues(alpha: 0.35),
+                          true,
+                        ),
+                        zone(
+                          percent * 10,
+                          '推薦／縮小',
+                          '$percent%',
+                          colorScheme.tertiary.withValues(alpha: 0.35),
+                          true,
+                        ),
+                        zone(
+                          sideFlex,
+                          '音量',
+                          '$sideText%',
+                          colorScheme.secondary.withValues(alpha: 0.35),
+                          false,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      padding: .zero,
+                      value: percent.toDouble(),
+                      min: 20,
+                      max: 60,
+                      divisions: 40,
+                      label: '$percent%',
+                      onChanged: (value) =>
+                          setDialogState(() => percent = value.round()),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('$percent%'),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            GStorage.setting
+                .put(SettingBoxKey.fullscreenCenterRatio, defaultPercent / 100)
+                .whenComplete(setState);
+          },
+          child: const Text('預設'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            '取消',
+            style: TextStyle(color: ColorScheme.of(context).outline),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            GStorage.setting
+                .put(SettingBoxKey.fullscreenCenterRatio, percent / 100)
+                .whenComplete(setState);
+          },
+          child: const Text('確定'),
+        ),
+      ],
+    ),
+  );
 }
 
 void _showUiScaleDialog(

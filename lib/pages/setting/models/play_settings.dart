@@ -77,19 +77,19 @@ List<SettingsModel> get playSettings => [
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '全屏顯示鎖定按鈕',
+    title: '全螢幕顯示鎖定按鈕',
     leading: Icon(Icons.lock_outline),
     setKey: SettingBoxKey.showFsLockBtn,
     defaultVal: true,
   ),
   const SwitchModel(
-    title: '全屏顯示截圖按鈕',
+    title: '全螢幕顯示截圖按鈕',
     leading: Icon(Icons.photo_camera_outlined),
     setKey: SettingBoxKey.showFsScreenshotBtn,
     defaultVal: true,
   ),
   SwitchModel(
-    title: '全屏顯示電池電量',
+    title: '全螢幕顯示電池電量',
     leading: const Icon(Icons.battery_3_bar),
     setKey: SettingBoxKey.showBatteryLevel,
     defaultVal: PlatformUtils.isMobile,
@@ -121,7 +121,7 @@ List<SettingsModel> get playSettings => [
       defaultVal: false,
     ),
   const SwitchModel(
-    title: '中間滑動進入/退出全屏',
+    title: '中間滑動進入/退出全螢幕',
     leading: Icon(MdiIcons.panVertical),
     setKey: SettingBoxKey.enableSlideFS,
     defaultVal: true,
@@ -171,25 +171,25 @@ List<SettingsModel> get playSettings => [
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '橫屏自動展開影片簡介',
+    title: '橫向螢幕自動展開影片簡介',
     leading: Icon(Icons.expand_more),
     setKey: SettingBoxKey.expandIntroPanelH,
     defaultVal: false,
   ),
   SwitchModel(
-    title: '橫屏分P/合集列表顯示在Tab欄',
+    title: '橫向螢幕分P/合集列表顯示在Tab欄',
     leading: const Icon(Icons.format_list_numbered_rtl_sharp),
     setKey: SettingBoxKey.horizontalSeasonPanel,
     defaultVal: Pref.horizontalScreen,
   ),
   SwitchModel(
-    title: '橫屏播放頁在側欄開啟UP主頁',
+    title: '橫向螢幕播放頁在側欄開啟UP主頁',
     leading: const Icon(Icons.account_circle_outlined),
     setKey: SettingBoxKey.horizontalMemberPage,
     defaultVal: Pref.horizontalScreen,
   ),
   SwitchModel(
-    title: '橫屏在側欄開啟圖片預覽',
+    title: '橫向螢幕在側欄開啟圖片預覽',
     leading: const Icon(Icons.photo_outlined),
     setKey: SettingBoxKey.horizontalPreview,
     defaultVal: false,
@@ -287,28 +287,28 @@ List<SettingsModel> get playSettings => [
         .whenComplete(setState),
   ),
   NormalModel(
-    title: '全屏 SuperChat 設定',
-    subtitle: '全屏 SuperChat (醒目留言) 大小、不透明度、縮放設定',
+    title: '全螢幕 SuperChat 設定',
+    subtitle: '全螢幕 SuperChat (醒目留言) 大小、不透明度、縮放設定',
     leading: const Icon(Icons.open_in_full),
     onTap: (_, _) => Get.to(const FullScreenSc()),
   ),
   const SwitchModel(
-    title: '豎屏擴大展示',
-    subtitle: '小屏豎屏影片寬高比由16:9擴大至1:1（不支援收起）；橫屏適配時，擴大至9:16',
+    title: '直向螢幕擴大展示',
+    subtitle: '小螢幕直向影片寬高比由16:9擴大至1:1（不支援收起）；橫向螢幕適配時，擴大至9:16',
     leading: Icon(Icons.expand_outlined),
     setKey: SettingBoxKey.enableVerticalExpand,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '自動全屏',
-    subtitle: '影片開始播放時進入全屏',
+    title: '自動全螢幕',
+    subtitle: '影片開始播放時進入全螢幕',
     leading: Icon(Icons.fullscreen_outlined),
     setKey: SettingBoxKey.enableAutoEnter,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '自動退出全屏',
-    subtitle: '影片結束播放時退出全屏',
+    title: '自動退出全螢幕',
+    subtitle: '影片結束播放時退出全螢幕',
     leading: Icon(Icons.fullscreen_exit_outlined),
     setKey: SettingBoxKey.enableAutoExit,
     defaultVal: true,
@@ -323,10 +323,10 @@ List<SettingsModel> get playSettings => [
   if (PlatformUtils.isMobile)
     const SwitchModel(
       title: '背景播放',
-      subtitle: '進入背景時繼續播放',
+      subtitle: '切到背景時繼續播放，關閉則暫停（開啟子母畫面時不暫停）',
       leading: Icon(Icons.motion_photos_pause_outlined),
       setKey: SettingBoxKey.continuePlayInBackground,
-      defaultVal: false,
+      defaultVal: true,
     ),
   const SwitchModel(
     title: '返回時縮小為小視窗',
@@ -351,8 +351,8 @@ List<SettingsModel> get playSettings => [
   if ((Platform.isAndroid && PiliAndroidHelper.isPipAvailable) ||
       (Platform.isIOS && IOSPipHelper.isAvailable))
     SwitchModel(
-      title: '背景畫中畫',
-      subtitle: '進入背景時以小窗形式（PiP）播放',
+      title: '子母畫面',
+      subtitle: '回到主畫面時以子母畫面（PiP）繼續播放',
       leading: const Icon(Icons.picture_in_picture_outlined),
       setKey: SettingBoxKey.autoPiP,
       defaultVal: false,
@@ -374,14 +374,14 @@ List<SettingsModel> get playSettings => [
       defaultVal: false,
     ),
   const SwitchModel(
-    title: '全屏手勢反向',
-    subtitle: '預設播放器中部向上滑動進入全屏，向下退出\n開啟後向下全屏，向上退出',
+    title: '全螢幕手勢反向',
+    subtitle: '預設播放器中部向上滑動進入全螢幕，向下退出\n開啟後向下全螢幕，向上退出',
     leading: Icon(Icons.swap_vert),
     setKey: SettingBoxKey.fullScreenGestureReverse,
     defaultVal: false,
   ),
   const SwitchModel(
-    title: '全屏展示點贊/投幣/收藏等操作按鈕',
+    title: '全螢幕展示點贊/投幣/收藏等操作按鈕',
     leading: Icon(MdiIcons.dotsHorizontalCircleOutline),
     setKey: SettingBoxKey.showFSActionItem,
     defaultVal: true,
@@ -394,9 +394,9 @@ List<SettingsModel> get playSettings => [
     defaultVal: false,
   ),
   NormalModel(
-    title: '預設全屏方向',
+    title: '預設全螢幕方向',
     leading: const Icon(Icons.open_with_outlined),
-    getSubtitle: () => '當前全屏方向：${Pref.fullScreenMode.desc}',
+    getSubtitle: () => '當前全螢幕方向：${Pref.fullScreenMode.desc}',
     onTap: _showFullScreenModeDialog,
   ),
   PopupModel(
@@ -482,7 +482,7 @@ Future<void> _showFullScreenModeDialog(
   final res = await showDialog<FullScreenMode>(
     context: context,
     builder: (context) => SelectDialog<FullScreenMode>(
-      title: '預設全屏方向',
+      title: '預設全螢幕方向',
       value: Pref.fullScreenMode,
       values: FullScreenMode.values.map((e) => (e, e.desc)).toList(),
     ),

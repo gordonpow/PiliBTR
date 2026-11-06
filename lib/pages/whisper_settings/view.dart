@@ -136,6 +136,7 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
         SmartDialog.showToast(item.redirect.otherPage.url);
       }
     } else if (item.redirect.settingPage.hasUrl()) {
+      // 與伺服器回傳文字比對，保留原文
       if (item.redirect.title == '消息屏蔽词') {
         Get.to(const WhisperBlockPage());
       } else if (item.redirect.settingPage.url.startsWith('http')) {

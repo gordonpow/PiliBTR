@@ -51,6 +51,7 @@ FIXUP = {
     '分割槽': '分區',  # 分区 = video category, not disk partition
     '賬': '帳',  # 帳號 is the Taiwan form
     '後臺': '背景',  # background playback
+    '許可權': '權限',  # OpenCC turns 权限 into 許可權; Taiwan uses 權限
 }
 
 
@@ -62,6 +63,18 @@ def literal_spans(src):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod.spans(src)
+
+
+def _load_screen_wording():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        'screen_wording', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'screen_wording.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+screen_wording = _load_screen_wording()
 
 
 def main():
@@ -89,6 +102,8 @@ def main():
             new = cc.convert(text)
             for a, b in FIXUP.items():
                 new = new.replace(a, b)
+            # Screen wording (屏 -> 螢幕 etc.), see screen_wording.py.
+            new = screen_wording.apply(new)
             if new != text:
                 out.append(src[last:s])
                 out.append(new)

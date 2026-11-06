@@ -93,7 +93,7 @@ class _DLNAPageState extends State<DLNAPage> {
     final colorScheme = ColorScheme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        title: const Text('投屏'),
+        title: const Text('投放'),
         actions: [
           IconButton(
             tooltip: '搜尋',
@@ -118,9 +118,9 @@ class _DLNAPageState extends State<DLNAPage> {
         final permanentlyDenied = status.isPermanentlyDenied;
         return HttpError(
           errMsg: permanentlyDenied
-              ? '區域網許可權未授權，請在系統設定中允許附近的裝置，返回後點選搜尋'
-              : '需要區域網許可權才能搜尋投屏裝置',
-          btnText: permanentlyDenied ? '前往設定' : '授予許可權',
+              ? '區域網權限未授權，請在系統設定中允許附近的裝置，返回後點選搜尋'
+              : '需要區域網權限才能搜尋投放裝置',
+          btnText: permanentlyDenied ? '前往設定' : '授予權限',
           onReload: permanentlyDenied
               ? () {
                   openAppSettings();

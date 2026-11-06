@@ -59,7 +59,7 @@ abstract final class ImageUtils {
       SmartDialog.show(
         builder: (context) => AlertDialog(
           title: const Text('提示'),
-          content: const Text('儲存許可權未授權'),
+          content: const Text('儲存權限未授權'),
           actions: [
             TextButton(
               onPressed: () {

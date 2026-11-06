@@ -36,6 +36,7 @@ import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/pages/video/post_panel/view.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/plugin/pl_player/models/bottom_control_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/double_tap_type.dart';
@@ -43,6 +44,7 @@ import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/gesture_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
+import 'package:PiliPlus/pages/video/widgets/fullscreen_recommend_panel.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/app_bar_ani.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/backward_seek.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/bottom_control.dart';
@@ -855,7 +857,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       BottomControlType.fullscreen => ComBtn(
         width: widgetWidth,
         height: 30,
-        tooltip: isFullScreen ? '退出全屏' : '全屏',
+        tooltip: isFullScreen ? '退出全螢幕' : '全螢幕',
         icon: isFullScreen
             ? const Icon(Icons.fullscreen_exit, size: 24, color: Colors.white)
             : const Icon(Icons.fullscreen, size: 24, color: Colors.white),
@@ -1004,7 +1006,12 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         }
 
         final double tapPosition = details.localFocalPoint.dx;
-        final double sectionWidth = maxWidth / 3;
+        // Fullscreen: the center zone has its own width (setting); the left
+        // and right zones share the rest.
+        final double centerWidth = _isMobileFullScreen
+            ? maxWidth * Pref.fullscreenCenterRatio
+            : maxWidth / 3;
+        final double sectionWidth = (maxWidth - centerWidth) / 2;
         if (tapPosition < sectionWidth) {
           if (!plPlayerController.enableSlideVolumeBrightness) {
             return;
@@ -1015,8 +1022,14 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           } else {
             _gestureType = .left;
           }
-        } else if (tapPosition < sectionWidth * 2) {
+        } else if (tapPosition < sectionWidth + centerWidth) {
           if (!plPlayerController.enableSlideFS) {
+            return;
+          }
+          if (_isMobileFullScreen && cumulativeDelta.dy > 0) {
+            // Fullscreen: straight down on the center zone also shrinks
+            // the video to the mini player.
+            if (canMini) _startMiniSwipe(details, cumulativeDelta);
             return;
           }
           // 全屏
@@ -1092,6 +1105,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       const double threshold = 2.5; // 滑动阈值
       double cumulativeDy = details.localFocalPoint.dy - _initialFocalPoint!.dy;
 
+      if (_isMobileFullScreen) {
+        // Fullscreen: swipe up shows the recommended videos (the reverse
+        // setting does not apply here).
+        if (cumulativeDy < -_recommendSwipeDistance) {
+          _gestureType = .center_up;
+          _showFullscreenRecommend();
+        }
+        return;
+      }
+
       void fullScreenTrigger(bool status) {
         plPlayerController.triggerFullScreen(status: status);
       }
@@ -1162,9 +1185,35 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   bool get _canSwipeToMini =>
       PlatformUtils.isMobile &&
       MiniPlayer.swipeEnabled &&
-      !isFullScreen &&
       !plPlayerController.isLive &&
       plPlayerController.videoController != null;
+
+  /// Fullscreen on a phone or tablet, not live: the fullscreen gestures
+  /// (center zone width, swipe up for recommendations, swipe down to the
+  /// mini player) apply.
+  bool get _isMobileFullScreen =>
+      isFullScreen && PlatformUtils.isMobile && !plPlayerController.isLive;
+
+  /// Distance of a swipe up on the center zone that opens the panel.
+  static const double _recommendSwipeDistance = 24;
+
+  /// Swipe up in fullscreen: related videos, or the episodes of a PGC
+  /// (bangumi) video.
+  void _showFullscreenRecommend() {
+    final videoDetailController = widget.videoDetailController;
+    if (videoDetailController == null || videoDetailController.isFileSource) {
+      return;
+    }
+    plPlayerController.controls = false;
+    if (videoDetailController.isUgc) {
+      showFullscreenRecommendPanel(
+        context,
+        heroTag: videoDetailController.heroTag,
+      );
+    } else {
+      widget.showEpisodes?.call(type: .pgc);
+    }
+  }
 
   /// Finger y when the swipe to the mini player started.
   double _miniSwipeStartDy = 0;
@@ -1178,11 +1227,26 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     } else if (_gestureType == .mini) {
       MiniPlayer.endSwipe(
         details.velocity.pixelsPerSecond.dy,
-        onCommit: () => MiniPlayer.popPlayerPages(context),
+        onCommit: _commitMiniSwipe,
       );
     }
     _initialFocalPoint = null;
     _gestureType = null;
+  }
+
+  /// Closes the player pages after a committed swipe to the mini player.
+  /// From fullscreen, exit fullscreen first: the page cannot pop while it
+  /// is in fullscreen (PopScope), and the main pages need their own
+  /// orientation back.
+  Future<void> _commitMiniSwipe() async {
+    final route = ModalRoute.of(context);
+    final navigator = Navigator.of(context);
+    if (isFullScreen) {
+      await plPlayerController.triggerFullScreen(status: false);
+      PlPlayerController.restoreAppRotation();
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    if (route != null) MiniPlayer.popPlayerPagesOf(navigator, route);
   }
 
   void onDoubleTapDownMobile(TapDownDetails details) {

@@ -9,8 +9,12 @@ import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class RelatedVideoPanel extends StatefulWidget {
-  const RelatedVideoPanel({super.key, required this.heroTag});
+  const RelatedVideoPanel({super.key, required this.heroTag, this.beforeOpen});
   final String heroTag;
+
+  /// Called before a tapped video opens (for example to close the panel
+  /// that shows this list).
+  final VoidCallback? beforeOpen;
   @override
   State<RelatedVideoPanel> createState() => _RelatedVideoPanelState();
 }
@@ -43,8 +47,15 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel> with GridMixin {
             ? SliverGrid.builder(
                 gridDelegate: gridDelegate,
                 itemBuilder: (context, index) {
+                  final beforeOpen = widget.beforeOpen;
                   return VideoCardH(
                     videoItem: response[index],
+                    onTap: beforeOpen == null
+                        ? null
+                        : () {
+                            beforeOpen();
+                            pushVideoH(response[index]);
+                          },
                     onRemove: () => _relatedController.loadingState
                       ..value.data!.removeAt(index)
                       ..refresh(),

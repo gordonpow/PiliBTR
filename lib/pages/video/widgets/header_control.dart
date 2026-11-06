@@ -1396,7 +1396,7 @@ class HeaderControlState extends State<HeaderControl>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '全屏字型大小 ${(subtitleFontScaleFS * 100).toStringAsFixed(1)}%',
+                          '全螢幕字型大小 ${(subtitleFontScaleFS * 100).toStringAsFixed(1)}%',
                         ),
                         resetBtn(theme, '150.0%', () => updateFontScaleFS(1.5)),
                       ],
@@ -1814,7 +1814,7 @@ class HeaderControlState extends State<HeaderControl>
                       width: btnWidth,
                       height: btnHeight,
                       child: IconButton(
-                        tooltip: '投屏',
+                        tooltip: '投放',
                         style: btnStyle,
                         onPressed: videoDetailCtr.onCast,
                         icon: const Icon(

@@ -168,6 +168,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     videoSourceInit();
 
     addObserverMobile(this);
+
+    // Phone already in landscape: open in fullscreen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        videoDetailController.plPlayerController.syncOrientation(context);
+      }
+    });
   }
 
   // 获取视频资源，初始化播放器
@@ -382,6 +389,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     if (!videoDetailController.plPlayerController.isCloseAll) {
       if (_toMini &&
+          !PlPlayerController.isVideoPage(Get.routing.current)) {
+        // The player lives on in the mini player: give the main pages their
+        // own orientation back.
+        PlPlayerController.restoreAppRotation();
+      }
+      if (_toMini &&
           plPlayerController != null &&
           MiniPlayer.show(
             ctr: plPlayerController!,
@@ -448,6 +461,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     isShowing = true;
 
     addObserverMobile(this);
+
+    videoDetailController.plPlayerController.syncOrientation(context);
 
     plPlayerController?.isLive = false;
     if (videoDetailController.plPlayerController.playerStatus.isPlaying &&

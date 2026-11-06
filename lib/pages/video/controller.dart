@@ -535,7 +535,9 @@ class VideoDetailController extends GetxController
 
   bool isPortrait = true;
 
-  bool get horizontalScreen => plPlayerController.horizontalScreen;
+  /// Tablet layout of this page. Android phones use the phone layout also
+  /// when the main pages rotate (see [PlPlayerController.videoPageHorizontal]).
+  bool get horizontalScreen => plPlayerController.videoPageHorizontal;
 
   bool get showVideoSheet =>
       (!horizontalScreen && !isPortrait) || plPlayerController.isDesktopPip;
@@ -1592,7 +1594,7 @@ class VideoDetailController extends GetxController
     if (res case Success(:final response)) {
       final first = response.durl?.firstOrNull;
       if (first == null || first.playUrls.isEmpty) {
-        SmartDialog.showToast('不支援投屏');
+        SmartDialog.showToast('不支援投放');
         return;
       }
       final url = VideoUtils.getCdnUrl(first.playUrls);

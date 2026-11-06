@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:PiliPlus/common/widgets/compact_navigation_bar.dart';
@@ -7,6 +8,7 @@ import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -37,13 +39,20 @@ abstract final class MiniPlayer {
       GStorage.setting.get(SettingBoxKey.miniPlayerOnSwipe, defaultValue: true);
 
   /// Labels of the window sizes, in the order of the stored index.
-  static const sizeLabels = ['小', '中', '大'];
+  static const sizeLabels = ['小', '中', '大', '自訂'];
 
   /// Setting: window size, an index in [sizeLabels]. Default: medium.
   static int get sizeIndex => (GStorage.setting.get(
     SettingBoxKey.miniPlayerSize,
     defaultValue: 1,
   ) as int).clamp(0, sizeLabels.length - 1);
+
+  /// Setting: window width (logical px) of the custom size, set by pinch.
+  /// Null if the user never pinched the window.
+  static double? get customWidth {
+    final v = GStorage.setting.get(SettingBoxKey.miniPlayerCustomWidth);
+    return v is num ? v.toDouble() : null;
+  }
 
   static bool _swipeRequest = false;
   static Rect? _swipeFrom;
@@ -137,15 +146,24 @@ abstract final class MiniPlayer {
   /// usual pop.
   static void popPlayerPages(BuildContext context) {
     final route = ModalRoute.of(context);
-    if (route == null ||
-        route.isFirst ||
-        route.popDisposition == RoutePopDisposition.doNotPop) {
+    if (route == null) {
       Navigator.maybePop(context);
+      return;
+    }
+    popPlayerPagesOf(Navigator.of(context), route);
+  }
+
+  /// Same as [popPlayerPages], for a caller whose context can be gone
+  /// (for example after it left fullscreen). [route] is the swiped page.
+  static void popPlayerPagesOf(NavigatorState navigator, ModalRoute route) {
+    if (route.isFirst ||
+        route.popDisposition == RoutePopDisposition.doNotPop) {
+      navigator.maybePop();
       return;
     }
     _poppingPlayerPages = true;
     try {
-      Navigator.of(context).popUntil(
+      navigator.popUntil(
         (r) => r.isFirst || !PlPlayerController.isVideoPage(r.settings.name),
       );
     } finally {
@@ -284,7 +302,7 @@ class _MiniPlayerView extends StatefulWidget {
 }
 
 class _MiniPlayerViewState extends State<_MiniPlayerView>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const double _margin = 8;
   static const double _barHeight = 40;
 
@@ -308,6 +326,14 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   static const double _barSpace = CompactNavigationBar.height;
   Worker? _barWorker;
   bool _dragging = false;
+
+  /// Pinch state: size at the start of the gesture, and if a pinch happened.
+  double _startWidth = 0;
+  bool _pinched = false;
+  double? _pinchWidth;
+
+  /// True if this window paused the player when the app went to background.
+  bool _pausedByLifecycle = false;
 
   double get _bottomGap {
     if (!Get.isRegistered<MainController>()) return _barSpace;
@@ -362,6 +388,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.ctr.addStatusLister(_onStatus);
     _listenBar();
     _anim = AnimationController(vsync: this)..addListener(_onTick);
@@ -413,11 +440,29 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.ctr.removeStatusLister(_onStatus);
     _barWorker?.dispose();
     _curve.dispose();
     _anim.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (!widget.ctr.continuePlayInBackground.value &&
+          !(Platform.isAndroid && AndroidHelper.isPipMode) &&
+          widget.ctr.playerStatus.isPlaying) {
+        _pausedByLifecycle = true;
+        widget.ctr.pause();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_pausedByLifecycle) {
+        _pausedByLifecycle = false;
+        widget.ctr.play(hideControls: false);
+      }
+    }
   }
 
   void _onStatus(PlayerStatus status) {
@@ -445,11 +490,37 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
 
   static Size _windowSize(MediaQueryData media) {
     final i = MiniPlayer.sizeIndex;
-    final width = math.min(
-      media.size.shortestSide * _widthFactor[i],
-      _maxWidth[i],
+    final double width;
+    if (i < _widthFactor.length) {
+      width = math.min(
+        media.size.shortestSide * _widthFactor[i],
+        _maxWidth[i],
+      );
+    } else {
+      // Custom size: the saved width, or the medium size if none.
+      width =
+          MiniPlayer.customWidth ??
+          math.min(media.size.shortestSide * _widthFactor[1], _maxWidth[1]);
+    }
+    return _sizeForWidth(media, width);
+  }
+
+  /// Window size for [width], clamped to the allowed range (16:9 + bar).
+  static Size _sizeForWidth(MediaQueryData media, double width) {
+    final shortest = media.size.shortestSide;
+    final minW = shortest * 0.30;
+    final maxW = math.max(
+      minW,
+      math.min(
+        shortest * 0.95,
+        media.size.width -
+            media.padding.left -
+            media.padding.right -
+            2 * _margin,
+      ),
     );
-    return Size(width, width * 9 / 16 + _barHeight);
+    final w = width.clamp(minW, maxW);
+    return Size(w, w * 9 / 16 + _barHeight);
   }
 
   static double _minTop(MediaQueryData media) => media.padding.top + _margin;
@@ -497,8 +568,11 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
     );
   }
 
-  void _onPanStart(DragStartDetails details) {
+  void _onScaleStart(ScaleStartDetails details) {
     _dragging = true;
+    _pinched = false;
+    _pinchWidth = null;
+    _startWidth = _rect!.width;
     _anim.stop();
     if (_opening) {
       _opening = false;
@@ -506,12 +580,36 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
     }
   }
 
-  void _onPanUpdate(DragUpdateDetails details) {
-    setState(() => _rect = _rect!.shift(details.delta));
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    final rect = _rect!;
+    if (details.pointerCount < 2) {
+      setState(() => _rect = rect.shift(details.focalPointDelta));
+      return;
+    }
+    _pinched = true;
+    final media = MediaQuery.of(context);
+    final size = _sizeForWidth(media, _startWidth * details.scale);
+    _pinchWidth = size.width;
+    // Keep the focal point at the same relative place in the window.
+    final focal = details.focalPoint;
+    final fx = rect.width == 0 ? 0.5 : (focal.dx - rect.left) / rect.width;
+    final fy = rect.height == 0 ? 0.5 : (focal.dy - rect.top) / rect.height;
+    final origin = Offset(
+      focal.dx - fx * size.width,
+      focal.dy - fy * size.height,
+    );
+    setState(() => _rect = origin & size);
   }
 
-  void _onPanEnd(DragEndDetails details) {
+  void _onScaleEnd(ScaleEndDetails details) {
     _dragging = false;
+    if (_pinched && _pinchWidth != null) {
+      GStorage.setting
+        ..put(SettingBoxKey.miniPlayerCustomWidth, _pinchWidth)
+        ..put(SettingBoxKey.miniPlayerSize, 3);
+    }
+    _pinched = false;
+    _pinchWidth = null;
     final media = MediaQuery.of(context);
     _animateTo(
       _snapRect(media, _rect!, details.velocity.pixelsPerSecond),
@@ -527,6 +625,19 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   @override
   Widget build(BuildContext context) {
     final videoController = widget.ctr.videoController;
+    if (videoController != null && widget.ctr.isPipMode) {
+      // System picture-in-picture: the app window is the PiP window. Show
+      // only the video, over the main page.
+      return Positioned.fill(
+        child: ColoredBox(
+          color: Colors.black,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SimpleVideo(controller: videoController),
+          ),
+        ),
+      );
+    }
     final rect = _rect;
     if (videoController == null || rect == null) {
       return const SizedBox.shrink();
@@ -540,9 +651,9 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
       child: Opacity(
         opacity: _opacity,
         child: GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
+          onScaleStart: _onScaleStart,
+          onScaleUpdate: _onScaleUpdate,
+          onScaleEnd: _onScaleEnd,
           onTap: MiniPlayer.expand,
           child: Material(
             elevation: 8,

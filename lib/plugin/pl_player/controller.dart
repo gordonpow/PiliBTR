@@ -351,7 +351,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   static bool get _isCurrVideoPage {
     final routing = Get.routing;
-    if (routing.route is! GetPageRoute) {
+    // A popup (bottom sheet, panel) over the video page does not change
+    // `current`: the video page is still the top page.
+    if (routing.route is! GetPageRoute && routing.route is! PopupRoute) {
       return false;
     }
     return isVideoPage(routing.current);
@@ -611,6 +613,34 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool visible = true;
 
   DeviceOrientation? _orientation;
+  bool? _isAutoRotate;
+
+  /// Applies the current orientation when a video page opens. The sensor
+  /// only reports changes, and the first report can come before the page
+  /// is the current route; so a page opened with the phone already in
+  /// landscape stayed in portrait.
+  void syncOrientation(BuildContext context) {
+    if (!PlatformUtils.isMobile || DeviceUtils.isChromeOS) return;
+    if (videoPageHorizontal || isFullScreen.value || isDesktopPip) return;
+    if (controlsLock.value) return;
+    DeviceOrientation? orientation;
+    // The main pages use fullMode, so the app window is already landscape
+    // when the phone is, and only when the system auto-rotate allows it.
+    if (MediaQuery.orientationOf(context) == Orientation.landscape) {
+      orientation = _orientation == .landscapeRight
+          ? DeviceOrientation.landscapeRight
+          : DeviceOrientation.landscapeLeft;
+    } else if ((_orientation == .landscapeLeft ||
+            _orientation == .landscapeRight) &&
+        (!checkIsAutoRotate || _isAutoRotate == true)) {
+      orientation = _orientation;
+    }
+    if (orientation != null) {
+      triggerFullScreen(orientation: orientation, isManualFS: false);
+    } else {
+      portraitUpMode();
+    }
+  }
   late final checkIsAutoRotate = Platform.isAndroid && mode != .gravity;
   StreamSubscription<OrientationParams>? _orientationListener;
 
@@ -621,6 +651,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   void _onOrientationChanged(OrientationParams param) {
     _orientation = param.orientation;
+    _isAutoRotate = param.isAutoRotate;
+    // Only the video page reacts. With the mini player over the main page
+    // the main page rotates by itself (fullMode).
+    if (!_isCurrVideoPage) return;
     if (Platform.isIOS && !visible) return;
     if (controlsLock.value) return;
     final orientation = param.orientation;
@@ -635,7 +669,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
     switch (orientation) {
       case .portraitUp:
-        if (!horizontalScreen && !_isVertical && isFullScreen) {
+        if (!videoPageHorizontal && !_isVertical && isFullScreen) {
           if (!isManualFS) {
             triggerFullScreen(status: false, orientation: orientation);
           }
@@ -643,16 +677,16 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           portraitUpMode();
         }
       case .portraitDown:
-        if (!horizontalScreen) return;
+        if (!videoPageHorizontal) return;
         portraitDownMode();
       case .landscapeLeft:
-        if (!horizontalScreen && !isFullScreen) {
+        if (!videoPageHorizontal && !isFullScreen) {
           triggerFullScreen(orientation: orientation, isManualFS: false);
         } else {
           landscapeLeftMode();
         }
       case .landscapeRight:
-        if (!horizontalScreen && !isFullScreen) {
+        if (!videoPageHorizontal && !isFullScreen) {
           triggerFullScreen(orientation: orientation, isManualFS: false);
         } else {
           landscapeRightMode();
@@ -689,7 +723,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }
 
   void _onUserLeaveHint() {
-    if (playerStatus.isPlaying && _isCurrVideoPage) {
+    if (playerStatus.isPlaying && (_isCurrVideoPage || MiniPlayer.active)) {
       enterPip();
     }
   }
@@ -1099,7 +1133,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           WakelockPlus.enable();
 
           if (_isAutoEnterPip) {
-            if (_isCurrVideoPage) {
+            if (_isCurrVideoPage || MiniPlayer.active) {
               enterPip(autoEnter: true);
             } else {
               _disableAutoEnterPip();
@@ -1550,6 +1584,17 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool isManualFS = true;
   late final FullScreenMode mode = Pref.fullScreenMode;
   late final horizontalScreen = Pref.horizontalScreen;
+
+  /// Tablet layout on the video page (side by side in landscape). Android
+  /// phones keep the phone behaviour also when [horizontalScreen] is on:
+  /// the video page stays portrait and landscape means fullscreen. The
+  /// main pages still rotate with [horizontalScreen].
+  late final videoPageHorizontal =
+      horizontalScreen && !(Platform.isAndroid && !DeviceUtils.isTablet);
+
+  /// True when entering fullscreen changed the screen orientation; exiting
+  /// must then restore it, also for [FullScreenMode.none].
+  bool _fsChangedOrientation = false;
   late final removeSafeArea = Pref.removeSafeArea;
 
   Future<void>? changeOrientation({
@@ -1601,6 +1646,8 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       if (status) {
         if (PlatformUtils.isMobile) {
           hideSystemBar();
+          _fsChangedOrientation =
+              orientation != null || (mode != .none && mode != .gravity);
           await changeOrientation(
             isVertical: isVertical,
             orientation: orientation,
@@ -1613,10 +1660,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           if (!removeSafeArea) {
             showSystemBar();
           }
-          if (orientation == null && mode == .none) {
+          if (orientation == null &&
+              mode == .none &&
+              !_fsChangedOrientation) {
             return;
           }
-          await resetScreenRotation();
+          _fsChangedOrientation = false;
+          await exitFullScreenRotation();
         } else {
           exitDesktopFullScreen();
         }
@@ -1717,8 +1767,19 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool _isCloseAll = false;
   bool get isCloseAll => _isCloseAll;
 
-  Future<void>? resetScreenRotation() {
-    if (horizontalScreen) {
+  /// Orientation after leaving fullscreen while the video page stays.
+  Future<void>? exitFullScreenRotation() {
+    if (videoPageHorizontal) {
+      return fullMode();
+    } else {
+      return portraitUpMode();
+    }
+  }
+
+  /// Orientation of the main pages, after leaving the video page (also to
+  /// the mini player).
+  static Future<void>? restoreAppRotation() {
+    if (Pref.horizontalScreen) {
       return fullMode();
     } else {
       return portraitUpMode();
@@ -1734,7 +1795,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   void dispose() {
     // 每次减1，最后销毁
-    resetScreenRotation();
+    if (_isCurrVideoPage) {
+      // Back to another video page: keep its orientation (fullscreen
+      // keeps its landscape lock).
+      if (!isFullScreen.value) exitFullScreenRotation();
+    } else {
+      restoreAppRotation();
+    }
     cancelLongPressTimer();
     _cancelSubForSeek();
     if (!_isCloseAll && _playerCount > 1) {

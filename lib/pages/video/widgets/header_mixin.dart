@@ -379,7 +379,7 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '全屏字型大小 ${(DanmakuOptions.danmakuFontScaleFS * 100).toStringAsFixed(1)}%',
+                          '全螢幕字型大小 ${(DanmakuOptions.danmakuFontScaleFS * 100).toStringAsFixed(1)}%',
                         ),
                         resetBtn(theme, '120.0%', () => updateFontSizeFS(1.2)),
                       ],

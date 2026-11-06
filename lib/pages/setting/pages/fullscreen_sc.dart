@@ -104,7 +104,7 @@ class _FullScreenScState extends State<FullScreenSc> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('全屏 SuperChat 設定'),
+            const Text('全螢幕 SuperChat 設定'),
             Transform.scale(
               scale: 0.8,
               alignment: .centerRight,

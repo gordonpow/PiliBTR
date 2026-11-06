@@ -213,7 +213,8 @@ abstract final class Pref {
   static FullScreenMode get fullScreenMode {
     int? index = _setting.get(SettingBoxKey.fullScreenMode);
     if (index == null) {
-      final FullScreenMode mode = horizontalScreen && DeviceUtils.isTablet
+      final FullScreenMode mode =
+          _isAndroidPhone || (horizontalScreen && DeviceUtils.isTablet)
           ? .none
           : .auto;
       _setting.put(SettingBoxKey.fullScreenMode, mode.index);
@@ -644,12 +645,41 @@ abstract final class Pref {
   static bool get optTabletNav =>
       _setting.get(SettingBoxKey.optTabletNav, defaultValue: true);
 
+  static bool get _isAndroidPhone =>
+      Platform.isAndroid && !DeviceUtils.isTablet;
+
+  /// One-time update of saved defaults on Android phones. The getters of
+  /// [horizontalScreen] and [fullScreenMode] wrote the old defaults (false
+  /// and auto) on the first read, so a changed default alone does not reach
+  /// old installs. A saved fullScreenMode other than auto was chosen by the
+  /// user and is kept. Call before the first read of [horizontalScreen].
+  static void migrateBtrDefaults() {
+    if (_setting.get(SettingBoxKey.btrDefaultsV1) == true) return;
+    if (_isAndroidPhone) {
+      _setting.put(SettingBoxKey.horizontalScreen, true);
+      final int? mode = _setting.get(SettingBoxKey.fullScreenMode);
+      if (mode == null || mode == FullScreenMode.auto.index) {
+        _setting.put(SettingBoxKey.fullScreenMode, FullScreenMode.none.index);
+      }
+    }
+    _setting.put(SettingBoxKey.btrDefaultsV1, true);
+  }
+
+  /// Width of the center zone of the fullscreen player, as a part of the
+  /// player width. The left and right zones share the rest.
+  static double get fullscreenCenterRatio => (_setting.get(
+    SettingBoxKey.fullscreenCenterRatio,
+    defaultValue: 0.34,
+  ) as num).toDouble().clamp(0.2, 0.6);
+
   static bool get horizontalScreen {
     bool? horizontalScreen = _setting.get(SettingBoxKey.horizontalScreen);
     if (horizontalScreen == null) {
-      final isTablet = DeviceUtils.isTablet;
-      _setting.put(SettingBoxKey.horizontalScreen, isTablet);
-      return isTablet;
+      // Android phones also rotate the main pages by default (the system
+      // auto-rotate lock is respected). Other devices: tablets only.
+      final value = _isAndroidPhone || DeviceUtils.isTablet;
+      _setting.put(SettingBoxKey.horizontalScreen, value);
+      return value;
     }
     return horizontalScreen;
   }
@@ -936,7 +966,7 @@ abstract final class Pref {
       _video.get(VideoBoxKey.cacheVideoFit, defaultValue: 1);
 
   static bool get continuePlayInBackground =>
-      _setting.get(SettingBoxKey.continuePlayInBackground, defaultValue: false);
+      _setting.get(SettingBoxKey.continuePlayInBackground, defaultValue: true);
 
   static bool get directExitOnBack =>
       _setting.get(SettingBoxKey.directExitOnBack, defaultValue: false);
