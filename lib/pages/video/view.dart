@@ -459,7 +459,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         videoDetailController.makeHeartBeat();
       } else if (plPlayerController != null) {
         videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
-        videoDetailController.makeHeartBeat();
+        videoDetailController
+          ..makeHeartBeat()
+          ..closeMobileHeartbeat();
         plPlayerController!.dispose();
       } else {
         videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);

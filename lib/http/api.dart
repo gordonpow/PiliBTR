@@ -277,6 +277,9 @@ abstract final class Api {
   // https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/report.md
   static const String heartBeat = '/x/click-interface/web/heartbeat';
 
+  // App 端心跳（帶推薦點擊歸因 track_id）
+  static const String heartBeatMobile = '/x/report/heartbeat/mobile';
+
   static const String historyReport = '/x/v2/history/report';
 
   static const String roomEntryAction =

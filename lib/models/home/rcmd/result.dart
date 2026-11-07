@@ -22,6 +22,7 @@ class RcmdVideoItemAppModel extends BaseRcmdVideoItemModel {
     //duration = json['cover_right_text'];
     title = json['title'];
     goto = json['card_goto'];
+    trackId = json['track_id'] as String?;
     owner = RcmdOwner.fromJson(json, goto);
     rcmdReason = json['rcmd_reason'];
     // 與伺服器回傳文字比對，保留原文

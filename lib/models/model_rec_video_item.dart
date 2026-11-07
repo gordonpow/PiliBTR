@@ -9,6 +9,8 @@ abstract class BaseRcmdVideoItemModel extends BaseVideoItemModel {
   // app推荐专属
   int? param;
   String? pgcBadge;
+  // app推荐卡片的 track_id（點擊歸因用）
+  String? trackId;
 }
 
 class RcmdVideoItemModel extends BaseRcmdVideoItemModel {

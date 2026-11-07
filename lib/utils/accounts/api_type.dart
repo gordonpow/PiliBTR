@@ -11,6 +11,7 @@ abstract final class ApiType {
 
       // history
       Api.heartBeat,
+      Api.heartBeatMobile,
       Api.historyReport,
       Api.roomEntryAction,
       Api.liveLikeReport,

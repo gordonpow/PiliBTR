@@ -297,6 +297,7 @@ class PgcIntroController extends CommonIntroController {
       videoDetailCtr
         ..plPlayerController.pause()
         ..makeHeartBeat()
+        ..closeMobileHeartbeat()
         ..onReset()
         ..epId = epId
         ..bvid = bvid

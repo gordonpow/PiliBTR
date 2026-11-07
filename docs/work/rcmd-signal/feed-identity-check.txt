@@ -1,0 +1,7 @@
+OLD android_i/8430300/appId1: code=0 message=OK items=12
+  key presence (cards having key / total): {"card_goto": 12, "player_args": 12, "args": 12, "param": 12, "track_id": 12}
+  card_goto values: ['av']
+NEW android_hd/2001100/appId5: code=0 message=OK items=20
+  key presence (cards having key / total): {"card_goto": 20, "player_args": 20, "args": 20, "param": 20, "track_id": 20}
+  card_goto values: ['av']
+RESULT: PASS

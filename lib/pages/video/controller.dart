@@ -422,6 +422,9 @@ class VideoDetailController extends GetxController
     _setVideoHeight();
   }
 
+  late final String trackId;
+  late final String fromSpmid;
+
   @override
   void onInit() {
     super.onInit();
@@ -440,6 +443,9 @@ class VideoDetailController extends GetxController
     seasonId = args['seasonId'];
     pgcType = args['pgcType'];
     heroTag = args['heroTag'];
+    // 推薦卡片點擊歸因（非推薦入口為空字串）
+    trackId = args['trackId'] as String? ?? '';
+    fromSpmid = args['fromSpmid'] as String? ?? '';
     cover = RxString(args['cover'] ?? '');
     isVertical = RxBool(args['isVertical'] ?? false);
 
@@ -810,6 +816,7 @@ class VideoDetailController extends GetxController
     Duration? seek = defaultST ?? playedTime;
     if (seek == .zero) seek = null;
     seek ??= getFirstSegment();
+    plPlayerController.hbQuality = currentVideoQa.value?.code ?? 0;
     await plPlayerController.setDataSource(
       isFileSource
           ? FileSource(
@@ -835,6 +842,8 @@ class VideoDetailController extends GetxController
       seasonId: isUgc ? null : seasonId,
       pgcType: isUgc ? null : pgcType,
       videoType: videoType,
+      trackId: trackId,
+      fromSpmid: fromSpmid,
       onInit: () {
         videoState.value = true;
         setSubtitle(vttSubtitlesIndex.value);
@@ -1310,6 +1319,14 @@ class VideoDetailController extends GetxController
         );
       } catch (_) {}
     }
+  }
+
+  /// 結束 App 心跳 session（頁面 dispose、切換分 P／選集時呼叫；
+  /// 交給迷你播放器時不呼叫）
+  void closeMobileHeartbeat() {
+    try {
+      plPlayerController.closeMobileHeartbeat();
+    } catch (_) {}
   }
 
   @override

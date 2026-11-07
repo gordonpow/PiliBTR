@@ -48,7 +48,8 @@ class AccountManager extends Interceptor {
 
     if (account is NoAccount || _skipCookie(path)) return handler.next(options);
 
-    if (!account.isLogin && path == Api.heartBeat) {
+    if (!account.isLogin &&
+        (path == Api.heartBeat || path == Api.heartBeatMobile)) {
       return handler.reject(
         DioException.requestCancelled(requestOptions: options, reason: null),
         false,

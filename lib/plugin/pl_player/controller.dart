@@ -30,6 +30,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
+import 'package:PiliPlus/plugin/pl_player/utils/mobile_heartbeat.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -157,6 +158,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   int? _pgcType;
   VideoType _videoType = VideoType.ugc;
   int _heartDuration = 0;
+
+  // App 心跳：推薦點擊歸因（每次設定新影片都會覆寫）與畫質
+  String trackId = '';
+  String fromSpmid = '';
+  int hbQuality = 0;
+  final MobileHeartbeat _mobileHb = MobileHeartbeat();
   int? width;
   int? height;
 
@@ -811,6 +818,8 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     int? seasonId,
     int? pgcType,
     VideoType? videoType,
+    String trackId = '',
+    String fromSpmid = '',
     VoidCallback? onInit,
     Volume? volume,
     bool autoFullScreenFlag = false,
@@ -818,6 +827,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }) async {
     try {
       _processing = true;
+      // 共用實例：每次都覆寫，避免沿用上一部的歸因
+      this.trackId = trackId;
+      this.fromSpmid = fromSpmid;
       final reuse = !isLive && _canReuse(dataSource, cid);
       this.isLive = isLive;
       _videoType = videoType ?? VideoType.ugc;
@@ -1171,6 +1183,22 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         if (seconds != 0) {
           makeHeartBeat(seconds, type: .status);
         }
+
+        // App 心跳：START／暫停 END，不受 seconds != 0 限制
+        if (playing) {
+          _mobileHb.onPlaying(
+            speed: playbackSpeed,
+            pos: seconds,
+            quality: hbQuality,
+            newMeta: _newMobileHbMeta,
+          );
+        } else {
+          _mobileHb.onPaused(
+            speed: playbackSpeed,
+            pos: seconds,
+            quality: hbQuality,
+          );
+        }
       }),
 
       ///completed
@@ -1184,6 +1212,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           }
 
           makeHeartBeat(-1, type: .completed);
+
+          // App 心跳：完成時送 END 並結束 session
+          _mobileHb.onCompleted(
+            speed: playbackSpeed,
+            pos: videoPlayerController!.state.position.inSeconds,
+            quality: hbQuality,
+          );
         }
       }),
 
@@ -1199,6 +1234,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           this.position.value = posInSeconds;
 
           makeHeartBeat(posInSeconds);
+          _mobileHb.trackPosition(posInSeconds); // 只記錄位置，不送請求
         }
 
         for (final element in _positionListeners) {
@@ -1341,6 +1377,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
     if (speed == _videoPlayerController?.state.rate) return;
 
+    _mobileHb.beforeSpeedChange(playbackSpeed);
     await _videoPlayerController?.setRate(speed);
     if (!isLive) _playbackSpeed.value = speed;
     _updatePlaybackState();
@@ -1775,6 +1812,43 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     return null;
   }
 
+  /// App 心跳 session 快照；不符合條件回傳 null
+  MobileHeartbeatMeta? _newMobileHbMeta() {
+    if (isLive || !enableHeart || isFileSource) return null;
+    final key = Accounts.heartbeat.accessKey;
+    if (key == null || key.isEmpty) return null;
+    final int type;
+    switch (_videoType) {
+      case VideoType.ugc:
+        type = 3;
+      case VideoType.pgc:
+        type = 4;
+      default:
+        return null;
+    }
+    final aid = _aid, cid = this.cid;
+    if (aid == null || cid == null || aid <= 0 || cid <= 0) return null;
+    return MobileHeartbeatMeta(
+      aid: aid,
+      cid: cid,
+      type: type,
+      epid: _epid,
+      seasonId: _seasonId,
+      subType: _pgcType,
+      trackId: trackId,
+      fromSpmid: fromSpmid,
+      videoDuration: durationInMilliseconds ~/ 1000,
+    );
+  }
+
+  /// 結束 App 心跳 session（播放中會先送 END）。
+  /// 頁面 dispose、切換 cid、睡眠定時結束時呼叫；交給迷你播放器時不要呼叫。
+  Future<void>? closeMobileHeartbeat() => _mobileHb.close(
+    speed: playbackSpeed,
+    pos: _videoPlayerController?.state.position.inSeconds ?? position.value,
+    quality: hbQuality,
+  );
+
   /// 播放順序改變時通知影片頁（用來取消自動連播倒數）
   VoidCallback? onPlayRepeatChanged;
 
@@ -1879,6 +1953,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       WindowController.instance.window?.isAlwaysOnTop = false;
     }
 
+    closeMobileHeartbeat(); // 最終銷毀（含迷你播放器關閉）時結束 session
     _removeListeners();
     _positionListeners.clear();
     _statusListeners.clear();

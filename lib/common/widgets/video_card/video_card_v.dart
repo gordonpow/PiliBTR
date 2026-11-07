@@ -36,7 +36,12 @@ class VideoCardV extends StatelessWidget {
   Future<void> onPushDetail([({int cid, int ms})? preview]) async {
     switch (videoItem.goto) {
       case 'bangumi':
-        PageUtils.viewPgc(epId: videoItem.param!);
+        final pgcTrackId = videoItem.trackId;
+        PageUtils.viewPgc(
+          epId: videoItem.param!,
+          trackId: pgcTrackId,
+          fromSpmid: 'tm.recommend.0.0',
+        );
         break;
       case 'av':
         var bvid = videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!);
@@ -65,6 +70,12 @@ class VideoCardV extends StatelessWidget {
             isVertical: isVertical,
             dimension: dimension,
             progress: preview?.ms,
+            extraArguments: videoItem.trackId?.isNotEmpty == true
+                ? {
+                    'trackId': videoItem.trackId,
+                    'fromSpmid': 'tm.recommend.0.0',
+                  }
+                : null,
           );
         }
         break;

@@ -124,8 +124,10 @@ class ShutdownTimerService {
         type: .completed,
         isManual: true,
       );
-      if (res != null) {
-        res.whenComplete(DeviceUtils.exitApp);
+      // App 心跳：結束 session（播放中會送 END）
+      final hb = player.closeMobileHeartbeat();
+      if (res != null || hb != null) {
+        Future.wait([?res, ?hb]).whenComplete(DeviceUtils.exitApp);
         return;
       }
     }

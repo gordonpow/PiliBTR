@@ -626,6 +626,8 @@ abstract final class PageUtils {
     int? progress, // milliseconds
     bool off = false,
     bool viewLater = false,
+    String? trackId, // 推薦卡片的 track_id
+    String? fromSpmid,
   }) async {
     try {
       SmartDialog.showLoading(msg: '資源獲取中');
@@ -650,6 +652,9 @@ abstract final class PageUtils {
               'pgcItem': response,
               if (viewLater) 'viewLater': true,
               'sectionIndex': ?sectionIndex,
+              if (trackId != null && trackId.isNotEmpty) 'trackId': trackId,
+              if (trackId != null && trackId.isNotEmpty)
+                'fromSpmid': ?fromSpmid,
             },
             off: off,
           );

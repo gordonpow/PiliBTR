@@ -30,6 +30,7 @@ import 'package:PiliPlus/models_new/video/video_relation/data.dart';
 import 'package:PiliPlus/models_new/video/video_shot/data.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
+import 'package:PiliPlus/utils/device_fp.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
@@ -41,7 +42,7 @@ import 'package:PiliPlus/utils/subtitle_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, debugPrint, kDebugMode;
 import 'package:protobuf/protobuf.dart';
 
 /// view层根据 status 判断渲染逻辑
@@ -115,7 +116,7 @@ abstract final class VideoHttp {
     required int freshIdx,
   }) async {
     final params = {
-      'build': 8430300,
+      'build': 2001100,
       'c_locale': 'zh_CN',
       'channel': 'master',
       'column': 2,
@@ -131,7 +132,7 @@ abstract final class VideoHttp {
       'guidance': 1,
       'https_url_req': 1,
       'idx': freshIdx,
-      'mobi_app': 'android_i',
+      'mobi_app': 'android_hd',
       'network': 'wifi',
       'platform': 'android',
       'player_net': 1,
@@ -140,7 +141,7 @@ abstract final class VideoHttp {
       'recsys_mode': 0,
       's_locale': 'zh_CN',
       'splash_id': '',
-      'statistics': Constants.statisticsApp,
+      'statistics': Constants.statistics,
       'voice_balance': 0,
     };
     final res = await Request().get(
@@ -149,9 +150,9 @@ abstract final class VideoHttp {
       options: Options(
         headers: {
           'buvid': Accounts.get(.recommend).buvid,
-          'fp_local': '1111111111111111111111111111111111111111111111111111111111111111',
-          'fp_remote': '1111111111111111111111111111111111111111111111111111111111111111',
-          'session_id': '11111111',
+          'fp_local': DeviceFp.fpLocal,
+          'fp_remote': DeviceFp.fpRemote,
+          'session_id': DeviceFp.sessionId,
           'env': 'prod',
           'app-key': 'android_hd',
           'User-Agent': Constants.userAgent,
@@ -218,9 +219,9 @@ abstract final class VideoHttp {
     final options = Options(
       headers: {
         'buvid': Accounts.get(.recommend).buvid,
-        'fp_local': '1111111111111111111111111111111111111111111111111111111111111111',
-        'fp_remote': '1111111111111111111111111111111111111111111111111111111111111111',
-        'session_id': '11111111',
+        'fp_local': DeviceFp.fpLocal,
+        'fp_remote': DeviceFp.fpRemote,
+        'session_id': DeviceFp.sessionId,
         'env': 'prod',
         'app-key': 'android_hd',
         'User-Agent': Constants.userAgent,
@@ -851,6 +852,98 @@ abstract final class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
+  }
+
+  /// App 端心跳（START / END）。整個呼叫不丟例外、不提示使用者。
+  /// [type]：UGC 3、PGC 4。
+  static Future<void> heartBeatMobile({
+    required bool isStart,
+    required String session,
+    required int startTs,
+    required int aid,
+    required int cid,
+    required int type,
+    int? epid,
+    int? seasonId,
+    int? subType,
+    required int quality,
+    required int totalTime,
+    required int pausedTime,
+    required int playedTime,
+    required int actualPlayedTime,
+    required int videoDuration,
+    required int lastProgress,
+    required int maxProgress,
+    required String fromSpmid,
+    required String trackId,
+  }) async {
+    final label = isStart ? 'START' : 'END';
+    try {
+      final account = Accounts.heartbeat;
+      final accessKey = account.accessKey;
+      if (accessKey == null || accessKey.isEmpty) return;
+      final isPgc = type == 4;
+      final params = <String, dynamic>{
+        'session': session,
+        'mid': account.mid.toString(),
+        'aid': aid.toString(),
+        'cid': cid.toString(),
+        'sid': isPgc ? (seasonId ?? '').toString() : '',
+        'epid': (isPgc ? (epid ?? 0) : 0).toString(),
+        'type': type.toString(),
+        'sub_type': (isPgc ? (subType ?? 0) : 0).toString(),
+        'quality': quality.toString(),
+        'total_time': totalTime.toString(),
+        'paused_time': pausedTime.toString(),
+        'played_time': playedTime.toString(),
+        'actual_played_time': actualPlayedTime.toString(),
+        'video_duration': videoDuration.toString(),
+        'start_ts': startTs.toString(),
+        'play_type': '1',
+        'network_type': '1',
+        'last_play_progress_time': lastProgress.toString(),
+        'max_play_progress_time': maxProgress.toString(),
+        'from': '6',
+        'from_spmid': fromSpmid,
+        'spmid': isPgc
+            ? 'pgc.pgc-video-detail.0.0'
+            : 'main.ugc-video-detail.0.0',
+        'epid_status': '',
+        'play_status': '',
+        'user_status': Accounts.isMainVip ? '1' : '0',
+        'auto_play': '0',
+        'list_play_time': '0',
+        'miniplayer_play_time': '0',
+        'is_auto_qn': '0',
+        'is_audio_play': '2',
+        'cur_language': 'zh-Hans',
+        'track_id': trackId,
+        'platform': 'android',
+        'mobi_app': 'android_hd',
+        'build': '2001100',
+        'channel': 'master',
+        'c_locale': 'zh_CN',
+        's_locale': 'zh_CN',
+        'access_key': accessKey,
+      };
+      AppSign.appSign(params);
+      final res = await Request().post(
+        Api.heartBeatMobile,
+        data: params,
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+      if (kDebugMode) {
+        final data = res.data;
+        final code = data is Map ? data['code'] : null;
+        final msg = data is Map ? data['message'] : null;
+        debugPrint(
+          'heartBeatMobile $label code=$code msg=$msg '
+          'trackId非空=${trackId.isNotEmpty} aid=$aid cid=$cid',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('heartBeatMobile $label failed: $e');
+    }
   }
 
   static Future<void> medialistHistory({
