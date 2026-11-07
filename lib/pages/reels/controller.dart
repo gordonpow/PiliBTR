@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/constants.dart';
@@ -13,7 +14,9 @@ import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart'
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier, kDebugMode, debugPrint;
 import 'package:flutter/widgets.dart' show Curves, PageController;
@@ -208,7 +211,8 @@ class ReelsItemCtr extends GetxController
 }
 
 /// 豎屏影片的播放網址。
-typedef ReelsSource = ({String media, int cid, bool preload});
+/// [expire] 為網址過期時間（毫秒 epoch，0 表示未知）。
+typedef ReelsSource = ({String media, int cid, bool preload, int expire});
 
 /// 豎屏頁的控制器：影片清單、分頁載入，以及自己持有的 media_kit 播放器
 /// （不使用 [PlPlayerController]，不影響影片頁、小視窗與 PiP）。
@@ -239,9 +243,24 @@ class ReelsController extends GetxController {
   /// 有種子影片時，第一部開始播放的位置
   Duration? _startAt;
 
+  /// 允許的最高畫質（依 Wi-Fi／行動網路設定），先用預設值，查完網路後更新。
+  int _maxQa = Pref.defaultVideoQa;
+  Future<void> _qaReady = Future.value();
+
+  Future<void> _initQa() async {
+    if (!(PlatformUtils.isMobile || Platform.isLinux)) return;
+    try {
+      final isWiFi = await ConnectivityUtils.isWiFi;
+      _maxQa = isWiFi ? Pref.defaultVideoQa : Pref.defaultVideoQaCellular;
+    } catch (_) {
+      // 判斷失敗：保留預設值
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
+    _qaReady = _initQa();
     final seed = this.seed;
     if (seed != null && seed['aid'] != null && seed['bvid'] != null) {
       final item = seed['item'] as StoryItem? ??
@@ -288,7 +307,7 @@ class ReelsController extends GetxController {
           if (added.isNotEmpty) {
             items.addAll(added);
             // 原本是最後一部而沒有預載時，補預載
-            if (_opened) _preloadNext(_playingIndex);
+            if (_opened) _preloadAhead(_playingIndex);
             error.value = null;
             break;
           }
@@ -315,7 +334,10 @@ class ReelsController extends GetxController {
 
   // ---------------- 播放 ----------------
 
-  /// 兩個播放器槽位：一個正在播放（[_cur]），另一個靜音暫停預載下一部。
+  /// 播放器數量。
+  static const _poolSize = 4;
+
+  /// 播放器槽位：一個正在播放（[_cur]），其餘靜音暫停預載後面幾部。
   final List<_Slot> _slots = [];
   int _cur = 0;
   Future<void>? _creating;
@@ -349,13 +371,32 @@ class ReelsController extends GetxController {
   /// 使用 `player_preload` 失敗過的影片（改用 videoUrl）
   final Set<int> _noPreload = {};
 
+  /// 解碼失敗過的影片（改只選 H.264）
+  final Set<int> _avcOnly = {};
+
   bool get isActive => _active;
 
   Duration get currentPosition => position.value;
 
-  _Slot? get _curSlot => _slots.length == 2 ? _slots[_cur] : null;
+  _Slot? get _curSlot => _slots.length == _poolSize ? _slots[_cur] : null;
 
-  _Slot get _otherSlot => _slots[1 - _cur];
+  /// 非目前槽位中載入（或載入中）[aid] 的槽位
+  _Slot? _slotFor(int aid) {
+    final cur = _curSlot;
+    for (final s in _slots) {
+      if (!identical(s, cur) && s.aid == aid) return s;
+    }
+    return null;
+  }
+
+  /// 丟棄槽位：停止播放並釋放解碼器與快取。
+  void _discard(_Slot slot) {
+    slot.player
+      ..pause()
+      ..setVolume(0)
+      ..stop();
+    slot.reset();
+  }
 
   Player? get _player => _curSlot?.player;
 
@@ -374,36 +415,37 @@ class ReelsController extends GetxController {
   Future<void> _ensurePlayers() => _creating ??= _createPlayers();
 
   Future<void> _createPlayers() async {
-    final created = <_Slot>[];
-    try {
-      for (var n = 0; n < 2; n++) {
-        final slot = await _createSlot();
-        if (slot == null) {
-          // 建立期間頁面已關閉：已建立的也釋放，避免洩漏
-          for (final s in created) {
-            s.dispose();
-          }
-          return;
+    Object? err;
+    StackTrace? st;
+    final results = await Future.wait(
+      List.generate(_poolSize, (_) async {
+        try {
+          return await _createSlot();
+        } catch (e, s) {
+          err ??= e;
+          st ??= s;
+          return null;
         }
-        created.add(slot);
-      }
-    } catch (_) {
+      }),
+    );
+    final created = results.whereType<_Slot>().toList();
+    if (err != null || created.length != _poolSize || isClosed) {
+      // 失敗或建立期間頁面已關閉：已建立的全部釋放，避免洩漏
       for (final s in created) {
         s.dispose();
       }
-      _creating = null;
-      rethrow;
-    }
-    if (isClosed) {
-      for (final s in created) {
-        s.dispose();
+      if (err != null) {
+        _creating = null;
+        await Future<void>.error(err!, st);
       }
       return;
     }
     _slots.addAll(created);
     _cur = 0;
     videoController.value = _slots[0].video;
-    _slots[1].player.setVolume(0);
+    for (var n = 1; n < _slots.length; n++) {
+      _slots[n].player.setVolume(0);
+    }
   }
 
   Future<_Slot?> _createSlot() async {
@@ -460,11 +502,16 @@ class ReelsController extends GetxController {
     }
   }
 
-  /// 用 `player_preload` 開啟失敗：清掉快取，改用 videoUrl 重試一次（每部一次）。
+  /// 開啟失敗：`player_preload` 來源改用 videoUrl；否則改只選 H.264。
+  /// 各重試一次（每部），從出錯前的位置繼續。
   void _onSlotError(_Slot slot) {
     final aid = slot.aid;
-    if (isClosed || aid == null || !slot.fromPreload) return;
-    if (!_noPreload.add(aid)) return;
+    if (isClosed || aid == null || slot.media == null) return;
+    if (slot.fromPreload) {
+      if (!_noPreload.add(aid)) return;
+    } else if (!_avcOnly.add(aid)) {
+      return;
+    }
     _sources.remove(aid);
     slot.fromPreload = false;
     if (identical(slot, _curSlot)) {
@@ -476,8 +523,8 @@ class ReelsController extends GetxController {
         _startItem(i);
       }
     } else {
-      // 預載槽位：丟棄，換到該頁時走一般開啟流程
-      slot.reset();
+      // 預載槽位：丟棄，之後重新預載或換到該頁時走一般開啟流程
+      _discard(slot);
     }
   }
 
@@ -485,10 +532,35 @@ class ReelsController extends GetxController {
   final Map<int, Future<ReelsSource?>> _sources = {};
   final Map<int, String> _sourceErrors = {};
 
-  Future<ReelsSource?> _source(StoryItem item) =>
-      _sources[item.aid] ??= _fetchSource(item)..then((v) {
-        if (v == null) _sources.remove(item.aid);
-      });
+  Future<ReelsSource?> _source(StoryItem item) async {
+    final aid = item.aid;
+    var f = _sources[aid];
+    if (f != null) {
+      final v = await f;
+      final left = v == null || v.expire <= 0
+          ? 1 << 30
+          : v.expire - DateTime.now().millisecondsSinceEpoch;
+      if (left >= 60000) {
+        if (kDebugMode && v != null) debugPrint('[reels] source hit aid=$aid');
+        return v;
+      }
+      // 快取的網址快過期：重新取得
+      if (identical(_sources[aid], f)) _sources.remove(aid);
+    }
+    if (kDebugMode) debugPrint('[reels] source fetch aid=$aid');
+    f = _sources[aid] ??= _fetchSource(item)..then((v) {
+      if (v == null) _sources.remove(aid);
+    });
+    return f;
+  }
+
+  /// 影片網址的 `deadline` 查詢參數（秒）轉毫秒；沒有時回傳 0。
+  int _deadlineMs(String? url) {
+    final d = int.tryParse(
+      Uri.tryParse(url ?? '')?.queryParameters['deadline'] ?? '',
+    );
+    return d == null || d <= 0 ? 0 : d * 1000;
+  }
 
   /// 組成 mpv 的播放來源（影音分離時用 EDL 合併）。
   Future<String> _compose(String video, String? audio) async {
@@ -509,23 +581,25 @@ class ReelsController extends GetxController {
       final cid = p['cid'];
       if (cid is num && cid.toInt() != item.cid) return null;
       final dash = Dash.fromJson(dashJson, null);
-      final video = _pickVideo(dash);
-      if (video == null) return null;
+      final picked = _pickVideo(dash, avcOnly: _avcOnly.contains(item.aid));
+      final video = picked?.baseUrl;
+      if (picked == null || video == null) return null;
+      // 選到的畫質低於允許值（上限 1080P）時改走 videoUrl 取得更高畫質
+      if (picked.id < (_maxQa < 80 ? _maxQa : 80)) return null;
       var expire = p['expire_time'] is num
           ? (p['expire_time'] as num).toInt()
           : 0;
-      if (expire <= 0) {
-        expire =
-            int.tryParse(
-              Uri.tryParse(video)?.queryParameters['deadline'] ?? '',
-            ) ??
-            0;
-      }
+      if (expire <= 0) expire = _deadlineMs(video) ~/ 1000;
       if (expire <= 0) return null;
       final left = expire * 1000 - DateTime.now().millisecondsSinceEpoch;
       if (left < 60000) return null;
       final media = await _compose(video, _pickAudio(dash));
-      return (media: media, cid: item.cid, preload: true);
+      return (
+        media: media,
+        cid: item.cid,
+        preload: true,
+        expire: expire * 1000,
+      );
     } catch (e) {
       if (kDebugMode) debugPrint('Reels preload source: $e');
       return null;
@@ -533,12 +607,13 @@ class ReelsController extends GetxController {
   }
 
   Future<ReelsSource?> _fetchSource(StoryItem item) async {
+    await _qaReady;
     if (await _preloadSource(item) case final pre?) return pre;
     try {
       final res = await VideoHttp.videoUrl(
         bvid: item.bvid,
         cid: item.cid,
-        qn: Pref.defaultVideoQa,
+        qn: _maxQa,
         tryLook: false,
         videoType: VideoType.ugc,
       );
@@ -546,10 +621,18 @@ class ReelsController extends GetxController {
         case Success(:final response):
           final dash = response.dash;
           if (dash != null) {
-            final video = _pickVideo(dash);
+            final video = _pickVideo(
+              dash,
+              avcOnly: _avcOnly.contains(item.aid),
+            )?.baseUrl;
             if (video != null) {
               final media = await _compose(video, _pickAudio(dash));
-              return (media: media, cid: item.cid, preload: false);
+              return (
+                media: media,
+                cid: item.cid,
+                preload: false,
+                expire: _deadlineMs(video),
+              );
             }
           }
           final url = response.durl?.firstOrNull?.playUrls.firstOrNull;
@@ -558,6 +641,7 @@ class ReelsController extends GetxController {
               media: await BtrProxy.wrap(url),
               cid: item.cid,
               preload: false,
+              expire: _deadlineMs(url),
             );
           }
           _sourceErrors[item.aid] = '無法取得播放網址';
@@ -572,16 +656,36 @@ class ReelsController extends GetxController {
     return null;
   }
 
-  /// 不高於設定畫質的最高畫質，優先 H.264（所有裝置都能解碼）。
-  String? _pickVideo(Dash dash) {
-    final videos = dash.video;
-    if (videos == null || videos.isEmpty) return null;
-    final avc = videos.where((v) => v.codecid == 7).toList();
-    final list = (avc.isNotEmpty ? avc : List.of(videos))
-      ..sort((a, b) => a.id.compareTo(b.id));
-    final max = Pref.defaultVideoQa;
-    final item = list.lastWhere((v) => v.id <= max, orElse: () => list.first);
-    return item.baseUrl;
+  /// 不高於 [_maxQa] 的最高畫質（全部編碼一起比）。
+  /// 同畫質依 AVC → HEVC → AV1 → 其他，同編碼取碼率最高；
+  /// [avcOnly] 時只選 AVC（沒有 AVC 才退回全部）。
+  VideoItem? _pickVideo(Dash dash, {bool avcOnly = false}) {
+    var list = dash.video;
+    if (list == null || list.isEmpty) return null;
+    if (avcOnly) {
+      final avc = list.where((v) => v.codecid == 7).toList();
+      if (avc.isNotEmpty) list = avc;
+    }
+    var cands = list.where((v) => v.id <= _maxQa).toList();
+    if (cands.isEmpty) {
+      // 沒有符合的：取最低畫質
+      final minId = list.map((v) => v.id).reduce((a, b) => a < b ? a : b);
+      cands = list.where((v) => v.id == minId).toList();
+    }
+    int rank(VideoItem v) => switch (v.codecid) {
+      7 => 0,
+      12 => 1,
+      13 => 2,
+      _ => 3,
+    };
+    cands.sort((a, b) {
+      final c = b.id.compareTo(a.id);
+      if (c != 0) return c;
+      final r = rank(a).compareTo(rank(b));
+      if (r != 0) return r;
+      return (b.bandWidth ?? 0).compareTo(a.bandWidth ?? 0);
+    });
+    return cands.first;
   }
 
   String? _pickAudio(Dash dash) {
@@ -595,11 +699,12 @@ class ReelsController extends GetxController {
   /// 頁面切換（PageView.onPageChanged）
   void onPageChanged(int i) {
     index.value = i;
-    if (items.length - i <= 3) loadMore();
+    // 要預取後面 6 部的網址，剩不到 6 部就先載入更多
+    if (items.length - i <= 6) loadMore();
     if (_active) _startItem(i);
   }
 
-  /// 設定是否允許播放。允許時開始或繼續播放目前影片；不允許時兩個播放器都暫停。
+  /// 設定是否允許播放。允許時開始或繼續播放目前影片；不允許時所有播放器都暫停。
   void setActive(bool active) {
     if (_active == active) return;
     _active = active;
@@ -637,17 +742,26 @@ class ReelsController extends GetxController {
       await _ensurePlayers();
       if (gen != _gen || isClosed) return;
 
-      var slot = _curSlot!;
-      final other = _otherSlot;
-      if (other.aid == item.aid) {
+      // 丟棄不屬於「目前＋後面 3 部」的非目前槽位（往回滑、跳頁都以新的 i 為準）
+      final keep = <int>{item.aid};
+      for (var k = 1; k <= 3; k++) {
+        if (i + k < items.length) keep.add(items[i + k].aid);
+      }
+      final cur = _curSlot!;
+      for (final s in _slots) {
+        if (identical(s, cur)) continue;
+        if (s.aid != null && !keep.contains(s.aid)) _discard(s);
+      }
+
+      var slot = cur;
+      final target = _slotFor(item.aid);
+      if (target != null) {
         // 預載槽位就是這部（通常是往下一部）：交換槽位，直接播放
         final old = slot;
-        _cur = 1 - _cur;
-        old
-          ..player.pause()
-          ..player.setVolume(0)
-          ..reset();
-        slot = other;
+        _cur = _slots.indexOf(target);
+        _discard(old);
+        slot = target;
+        if (kDebugMode) debugPrint('[reels] swap aid=${item.aid}');
         videoController.value = slot.video;
         if (slot.opening case final f?) await f;
         if (gen != _gen || isClosed) return;
@@ -664,21 +778,21 @@ class ReelsController extends GetxController {
           _opened = true;
           playing.value = slot.player.state.playing;
           duration.value = slot.player.state.duration;
-          _preloadNext(i);
+          _preloadAhead(i);
           return;
         }
         // 預載失敗：在這個槽位走一般開啟
-      } else if (other.aid != null) {
-        // 預載的不是這部（跳頁、往回）：停掉它，之後重新預載
-        other
-          ..player.pause()
-          ..reset();
       }
 
       slot
         ..reset()
         ..aid = item.aid;
       final tok = slot.token;
+      if (kDebugMode) {
+        debugPrint(
+          '[reels] open aid=${item.aid} slot=${_slots.indexOf(slot)} play',
+        );
+      }
       slot.player
         ..setVolume(100)
         ..stop();
@@ -703,26 +817,43 @@ class ReelsController extends GetxController {
       _opened = true;
       playing.value = slot.player.state.playing;
       duration.value = slot.player.state.duration;
-      _preloadNext(i);
+      _preloadAhead(i);
     } catch (e) {
       if (kDebugMode) debugPrint('Reels play: $e');
       if (gen == _gen) _fail(gen, i, '播放失敗');
     }
   }
 
-  /// 在另一個槽位靜音暫停預載下一部。
-  void _preloadNext(int i) {
-    if (isClosed || _slots.length != 2) return;
-    final n = i + 1;
-    if (n >= items.length) return;
-    final item = items[n];
-    final slot = _otherSlot;
-    if (slot.aid == item.aid) return;
-    slot
-      ..reset()
-      ..aid = item.aid;
-    final tok = slot.token;
-    slot.opening = _openPreload(slot, tok, item);
+  /// 在非目前槽位靜音暫停預載 items[i+1..i+3]，並預取 items[i+4..i+6] 的網址。
+  void _preloadAhead(int i) {
+    if (isClosed || _slots.length != _poolSize) return;
+    final cur = _curSlot;
+    final targets = <StoryItem>[
+      for (var k = 1; k <= 3; k++)
+        if (i + k < items.length) items[i + k],
+    ];
+    final targetAids = targets.map((e) => e.aid).toSet();
+    // 保留已載目標的槽位；其餘非目前槽位丟棄後當作空槽位
+    final free = <_Slot>[];
+    for (final s in _slots) {
+      if (identical(s, cur)) continue;
+      if (s.aid != null && targetAids.contains(s.aid)) continue;
+      if (s.aid != null) _discard(s);
+      free.add(s);
+    }
+    for (final item in targets) {
+      if (_slotFor(item.aid) != null) continue;
+      if (free.isEmpty) break;
+      final slot = free.removeAt(0);
+      // 級聯依序執行：reset() 之後 token 才是新值
+      slot
+        ..reset()
+        ..aid = item.aid
+        ..opening = _openPreload(slot, slot.token, item);
+    }
+    for (var k = 4; k <= 6; k++) {
+      if (i + k < items.length) _source(items[i + k]);
+    }
   }
 
   Future<void> _openPreload(_Slot slot, int tok, StoryItem item) async {
@@ -740,6 +871,11 @@ class ReelsController extends GetxController {
       slot
         ..fromPreload = source.preload
         ..media = media.uri;
+      if (kDebugMode) {
+        debugPrint(
+          '[reels] open aid=${item.aid} slot=${_slots.indexOf(slot)} preload',
+        );
+      }
       await slot.player.open(media, play: false);
       if (isClosed || tok != slot.token) return;
       slot.player
@@ -772,6 +908,8 @@ class ReelsController extends GetxController {
   void _fail(int gen, int i, String msg) {
     playError.value = msg;
     SmartDialog.showToast(msg);
+    // 自動跳下一部前先預載，避免冷啟
+    _preloadAhead(i);
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (isClosed || gen != _gen || !_active) return;
       if (i + 1 < items.length && pageController.hasClients) {

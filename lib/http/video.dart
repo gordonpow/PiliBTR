@@ -204,7 +204,7 @@ abstract final class VideoHttp {
       'network': 'wifi',
       'platform': 'android',
       'player_net': 1,
-      'qn': 32,
+      'qn': 80,
       'recsys_mode': 0,
       's_locale': 'zh_CN',
       'splash_id': '',
