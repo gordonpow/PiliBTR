@@ -856,6 +856,33 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         },
       ),
 
+      /// 豎屏模式
+      BottomControlType.reels => Obx(
+        () => videoDetailController.isVertical.value
+            ? ComBtn(
+                width: widgetWidth,
+                height: 30,
+                tooltip: '豎屏',
+                icon: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '豎屏',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        height: 1,
+                      ),
+                    ),
+                    Icon(Icons.crop_portrait, size: 16, color: Colors.white),
+                  ],
+                ),
+                onTap: _openReels,
+              )
+            : const SizedBox.shrink(),
+      ),
+
       /// 全屏
       BottomControlType.fullscreen => ComBtn(
         width: widgetWidth,
@@ -893,6 +920,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       .subtitle,
       .speed,
       if (isNotFileSource && flag) .qa,
+      if (isNotFileSource && !plPlayerController.isLive) .reels,
       if (!plPlayerController.isDesktopPip) .fullscreen,
     ];
     return PlayerBar(
@@ -904,6 +932,26 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         mainAxisSize: .min,
         children: userSpecifyItemRight.map(progressWidget).toList(),
       ),
+    );
+  }
+
+  void _openReels() {
+    String title = '';
+    try {
+      title = ugcController.videoDetail.value.title ?? '';
+    } catch (_) {}
+    final progress = plPlayerController.positionInMilliseconds;
+    plPlayerController.pause();
+    Get.toNamed(
+      '/reels',
+      arguments: {
+        'aid': videoDetailController.aid,
+        'bvid': videoDetailController.bvid,
+        'cid': videoDetailController.cid.value,
+        'title': title,
+        'cover': videoDetailController.cover.value,
+        'progress': progress,
+      },
     );
   }
 
@@ -1188,7 +1236,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   bool get _canSwipeToMini =>
       PlatformUtils.isMobile &&
       MiniPlayer.swipeEnabled &&
-      !plPlayerController.isLive &&
+      !(plPlayerController.isLive && isFullScreen) &&
       plPlayerController.videoController != null;
 
   /// Fullscreen on a phone or tablet, not live: the fullscreen gestures

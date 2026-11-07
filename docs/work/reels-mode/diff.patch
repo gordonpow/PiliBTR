@@ -1,0 +1,2003 @@
+diff --git a/lib/http/api.dart b/lib/http/api.dart
+index 48dc1f9e2..624088be1 100644
+--- a/lib/http/api.dart
++++ b/lib/http/api.dart
+@@ -4,6 +4,9 @@ abstract final class Api {
+   // 推荐视频
+   static const String recommendListApp =
+       '${HttpString.appBaseUrl}/x/v2/feed/index';
++  // 豎屏（story）推薦
++  static const String storyFeed =
++      '${HttpString.appBaseUrl}/x/v2/feed/index/story';
+   static const String recommendListWeb =
+       '/x/web-interface/wbi/index/top/feed/rcmd';
+ 
+diff --git a/lib/http/video.dart b/lib/http/video.dart
+index 81d5c8fad..b5d53464f 100644
+--- a/lib/http/video.dart
++++ b/lib/http/video.dart
+@@ -19,6 +19,7 @@ import 'package:PiliPlus/models_new/pgc/pgc_rank/pgc_rank_item_model.dart';
+ import 'package:PiliPlus/models_new/popular/popular_precious/data.dart';
+ import 'package:PiliPlus/models_new/popular/popular_series_list/list.dart';
+ import 'package:PiliPlus/models_new/popular/popular_series_one/data.dart';
++import 'package:PiliPlus/models_new/story/story_item.dart';
+ import 'package:PiliPlus/models_new/triple/pgc_triple.dart';
+ import 'package:PiliPlus/models_new/triple/ugc_triple.dart';
+ import 'package:PiliPlus/models_new/video/video_ai_conclusion/data.dart';
+@@ -177,6 +178,89 @@ abstract final class VideoHttp {
+     }
+   }
+ 
++  /// 豎屏（story）推薦。不一定都是豎屏影片，由呼叫端依 [StoryItem.isVertical]
++  /// 篩選。[aid] 給的話會接續該影片的推薦。逾時時重試 1 次。
++  static Future<LoadingState<List<StoryItem>>> storyFeed({
++    int? aid,
++    required int displayId,
++  }) async {
++    final params = {
++      'build': 8430300,
++      'c_locale': 'zh_CN',
++      'channel': 'master',
++      'column': 2,
++      'device': 'phone',
++      'device_name': 'android',
++      'device_type': 0,
++      'disable_rcmd': 0,
++      'flush': 8,
++      'fnval': 272,
++      'fnver': 0,
++      'force_host': 2, //使用https
++      'fourk': 1,
++      'guidance': 1,
++      'https_url_req': 1,
++      'mobi_app': 'android_i',
++      'network': 'wifi',
++      'platform': 'android',
++      'player_net': 1,
++      'qn': 32,
++      'recsys_mode': 0,
++      's_locale': 'zh_CN',
++      'splash_id': '',
++      'statistics': Constants.statisticsApp,
++      'voice_balance': 0,
++      'aid': ?aid,
++      'display_id': displayId,
++      'request_from': 1,
++      'from_spmid': 'main.ugc-video-detail.0.0',
++    };
++    final options = Options(
++      headers: {
++        'buvid': Accounts.get(.recommend).buvid,
++        'fp_local': '1111111111111111111111111111111111111111111111111111111111111111',
++        'fp_remote': '1111111111111111111111111111111111111111111111111111111111111111',
++        'session_id': '11111111',
++        'env': 'prod',
++        'app-key': 'android_hd',
++        'User-Agent': Constants.userAgent,
++        'x-bili-trace-id': Constants.traceId,
++        'x-bili-aurora-eid': '',
++        'x-bili-aurora-zone': '',
++        'bili-http-engine': 'cronet',
++      },
++    );
++    var res = await Request().get(
++      Api.storyFeed,
++      queryParameters: params,
++      options: options,
++    );
++    // 逾時或網路錯誤（沒有 code）時重試 1 次
++    if (res.data is! Map || res.data['code'] == null) {
++      res = await Request().get(
++        Api.storyFeed,
++        queryParameters: params,
++        options: options,
++      );
++    }
++    if (res.data is Map && res.data['code'] == 0) {
++      final list = <StoryItem>[];
++      for (final i in (res.data['data']?['items'] as List?) ?? const []) {
++        try {
++          final item = StoryItem.fromJson(i);
++          if (item == null) continue;
++          if (GlobalData().blackMids.contains(item.ownerMid)) continue;
++          list.add(item);
++        } catch (_) {
++          // 單筆格式異常不影響其他影片
++        }
++      }
++      return Success(list);
++    } else {
++      return Error(res.data is Map ? res.data['message'] : null);
++    }
++  }
++
+   static bool _filterHotAndRank(dynamic i) {
+     if (GlobalData().blackMids.contains(i['owner']['mid'])) return false;
+     if (RecommendFilter.filterTitle(i['title'])) return false;
+diff --git a/lib/models/common/home_tab_type.dart b/lib/models/common/home_tab_type.dart
+index 1fb4680d3..ec658c432 100644
+--- a/lib/models/common/home_tab_type.dart
++++ b/lib/models/common/home_tab_type.dart
+@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/rank/controller.dart';
+ import 'package:PiliPlus/pages/rank/view.dart';
+ import 'package:PiliPlus/pages/rcmd/controller.dart';
+ import 'package:PiliPlus/pages/rcmd/view.dart';
++import 'package:PiliPlus/pages/reels/view.dart';
+ import 'package:get/get.dart';
+ import 'package:PiliPlus/common/widgets/zh_material.dart';
+ 
+@@ -20,6 +21,7 @@ enum HomeTabType implements EnumWithLabel {
+   rank('分區'),
+   bangumi('番劇'),
+   cinema('影視'),
++  reels('豎屏'),
+   ;
+ 
+   @override
+@@ -33,6 +35,7 @@ enum HomeTabType implements EnumWithLabel {
+     HomeTabType.rank => Get.find<RankController>,
+     HomeTabType.bangumi ||
+     HomeTabType.cinema => () => Get.find<PgcController>(tag: name),
++    HomeTabType.reels => () => _reelsScrollAdapter,
+   };
+ 
+   Widget get page => switch (this) {
+@@ -42,5 +45,28 @@ enum HomeTabType implements EnumWithLabel {
+     HomeTabType.rank => const RankPage(),
+     HomeTabType.bangumi => const PgcPage(tabType: HomeTabType.bangumi),
+     HomeTabType.cinema => const PgcPage(tabType: HomeTabType.cinema),
++    HomeTabType.reels => const ReelsPage(embedded: true),
+   };
++
++  static const List<HomeTabType> defaultOrder = [
++    live,
++    rcmd,
++    reels,
++    hot,
++    rank,
++    bangumi,
++    cinema,
++  ];
++
++  /// 豎屏分頁沒有可捲動列表，捲到頂部與重新整理都不做事。
++  static final ScrollOrRefreshMixin _reelsScrollAdapter =
++      _ReelsScrollAdapter();
++}
++
++class _ReelsScrollAdapter with ScrollOrRefreshMixin {
++  @override
++  final ScrollController scrollController = ScrollController();
++
++  @override
++  Future<void> onRefresh() async {}
+ }
+diff --git a/lib/pages/home/controller.dart b/lib/pages/home/controller.dart
+index 82b9e59ed..5d3d71730 100644
+--- a/lib/pages/home/controller.dart
++++ b/lib/pages/home/controller.dart
+@@ -67,9 +67,27 @@ class HomeController extends GetxController
+   void setTabConfig() {
+     final tabs = GStorage.setting.get(SettingBoxKey.tabBarSort) as List?;
+     if (tabs != null) {
+-      this.tabs = tabs.map((i) => HomeTabType.values[i]).toList();
++      final list = tabs.map((i) => HomeTabType.values[i]).toList();
++      // 一次性遷移：已自訂排序的使用者補上豎屏分頁
++      if (GStorage.setting.get('homeTabReelsV1') != true) {
++        GStorage.setting.put('homeTabReelsV1', true);
++        if (!list.contains(HomeTabType.reels)) {
++          final rcmdIndex = list.indexOf(HomeTabType.rcmd);
++          list.insert(
++            rcmdIndex >= 0 ? rcmdIndex + 1 : min(1, list.length),
++            HomeTabType.reels,
++          );
++          GStorage.setting.put(
++            SettingBoxKey.tabBarSort,
++            list.map((e) => e.index).toList(),
++          );
++        }
++      }
++      this.tabs = list;
+     } else {
+-      this.tabs = HomeTabType.values;
++      // 沒有自訂排序，之後存下的排序已包含豎屏，不需遷移
++      GStorage.setting.put('homeTabReelsV1', true);
++      this.tabs = HomeTabType.defaultOrder;
+     }
+ 
+     tabController = TabController(
+diff --git a/lib/pages/setting/models/style_settings.dart b/lib/pages/setting/models/style_settings.dart
+index ca7ca32fe..91adb4f56 100644
+--- a/lib/pages/setting/models/style_settings.dart
++++ b/lib/pages/setting/models/style_settings.dart
+@@ -404,7 +404,7 @@ List<SettingsModel> get styleSettings => [
+       '/barSetting',
+       arguments: {
+         'key': SettingBoxKey.tabBarSort,
+-        'defaultBars': HomeTabType.values,
++        'defaultBars': HomeTabType.defaultOrder,
+         'title': '首頁標籤頁',
+       },
+     ),
+diff --git a/lib/plugin/pl_player/models/bottom_control_type.dart b/lib/plugin/pl_player/models/bottom_control_type.dart
+index be14c8420..aab9617cc 100644
+--- a/lib/plugin/pl_player/models/bottom_control_type.dart
++++ b/lib/plugin/pl_player/models/bottom_control_type.dart
+@@ -13,4 +13,5 @@ enum BottomControlType {
+   dmChart,
+   qa,
+   aiTranslate,
++  reels,
+ }
+diff --git a/lib/plugin/pl_player/view/view.dart b/lib/plugin/pl_player/view/view.dart
+index 97f02829b..fb0324fe0 100644
+--- a/lib/plugin/pl_player/view/view.dart
++++ b/lib/plugin/pl_player/view/view.dart
+@@ -856,6 +856,33 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+         },
+       ),
+ 
++      /// 豎屏模式
++      BottomControlType.reels => Obx(
++        () => videoDetailController.isVertical.value
++            ? ComBtn(
++                width: widgetWidth,
++                height: 30,
++                tooltip: '豎屏',
++                icon: const Column(
++                  mainAxisSize: MainAxisSize.min,
++                  mainAxisAlignment: MainAxisAlignment.center,
++                  children: [
++                    Text(
++                      '豎屏',
++                      style: TextStyle(
++                        color: Colors.white,
++                        fontSize: 8,
++                        height: 1,
++                      ),
++                    ),
++                    Icon(Icons.crop_portrait, size: 16, color: Colors.white),
++                  ],
++                ),
++                onTap: _openReels,
++              )
++            : const SizedBox.shrink(),
++      ),
++
+       /// 全屏
+       BottomControlType.fullscreen => ComBtn(
+         width: widgetWidth,
+@@ -893,6 +920,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+       .subtitle,
+       .speed,
+       if (isNotFileSource && flag) .qa,
++      if (isNotFileSource && !plPlayerController.isLive) .reels,
+       if (!plPlayerController.isDesktopPip) .fullscreen,
+     ];
+     return PlayerBar(
+@@ -907,6 +935,26 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+     );
+   }
+ 
++  void _openReels() {
++    String title = '';
++    try {
++      title = ugcController.videoDetail.value.title ?? '';
++    } catch (_) {}
++    final progress = plPlayerController.positionInMilliseconds;
++    plPlayerController.pause();
++    Get.toNamed(
++      '/reels',
++      arguments: {
++        'aid': videoDetailController.aid,
++        'bvid': videoDetailController.bvid,
++        'cid': videoDetailController.cid.value,
++        'title': title,
++        'cover': videoDetailController.cover.value,
++        'progress': progress,
++      },
++    );
++  }
++
+   PlPlayerController get plPlayerController => widget.plPlayerController;
+ 
+   bool get isFullScreen => plPlayerController.isFullScreen.value;
+@@ -1188,7 +1236,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+   bool get _canSwipeToMini =>
+       PlatformUtils.isMobile &&
+       MiniPlayer.swipeEnabled &&
+-      !plPlayerController.isLive &&
++      !(plPlayerController.isLive && isFullScreen) &&
+       plPlayerController.videoController != null;
+ 
+   /// Fullscreen on a phone or tablet, not live: the fullscreen gestures
+diff --git a/lib/router/app_pages.dart b/lib/router/app_pages.dart
+index 9472f5de7..660f299e1 100644
+--- a/lib/router/app_pages.dart
++++ b/lib/router/app_pages.dart
+@@ -49,6 +49,7 @@ import 'package:PiliPlus/pages/music/view.dart';
+ import 'package:PiliPlus/pages/my_reply/view.dart';
+ import 'package:PiliPlus/pages/popular_precious/view.dart';
+ import 'package:PiliPlus/pages/popular_series/view.dart';
++import 'package:PiliPlus/pages/reels/view.dart';
+ import 'package:PiliPlus/pages/search/view.dart';
+ import 'package:PiliPlus/pages/search_result/view.dart';
+ import 'package:PiliPlus/pages/search_trending/view.dart';
+@@ -105,6 +106,8 @@ class Routes {
+     GetPage(name: '/fan', page: () => const FansPage()),
+     // 直播详情
+     GetPage(name: '/liveRoom', page: () => const LiveRoomPage()),
++    // 豎屏模式
++    GetPage(name: '/reels', page: () => const ReelsPage()),
+     // 用户中心
+     GetPage(name: '/member', page: () => const MemberPage()),
+     GetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
+diff --git a/lib/utils/accounts/api_type.dart b/lib/utils/accounts/api_type.dart
+index 29d63550a..58926000b 100644
+--- a/lib/utils/accounts/api_type.dart
++++ b/lib/utils/accounts/api_type.dart
+@@ -60,6 +60,7 @@ abstract final class ApiType {
+     AccountType.recommend: {
+       Api.recommendListWeb,
+       Api.recommendListApp,
++      Api.storyFeed,
+       Api.feedDislike,
+       Api.feedDislikeCancel,
+       Api.hotList,
+diff --git a/lib/models_new/story/story_item.dart b/lib/models_new/story/story_item.dart
+new file mode 100644
+index 000000000..5ce35caf2
+--- /dev/null
++++ b/lib/models_new/story/story_item.dart
+@@ -0,0 +1,145 @@
++import 'dart:convert';
++
++/// 豎屏（story）推薦的一部影片。
++class StoryItem {
++  StoryItem({
++    required this.aid,
++    required this.bvid,
++    required this.cid,
++    required this.title,
++    this.cover,
++    this.desc,
++    this.duration = 0,
++    this.ownerMid = 0,
++    this.ownerName,
++    this.ownerFace,
++    this.followed = false,
++    this.view = 0,
++    this.danmaku = 0,
++    this.reply = 0,
++    this.favorite = 0,
++    this.coin = 0,
++    this.share = 0,
++    this.like = 0,
++    this.copyright,
++    this.width = 0,
++    this.height = 0,
++    this.rotate = 0,
++    this.isVertical = false,
++    this.hasLiked = false,
++    this.coined = 0,
++    this.hasFaved = false,
++    this.playerPreload,
++  });
++
++  final int aid;
++  final String bvid;
++  final int cid;
++  final String title;
++  final String? cover;
++  final String? desc;
++
++  /// 秒
++  final int duration;
++
++  final int ownerMid;
++  final String? ownerName;
++  final String? ownerFace;
++
++  /// 已關注 UP 主（`owner.relation.status` 為 2 或 4，或 `req_user.attention`）
++  final bool followed;
++
++  // 統計
++  final int view;
++  final int danmaku;
++  final int reply;
++  final int favorite;
++  final int coin;
++  final int share;
++  final int like;
++  final int? copyright;
++
++  // 尺寸（原始值）
++  final int width;
++  final int height;
++  final int rotate;
++
++  /// 高大於寬（`rotate` 為 1 時寬高互換後判斷）
++  final bool isVertical;
++
++  // `req_user`：登入時的按讚、投幣、收藏狀態
++  final bool hasLiked;
++  final int coined;
++  final bool hasFaved;
++
++  /// `uri` 中的 `player_preload`（附帶 dash 播放網址，約 1 小時過期）原始 JSON。
++  final Map<String, dynamic>? playerPreload;
++
++  static int _int(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
++
++  static bool _flag(dynamic v) => v == true || v == 1 || v == '1';
++
++  /// 解析失敗（缺少 aid 或 bvid）時回傳 null。
++  static StoryItem? fromJson(Map<String, dynamic> json) {
++    final args = json['player_args'] as Map?;
++    final aid = _int(json['param'] ?? args?['aid']);
++    final bvid = json['bvid'] as String?;
++    final cid = _int(args?['cid']);
++    if (aid == 0 || bvid == null || bvid.isEmpty || cid == 0) return null;
++
++    final owner = json['owner'] as Map? ?? const {};
++    final stat = json['stat'] as Map? ?? const {};
++    final dim = json['dimension'] as Map? ?? const {};
++    final reqUser = json['req_user'] as Map? ?? const {};
++    final rotate = _int(dim['rotate']);
++    var w = _int(dim['width']);
++    var h = _int(dim['height']);
++    final rawW = w, rawH = h;
++    if (rotate == 1) {
++      final t = w;
++      w = h;
++      h = t;
++    }
++    final status = _int((owner['relation'] as Map?)?['status']);
++
++    Map<String, dynamic>? preload;
++    try {
++      final raw = Uri.tryParse(
++        json['uri'] as String? ?? '',
++      )?.queryParameters['player_preload'];
++      if (raw != null && raw.isNotEmpty) {
++        preload = jsonDecode(raw) as Map<String, dynamic>?;
++      }
++    } catch (_) {}
++
++    return StoryItem(
++      aid: aid,
++      bvid: bvid,
++      cid: cid,
++      title: json['title'] as String? ?? '',
++      cover: json['cover'] as String?,
++      desc: json['desc'] as String?,
++      duration: _int(json['duration']),
++      ownerMid: _int(owner['mid']),
++      ownerName: owner['name'] as String?,
++      ownerFace: owner['face'] as String?,
++      followed: status == 2 || status == 4 || _flag(reqUser['attention']),
++      view: _int(stat['view']),
++      danmaku: _int(stat['danmaku']),
++      reply: _int(stat['reply']),
++      favorite: _int(stat['favorite']),
++      coin: _int(stat['coin']),
++      share: _int(stat['share']),
++      like: _int(stat['like']),
++      copyright: json['copyright'] == null ? null : _int(json['copyright']),
++      width: rawW,
++      height: rawH,
++      rotate: rotate,
++      isVertical: h > w,
++      hasLiked: _flag(reqUser['like']),
++      coined: _int(reqUser['coin']),
++      hasFaved: _flag(reqUser['favorite']),
++      playerPreload: preload,
++    );
++  }
++}
+diff --git a/lib/pages/reels/controller.dart b/lib/pages/reels/controller.dart
+new file mode 100644
+index 000000000..e9729031b
+--- /dev/null
++++ b/lib/pages/reels/controller.dart
+@@ -0,0 +1,600 @@
++import 'dart:async';
++
++import 'package:PiliPlus/http/browser_ua.dart';
++import 'package:PiliPlus/http/constants.dart';
++import 'package:PiliPlus/http/loading_state.dart';
++import 'package:PiliPlus/http/video.dart';
++import 'package:PiliPlus/models/common/video/video_type.dart';
++import 'package:PiliPlus/models/video/play/url.dart';
++import 'package:PiliPlus/models_new/story/story_item.dart';
++import 'package:PiliPlus/pages/common/common_intro_controller.dart'
++    show FavMixin;
++import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart';
++import 'package:PiliPlus/plugin/pl_player/controller.dart';
++import 'package:PiliPlus/services/download/btr_proxy.dart';
++import 'package:PiliPlus/utils/accounts.dart';
++import 'package:PiliPlus/utils/global_data.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
++import 'package:flutter/foundation.dart' show ValueNotifier, kDebugMode, debugPrint;
++import 'package:flutter/widgets.dart' show Curves, PageController;
++import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
++import 'package:get/get.dart';
++import 'package:media_kit/media_kit.dart';
++import 'package:media_kit_video/media_kit_video.dart';
++
++/// 單部豎屏影片的互動狀態（按讚、投幣、收藏、關注與統計數字）。
++///
++/// 不是 UgcIntroController（它只能在影片頁使用）：只實作 [TripleMixin] 與
++/// [FavMixin] 需要的部分，讓收藏面板（PageUtils.showFavBottomSheet）可以直接使用。
++class ReelsItemCtr extends GetxController
++    with GetSingleTickerProviderStateMixin, TripleMixin, FavMixin {
++  ReelsItemCtr(this.item)
++    : ownerName = Rxn(item.ownerName),
++      ownerFace = Rxn(item.ownerFace),
++      desc = Rxn(item.desc),
++      ownerMid = item.ownerMid,
++      followed = item.followed.obs,
++      like = item.like.obs,
++      coin = item.coin.obs,
++      fav = item.favorite.obs,
++      reply = item.reply.obs,
++      share = item.share.obs,
++      danmaku = item.danmaku.obs {
++    hasLike.value = item.hasLiked;
++    coinNum.value = item.coined;
++    hasFav.value = item.hasFaved;
++  }
++
++  final StoryItem item;
++  int ownerMid;
++  final Rxn<String> ownerName;
++  final Rxn<String> ownerFace;
++  final Rxn<String> desc;
++  final RxBool followed;
++  final RxInt like;
++  final RxInt coin;
++  final RxInt fav;
++  final RxInt reply;
++  final RxInt share;
++  final RxInt danmaku;
++
++  int? _copyright;
++
++  @override
++  bool get isLogin => Accounts.main.isLogin;
++
++  /// 沒有版權資訊時保守視為轉載（最多投 1 幣）。
++  @override
++  int get copyright => _copyright ?? item.copyright ?? 2;
++
++  @override
++  (Object, int) get getFavRidType => (item.aid, 2);
++
++  @override
++  void updateFavCount(int count) => fav.value += count;
++
++  bool _isProcessing = false;
++  bool _detailLoaded = false;
++
++  /// 登入時取得真實的按讚、投幣、收藏、關注狀態；
++  /// 以影片頁種子開啟的項目沒有 UP 主與統計，一併補齊。
++  Future<void> loadDetail() async {
++    if (_detailLoaded) return;
++    _detailLoaded = true;
++    if (item.ownerName == null) {
++      final res = await VideoHttp.videoIntro(bvid: item.bvid);
++      if (res case Success(:final response)) {
++        ownerMid = response.owner?.mid ?? ownerMid;
++        ownerName.value = response.owner?.name;
++        ownerFace.value = response.owner?.face;
++        desc.value = response.desc;
++        _copyright = response.copyright;
++        if (response.stat case final stat?) {
++          like.value = stat.like;
++          coin.value = stat.coin.toInt();
++          fav.value = stat.favorite;
++          reply.value = stat.reply ?? 0;
++          share.value = stat.share ?? 0;
++          danmaku.value = stat.danmaku ?? 0;
++        }
++      }
++    }
++    if (isLogin) {
++      final res = await VideoHttp.videoRelation(bvid: item.bvid);
++      if (res case Success(:final response)) {
++        hasLike.value = response.like ?? hasLike.value;
++        coinNum.value = response.coin ?? coinNum.value;
++        hasFav.value = response.favorite ?? hasFav.value;
++        followed.value = response.attention ?? followed.value;
++      }
++    }
++  }
++
++  @override
++  Future<void> actionLikeVideo() async {
++    if (!isLogin) {
++      SmartDialog.showToast('帳號未登入');
++      return;
++    }
++    if (_isProcessing) return;
++    _isProcessing = true;
++    try {
++      final newVal = !hasLike.value;
++      final res = await VideoHttp.likeVideo(bvid: item.bvid, type: newVal);
++      if (res case Success(:final response)) {
++        SmartDialog.showToast(newVal ? response : '取消贊');
++        like.value += newVal ? 1 : -1;
++        hasLike.value = newVal;
++      } else {
++        res.toast();
++      }
++    } finally {
++      _isProcessing = false;
++    }
++  }
++
++  @override
++  Future<void> onPayCoin(int coin, bool coinWithLike) async {
++    final res = await VideoHttp.coinVideo(
++      bvid: item.bvid,
++      multiply: coin,
++      selectLike: coinWithLike ? 1 : 0,
++    );
++    if (res.isSuccess) {
++      SmartDialog.showToast('投幣成功');
++      coinNum.value += coin;
++      GlobalData().afterCoin(coin);
++      this.coin.value += coin;
++      if (coinWithLike && !hasLike.value) {
++        like.value++;
++        hasLike.value = true;
++      }
++    } else {
++      res.toast();
++    }
++  }
++
++  @override
++  Future<void> actionTriple() async {
++    if (!isLogin) {
++      SmartDialog.showToast('帳號未登入');
++      return;
++    }
++    final res = await VideoHttp.ugcTriple(bvid: item.bvid);
++    if (res case Success(:final response)) {
++      if (response.like == true && !hasLike.value) {
++        like.value++;
++        hasLike.value = true;
++      }
++      if (response.coin == true && !hasCoin) {
++        coin.value += response.multiply ?? 1;
++        coinNum.value = response.multiply ?? 1;
++      }
++      if (response.fav == true && !hasFav.value) {
++        fav.value++;
++        hasFav.value = true;
++      }
++      SmartDialog.showToast('三連成功');
++    } else {
++      res.toast();
++    }
++  }
++
++  /// 關注或取消關注 UP 主。
++  Future<void> actionFollow() async {
++    if (!isLogin) {
++      SmartDialog.showToast('帳號未登入');
++      return;
++    }
++    if (ownerMid == 0 || _isProcessing) return;
++    _isProcessing = true;
++    try {
++      final follow = !followed.value;
++      final res = await VideoHttp.relationMod(
++        mid: ownerMid,
++        act: follow ? 1 : 2,
++        reSrc: 11,
++      );
++      if (res.isSuccess) {
++        followed.value = follow;
++        SmartDialog.showToast(follow ? '關注成功' : '已取消關注');
++      } else {
++        res.toast();
++      }
++    } finally {
++      _isProcessing = false;
++    }
++  }
++}
++
++/// 豎屏影片的播放網址。
++typedef ReelsSource = ({String media, int cid});
++
++/// 豎屏頁的控制器：影片清單、分頁載入，以及自己持有的 media_kit 播放器
++/// （不使用 [PlPlayerController]，不影響影片頁、小視窗與 PiP）。
++class ReelsController extends GetxController {
++  ReelsController({this.seed});
++
++  /// 種子影片：`{aid, bvid, cid, title, cover, progress(ms)}`
++  final Map? seed;
++
++  final items = <StoryItem>[].obs;
++  final index = 0.obs;
++
++  /// 第一次載入中（沒有任何影片時顯示轉圈）
++  final loading = true.obs;
++  final loadingMore = false.obs;
++
++  /// 沒有影片時的錯誤訊息；null 表示沒有錯誤
++  final error = RxnString();
++
++  int displayId = 0;
++  final Set<int> seen = {};
++
++  /// 單次載入最多連續呼叫的次數（一頁沒有豎屏影片時再抓）
++  static const _maxCalls = 5;
++
++  final pageController = PageController();
++
++  /// 有種子影片時，第一部開始播放的位置
++  Duration? _startAt;
++
++  @override
++  void onInit() {
++    super.onInit();
++    final seed = this.seed;
++    if (seed != null && seed['aid'] != null && seed['bvid'] != null) {
++      final item = StoryItem(
++        aid: seed['aid'] as int,
++        bvid: seed['bvid'] as String,
++        cid: seed['cid'] as int,
++        title: seed['title'] as String? ?? '',
++        cover: seed['cover'] as String?,
++        isVertical: true,
++      );
++      items.add(item);
++      seen.add(item.aid);
++      final progress = seed['progress'];
++      if (progress is int && progress > 0) {
++        _startAt = Duration(milliseconds: progress);
++      }
++      loading.value = false;
++    }
++    loadMore();
++  }
++
++  final Map<int, ReelsItemCtr> _itemCtrs = {};
++
++  ReelsItemCtr itemCtr(StoryItem item) =>
++      _itemCtrs[item.aid] ??= ReelsItemCtr(item);
++
++  Future<void> loadMore() async {
++    if (loadingMore.value) return;
++    loadingMore.value = true;
++    try {
++      for (var call = 0; call < _maxCalls; call++) {
++        final res = await VideoHttp.storyFeed(
++          aid: items.isEmpty ? null : items.last.aid,
++          displayId: ++displayId,
++        );
++        if (isClosed) return;
++        if (res case Success(:final response)) {
++          final added = <StoryItem>[];
++          for (final i in response) {
++            if (!i.isVertical || !seen.add(i.aid)) continue;
++            added.add(i);
++          }
++          if (added.isNotEmpty) {
++            items.addAll(added);
++            error.value = null;
++            break;
++          }
++        } else {
++          if (items.isEmpty) {
++            error.value = res is Error ? res.errMsg : null;
++            error.value ??= '載入失敗';
++          }
++          break;
++        }
++      }
++    } finally {
++      loading.value = false;
++      loadingMore.value = false;
++    }
++  }
++
++  /// 重試（沒有影片時的按鈕）
++  Future<void> retry() {
++    error.value = null;
++    loading.value = true;
++    return loadMore();
++  }
++
++  // ---------------- 播放 ----------------
++
++  Player? _player;
++  Future<void>? _creating;
++
++  /// 目前的播放器畫面（建立後不變）
++  final videoController = Rxn<VideoController>();
++
++  /// 目前是否允許播放（分頁可見、頁面在最上層、App 在前景）
++  bool _active = false;
++
++  /// 使用者點一下暫停
++  final userPaused = false.obs;
++
++  /// 播放中（只計算目前這部影片）
++  final playing = false.obs;
++
++  /// 第一個畫面出現後才蓋掉封面
++  final firstFrame = false.obs;
++
++  /// 目前影片的播放失敗訊息
++  final playError = RxnString();
++
++  final position = ValueNotifier(Duration.zero);
++  final duration = ValueNotifier(Duration.zero);
++
++  final List<StreamSubscription> _subs = [];
++  int _gen = 0;
++  int _playingIndex = -1;
++  String? _media;
++  bool _opened = false;
++
++  bool get isActive => _active;
++
++  Duration get currentPosition => position.value;
++
++  bool get _isMine {
++    if (!_opened) return false;
++    final playlist = _player?.state.playlist;
++    if (playlist == null || playlist.medias.isEmpty) return false;
++    return playlist.medias[playlist.index.clamp(0, playlist.medias.length - 1)]
++            .uri ==
++        _media;
++  }
++
++  Future<void> _ensurePlayer() => _creating ??= _createPlayer();
++
++  Future<void> _createPlayer() async {
++    final player = await Player.create(
++      configuration: const PlayerConfiguration(
++        logLevel: kDebugMode ? .warn : .error,
++        options: {
++          'cache-pause-initial': 'no',
++          'demuxer-max-bytes': '32MiB',
++          'demuxer-readahead-secs': '15',
++        },
++      ),
++    );
++    try {
++      final controller = await VideoController.create(player);
++      if (isClosed) {
++        // 建立播放器期間頁面已關閉：直接釋放，避免洩漏
++        player.dispose();
++        return;
++      }
++      player
++        ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl)
++        ..setPlaylistMode(.single);
++      _player = player;
++      _subs
++        ..add(
++          player.stream.playing.listen((v) {
++            if (_isMine) playing.value = v;
++          }),
++        )
++        ..add(
++          player.stream.position.listen((p) {
++            if (!_isMine) return;
++            if (!firstFrame.value && p > Duration.zero) {
++              firstFrame.value = true;
++            }
++            position.value = p;
++          }),
++        )
++        ..add(
++          player.stream.duration.listen((d) {
++            if (_isMine) duration.value = d;
++          }),
++        );
++      videoController.value = controller;
++    } catch (_) {
++      player.dispose();
++      _creating = null;
++      rethrow;
++    }
++  }
++
++  /// 播放網址快取（預先載入下一部）
++  final Map<int, Future<ReelsSource?>> _sources = {};
++  final Map<int, String> _sourceErrors = {};
++
++  Future<ReelsSource?> _source(StoryItem item) =>
++      _sources[item.aid] ??= _fetchSource(item)..then((v) {
++        if (v == null) _sources.remove(item.aid);
++      });
++
++  Future<ReelsSource?> _fetchSource(StoryItem item) async {
++    try {
++      final res = await VideoHttp.videoUrl(
++        bvid: item.bvid,
++        cid: item.cid,
++        qn: Pref.defaultVideoQa,
++        tryLook: false,
++        videoType: VideoType.ugc,
++      );
++      switch (res) {
++        case Success(:final response):
++          final dash = response.dash;
++          if (dash != null) {
++            final video = _pickVideo(dash);
++            if (video != null) {
++              final audio = _pickAudio(dash);
++              final v = await BtrProxy.wrap(video);
++              final a = audio == null ? null : await BtrProxy.wrap(audio);
++              final media = a == null
++                  ? v
++                  : 'edl://!no_chapters;%${v.length}%$v;'
++                        '!new_stream;!no_chapters;%${a.length}%$a';
++              return (media: media, cid: item.cid);
++            }
++          }
++          final url = response.durl?.firstOrNull?.playUrls.firstOrNull;
++          if (url != null) {
++            return (media: await BtrProxy.wrap(url), cid: item.cid);
++          }
++          _sourceErrors[item.aid] = '無法取得播放網址';
++        case Error(:final errMsg):
++          _sourceErrors[item.aid] = errMsg ?? '無法取得播放網址';
++        default:
++      }
++    } catch (e) {
++      if (kDebugMode) debugPrint('Reels source: $e');
++      _sourceErrors[item.aid] = '無法取得播放網址';
++    }
++    return null;
++  }
++
++  /// 不高於設定畫質的最高畫質，優先 H.264（所有裝置都能解碼）。
++  String? _pickVideo(Dash dash) {
++    final videos = dash.video;
++    if (videos == null || videos.isEmpty) return null;
++    final avc = videos.where((v) => v.codecid == 7).toList();
++    final list = (avc.isNotEmpty ? avc : List.of(videos))
++      ..sort((a, b) => a.id.compareTo(b.id));
++    final max = Pref.defaultVideoQa;
++    final item = list.lastWhere((v) => v.id <= max, orElse: () => list.first);
++    return item.baseUrl;
++  }
++
++  String? _pickAudio(Dash dash) {
++    final audios = dash.audio;
++    if (audios == null || audios.isEmpty) return null;
++    final list = List.of(audios)
++      ..sort((a, b) => (b.bandWidth ?? 0).compareTo(a.bandWidth ?? 0));
++    return list.first.baseUrl;
++  }
++
++  /// 頁面切換（PageView.onPageChanged）
++  void onPageChanged(int i) {
++    index.value = i;
++    if (items.length - i <= 3) loadMore();
++    if (_active) _startItem(i);
++  }
++
++  /// 設定是否允許播放。允許時開始或繼續播放目前影片；不允許時暫停。
++  void setActive(bool active) {
++    if (_active == active) return;
++    _active = active;
++    if (active) {
++      // 只讓一個播放器出聲：暫停影片頁（含小視窗）的播放器
++      PlPlayerController.pauseIfExists();
++      if (items.isEmpty) return;
++      final i = index.value.clamp(0, items.length - 1);
++      if (_playingIndex == i && _opened) {
++        if (!userPaused.value) _player?.play();
++      } else {
++        _startItem(i);
++      }
++    } else {
++      _player?.pause();
++    }
++  }
++
++  Future<void> _startItem(int i) async {
++    if (i < 0 || i >= items.length) return;
++    final gen = ++_gen;
++    final item = items[i];
++    _playingIndex = i;
++    _opened = false;
++    _media = null;
++    userPaused.value = false;
++    playing.value = false;
++    firstFrame.value = false;
++    playError.value = null;
++    position.value = Duration.zero;
++    duration.value = Duration.zero;
++    itemCtr(item).loadDetail();
++    try {
++      await _ensurePlayer();
++      if (gen != _gen) return;
++      _player!.stop();
++      final source = await _source(item);
++      if (gen != _gen) return;
++      // 預先取得下一部的網址
++      if (i + 1 < items.length) _source(items[i + 1]);
++      if (source == null) {
++        _fail(gen, i, _sourceErrors[item.aid] ?? '無法播放此影片');
++        return;
++      }
++      final start = _startAt;
++      _startAt = null;
++      final media = Media(source.media, start: start);
++      _media = media.uri;
++      await _player!.open(media, play: _active);
++      if (gen != _gen) return;
++      // open 期間被設為不可播放（切走分頁）時，補一次暫停
++      if (!_active) _player!.pause();
++      _opened = true;
++      playing.value = _player!.state.playing;
++      duration.value = _player!.state.duration;
++    } catch (e) {
++      if (kDebugMode) debugPrint('Reels play: $e');
++      if (gen == _gen) _fail(gen, i, '播放失敗');
++    }
++  }
++
++  /// 顯示錯誤，稍後自動跳到下一部。
++  void _fail(int gen, int i, String msg) {
++    playError.value = msg;
++    SmartDialog.showToast(msg);
++    Future.delayed(const Duration(milliseconds: 1500), () {
++      if (isClosed || gen != _gen || !_active) return;
++      if (i + 1 < items.length && pageController.hasClients) {
++        pageController.nextPage(
++          duration: const Duration(milliseconds: 250),
++          curve: Curves.easeOut,
++        );
++      } else if (i + 1 >= items.length) {
++        loadMore();
++      }
++    });
++  }
++
++  /// 點一下暫停或繼續
++  void togglePlay() {
++    final player = _player;
++    if (player == null || !_isMine) return;
++    if (player.state.playing) {
++      userPaused.value = true;
++      player.pause();
++    } else {
++      userPaused.value = false;
++      player.play();
++    }
++  }
++
++  void seekTo(Duration position) {
++    if (_isMine) _player?.seek(position);
++  }
++
++  @override
++  void onClose() {
++    _gen++;
++    _active = false;
++    for (final sub in _subs) {
++      sub.cancel();
++    }
++    _player?.dispose();
++    _player = null;
++    for (final c in _itemCtrs.values) {
++      c.onClose();
++    }
++    pageController.dispose();
++    position.dispose();
++    duration.dispose();
++    super.onClose();
++  }
++}
+diff --git a/lib/pages/reels/view.dart b/lib/pages/reels/view.dart
+new file mode 100644
+index 000000000..abbb7688c
+--- /dev/null
++++ b/lib/pages/reels/view.dart
+@@ -0,0 +1,895 @@
++import 'dart:async';
++
++import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
++import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
++import 'package:PiliPlus/common/widgets/zh_material.dart';
++import 'package:PiliPlus/grpc/bilibili/community/service/dm/v1.pb.dart'
++    show DanmakuElem;
++import 'package:PiliPlus/grpc/dm.dart';
++import 'package:PiliPlus/http/loading_state.dart';
++import 'package:PiliPlus/models/common/image_type.dart';
++import 'package:PiliPlus/models/common/home_tab_type.dart';
++import 'package:PiliPlus/models/common/nav_bar_config.dart';
++import 'package:PiliPlus/models_new/story/story_item.dart';
++import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
++import 'package:PiliPlus/pages/home/controller.dart';
++import 'package:PiliPlus/pages/main/controller.dart';
++import 'package:PiliPlus/pages/main_reply/view.dart';
++import 'package:PiliPlus/pages/reels/controller.dart';
++import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
++import 'package:PiliPlus/utils/danmaku_utils.dart';
++import 'package:PiliPlus/utils/num_utils.dart';
++import 'package:PiliPlus/utils/page_utils.dart';
++import 'package:PiliPlus/utils/share_utils.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
++import 'package:canvas_danmaku/canvas_danmaku.dart';
++import 'package:flutter/gestures.dart';
++import 'package:get/get.dart';
++import 'package:media_kit_video/media_kit_video.dart';
++
++/// 豎屏模式（類似 IG Reels）：直向 PageView，上下滑換影片。
++///
++/// [embedded] 為 true 時是首頁分頁：不顯示返回鍵，並且只有在分頁停在豎屏、
++/// 首頁在最上層、App 在前景時才載入與播放。否則是路由 `/reels`
++/// （參數 `{aid, bvid, cid, title, cover, progress}`）。
++class ReelsPage extends StatefulWidget {
++  const ReelsPage({super.key, this.embedded = false});
++
++  final bool embedded;
++
++  @override
++  State<ReelsPage> createState() => _ReelsPageState();
++}
++
++class _ReelsPageState extends State<ReelsPage>
++    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
++  ReelsController? _ctr;
++  late final String _tag = 'reels_${identityHashCode(this)}';
++
++  bool _resumed = true;
++  bool _tickerOn = true;
++  bool _visible = false;
++
++  final _danmakuOn = Pref.enableShowDanmaku.obs;
++
++  HomeController? _home;
++  MainController? _main;
++  Worker? _mainWorker;
++
++  @override
++  bool get wantKeepAlive => widget.embedded;
++
++  @override
++  void initState() {
++    super.initState();
++    WidgetsBinding.instance.addObserver(this);
++    if (widget.embedded) {
++      if (Get.isRegistered<HomeController>()) {
++        _home = Get.find<HomeController>()
++          ..tabController.addListener(_evaluate);
++      }
++      if (Get.isRegistered<MainController>()) {
++        _main = Get.find<MainController>();
++        _mainWorker = ever(_main!.selectedIndex, (_) => _evaluate());
++      }
++    } else {
++      _create();
++    }
++  }
++
++  void _create() {
++    final seed = widget.embedded ? null : Get.arguments;
++    _ctr = Get.put(
++      ReelsController(seed: seed is Map ? seed : null),
++      tag: _tag,
++    );
++  }
++
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    // 其他頁面蓋在上面時，TickerMode 會關閉
++    _tickerOn = TickerMode.valuesOf(context).enabled;
++    _scheduleEvaluate();
++  }
++
++  @override
++  void didChangeAppLifecycleState(AppLifecycleState state) {
++    _resumed = state == AppLifecycleState.resumed;
++    _evaluate();
++  }
++
++  void _scheduleEvaluate() {
++    // 不在 build 期間改變狀態
++    scheduleMicrotask(() {
++      if (mounted) _evaluate();
++    });
++  }
++
++  bool get _tabVisible {
++    if (!widget.embedded) return true;
++    final home = _home;
++    if (home == null) return false;
++    final index = home.tabs.indexOf(HomeTabType.reels);
++    final tc = home.tabController;
++    if (index < 0 || tc.index != index || tc.indexIsChanging) return false;
++    final main = _main;
++    if (main != null) {
++      final i = main.selectedIndex.value;
++      if (i < 0 ||
++          i >= main.navigationBars.length ||
++          main.navigationBars[i] != NavigationBarType.home) {
++        return false;
++      }
++    }
++    return true;
++  }
++
++  void _evaluate() {
++    if (!mounted) return;
++    final visible = _resumed && _tickerOn && _tabVisible;
++    if (visible == _visible) return;
++    _visible = visible;
++    if (visible && _ctr == null) {
++      setState(_create);
++    }
++    _ctr?.setActive(visible);
++  }
++
++  @override
++  void dispose() {
++    WidgetsBinding.instance.removeObserver(this);
++    _home?.tabController.removeListener(_evaluate);
++    _mainWorker?.dispose();
++    if (_ctr != null) Get.delete<ReelsController>(tag: _tag);
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    super.build(context);
++    final ctr = _ctr;
++    Widget child;
++    if (ctr == null) {
++      child = const ColoredBox(color: Colors.black);
++    } else {
++      child = _ReelsBody(
++        ctr: ctr,
++        embedded: widget.embedded,
++        danmakuOn: _danmakuOn,
++      );
++    }
++    if (widget.embedded) {
++      // 垂直滑動不要觸發首頁上下列的自動隱藏
++      child = NotificationListener<ScrollNotification>(
++        onNotification: (_) => true,
++        child: child,
++      );
++    }
++    return child;
++  }
++}
++
++class _ReelsBody extends StatelessWidget {
++  const _ReelsBody({
++    required this.ctr,
++    required this.embedded,
++    required this.danmakuOn,
++  });
++
++  final ReelsController ctr;
++  final bool embedded;
++  final RxBool danmakuOn;
++
++  @override
++  Widget build(BuildContext context) {
++    return ColoredBox(
++      color: Colors.black,
++      child: Stack(
++        fit: StackFit.expand,
++        children: [
++          Obx(() {
++            final items = ctr.items;
++            if (items.isEmpty) {
++              return _emptyState();
++            }
++            return PageView.builder(
++              controller: ctr.pageController,
++              scrollDirection: Axis.vertical,
++              itemCount: items.length,
++              onPageChanged: ctr.onPageChanged,
++              itemBuilder: (context, i) => _ReelsItem(
++                key: ValueKey(items[i].aid),
++                ctr: ctr,
++                item: items[i],
++                position: i,
++                embedded: embedded,
++                danmakuOn: danmakuOn,
++              ),
++            );
++          }),
++          if (!embedded)
++            Positioned(
++              left: 4,
++              top: 0,
++              child: SafeArea(
++                child: IconButton(
++                  color: Colors.white,
++                  tooltip: '返回',
++                  icon: const Icon(Icons.arrow_back),
++                  onPressed: Get.back,
++                ),
++              ),
++            ),
++        ],
++      ),
++    );
++  }
++
++  Widget _emptyState() => Obx(() {
++    if (ctr.loading.value) {
++      return const Center(
++        child: CircularProgressIndicator(color: Colors.white),
++      );
++    }
++    return Center(
++      child: Column(
++        mainAxisSize: MainAxisSize.min,
++        children: [
++          const Text(
++            '暫時沒有豎屏影片',
++            style: TextStyle(color: Colors.white, fontSize: 15),
++          ),
++          if (ctr.error.value case final msg?)
++            Padding(
++              padding: const EdgeInsets.only(top: 6),
++              child: Text(
++                msg,
++                style: const TextStyle(color: Colors.white54, fontSize: 12),
++              ),
++            ),
++          const SizedBox(height: 12),
++          FilledButton.tonal(onPressed: ctr.retry, child: const Text('重試')),
++        ],
++      ),
++    );
++  });
++}
++
++class _ReelsItem extends StatelessWidget {
++  const _ReelsItem({
++    super.key,
++    required this.ctr,
++    required this.item,
++    required this.position,
++    required this.embedded,
++    required this.danmakuOn,
++  });
++
++  final ReelsController ctr;
++  final StoryItem item;
++  final int position;
++  final bool embedded;
++  final RxBool danmakuOn;
++
++  @override
++  Widget build(BuildContext context) {
++    final itemCtr = ctr.itemCtr(item);
++    return LayoutBuilder(
++      builder: (context, constraints) {
++        final size = constraints.biggest;
++        return Stack(
++          fit: StackFit.expand,
++          children: [
++            // 封面，播放第一個畫面後被影片蓋掉
++            NetworkImgLayer(
++              src: item.cover,
++              width: size.width,
++              height: size.height,
++              borderRadius: BorderRadius.zero,
++              fit: BoxFit.cover,
++            ),
++            Obx(() {
++              final current = ctr.index.value == position;
++              final video = ctr.videoController.value;
++              if (!current || video == null || !ctr.firstFrame.value) {
++                return const SizedBox.shrink();
++              }
++              return ColoredBox(
++                color: Colors.black,
++                child: ClipRect(
++                  child: FittedBox(
++                    fit: BoxFit.cover,
++                    child: SimpleVideo(controller: video),
++                  ),
++                ),
++              );
++            }),
++            // 點一下暫停或繼續
++            Positioned.fill(
++              child: GestureDetector(
++                behavior: HitTestBehavior.opaque,
++                onTap: () {
++                  if (ctr.index.value == position) ctr.togglePlay();
++                },
++              ),
++            ),
++            Obx(() {
++              if (ctr.index.value != position) return const SizedBox.shrink();
++              if (ctr.userPaused.value) {
++                return const IgnorePointer(
++                  child: Center(
++                    child: Icon(
++                      Icons.play_arrow_rounded,
++                      size: 72,
++                      color: Colors.white70,
++                    ),
++                  ),
++                );
++              }
++              if (ctr.playError.value case final msg?) {
++                return IgnorePointer(
++                  child: Center(
++                    child: DecoratedBox(
++                      decoration: BoxDecoration(
++                        color: Colors.black54,
++                        borderRadius: BorderRadius.circular(6),
++                      ),
++                      child: Padding(
++                        padding: const EdgeInsets.symmetric(
++                          horizontal: 10,
++                          vertical: 6,
++                        ),
++                        child: Text(
++                          '$msg，即將播放下一部',
++                          style: const TextStyle(
++                            color: Colors.white,
++                            fontSize: 13,
++                          ),
++                        ),
++                      ),
++                    ),
++                  ),
++                );
++              }
++              if (!ctr.firstFrame.value) {
++                return const IgnorePointer(
++                  child: Center(
++                    child: SizedBox.square(
++                      dimension: 26,
++                      child: CircularProgressIndicator(
++                        strokeWidth: 2.5,
++                        color: Colors.white,
++                      ),
++                    ),
++                  ),
++                );
++              }
++              return const SizedBox.shrink();
++            }),
++            // 彈幕
++            Obx(() {
++              if (ctr.index.value != position) return const SizedBox.shrink();
++              return IgnorePointer(
++                child: AnimatedOpacity(
++                  opacity: danmakuOn.value ? Pref.danmakuOpacity : 0,
++                  duration: const Duration(milliseconds: 100),
++                  child: _ReelsDanmaku(
++                    key: ValueKey('dm${item.aid}'),
++                    ctr: ctr,
++                    cid: item.cid,
++                    size: size,
++                  ),
++                ),
++              );
++            }),
++            // 底部漸層
++            const Positioned(
++              left: 0,
++              right: 0,
++              bottom: 0,
++              height: 220,
++              child: IgnorePointer(
++                child: DecoratedBox(
++                  decoration: BoxDecoration(
++                    gradient: LinearGradient(
++                      begin: Alignment.topCenter,
++                      end: Alignment.bottomCenter,
++                      colors: [Colors.transparent, Colors.black54],
++                    ),
++                  ),
++                ),
++              ),
++            ),
++            Positioned(
++              left: 12,
++              right: 76,
++              bottom: 18,
++              child: _InfoPanel(item: item, itemCtr: itemCtr),
++            ),
++            Positioned(
++              right: 8,
++              bottom: 24,
++              child: _ActionColumn(
++                ctr: ctr,
++                item: item,
++                itemCtr: itemCtr,
++                danmakuOn: danmakuOn,
++              ),
++            ),
++            Positioned(
++              left: 0,
++              right: 0,
++              bottom: 0,
++              child: Obx(
++                () => ctr.index.value == position
++                    ? _ProgressBar(ctr: ctr)
++                    : const SizedBox.shrink(),
++              ),
++            ),
++          ],
++        );
++      },
++    );
++  }
++}
++
++/// 左下：UP 主頭像、名稱、關注，標題（兩行，點選展開說明）。
++class _InfoPanel extends StatefulWidget {
++  const _InfoPanel({required this.item, required this.itemCtr});
++
++  final StoryItem item;
++  final ReelsItemCtr itemCtr;
++
++  @override
++  State<_InfoPanel> createState() => _InfoPanelState();
++}
++
++class _InfoPanelState extends State<_InfoPanel> {
++  bool _expanded = false;
++
++  @override
++  Widget build(BuildContext context) {
++    final itemCtr = widget.itemCtr;
++    const shadow = [Shadow(blurRadius: 4, color: Colors.black54)];
++    return Column(
++      crossAxisAlignment: CrossAxisAlignment.start,
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        Obx(
++          () => Row(
++            children: [
++              GestureDetector(
++                onTap: itemCtr.ownerMid == 0
++                    ? null
++                    : () => Get.toNamed('/member?mid=${itemCtr.ownerMid}'),
++                child: NetworkImgLayer(
++                  src: itemCtr.ownerFace.value,
++                  width: 36,
++                  height: 36,
++                  type: ImageType.avatar,
++                ),
++              ),
++              const SizedBox(width: 8),
++              Flexible(
++                child: Text(
++                  itemCtr.ownerName.value ?? '',
++                  maxLines: 1,
++                  overflow: TextOverflow.ellipsis,
++                  style: const TextStyle(
++                    color: Colors.white,
++                    fontSize: 15,
++                    fontWeight: FontWeight.w600,
++                    shadows: shadow,
++                  ),
++                ),
++              ),
++              const SizedBox(width: 8),
++              if (itemCtr.ownerMid != 0)
++                SizedBox(
++                  height: 28,
++                  child: itemCtr.followed.value
++                      ? OutlinedButton(
++                          style: OutlinedButton.styleFrom(
++                            foregroundColor: Colors.white70,
++                            side: const BorderSide(color: Colors.white54),
++                            padding: const EdgeInsets.symmetric(horizontal: 10),
++                          ),
++                          onPressed: itemCtr.actionFollow,
++                          child: const Text('已關注'),
++                        )
++                      : FilledButton(
++                          style: FilledButton.styleFrom(
++                            padding: const EdgeInsets.symmetric(horizontal: 12),
++                          ),
++                          onPressed: itemCtr.actionFollow,
++                          child: const Text('關注'),
++                        ),
++                ),
++            ],
++          ),
++        ),
++        const SizedBox(height: 8),
++        GestureDetector(
++          onTap: () => setState(() => _expanded = !_expanded),
++          child: Obx(() {
++            final desc = itemCtr.desc.value;
++            final text = _expanded && desc != null && desc.isNotEmpty
++                ? '${widget.item.title}\n$desc'
++                : widget.item.title;
++            return ConstrainedBox(
++              constraints: BoxConstraints(
++                maxHeight: _expanded ? 220 : double.infinity,
++              ),
++              child: SingleChildScrollView(
++                physics: _expanded
++                    ? const ClampingScrollPhysics()
++                    : const NeverScrollableScrollPhysics(),
++                child: Text(
++                  text,
++                  maxLines: _expanded ? null : 2,
++                  overflow: _expanded ? null : TextOverflow.ellipsis,
++                  style: const TextStyle(
++                    color: Colors.white,
++                    fontSize: 14,
++                    shadows: shadow,
++                  ),
++                ),
++              ),
++            );
++          }),
++        ),
++      ],
++    );
++  }
++}
++
++/// 右側直列按鈕。
++class _ActionColumn extends StatelessWidget {
++  const _ActionColumn({
++    required this.ctr,
++    required this.item,
++    required this.itemCtr,
++    required this.danmakuOn,
++  });
++
++  final ReelsController ctr;
++  final StoryItem item;
++  final ReelsItemCtr itemCtr;
++  final RxBool danmakuOn;
++
++  static const _active = Color(0xFFFB7299);
++
++  Widget _btn({
++    required IconData icon,
++    required String label,
++    required VoidCallback onTap,
++    bool active = false,
++  }) {
++    return GestureDetector(
++      behavior: HitTestBehavior.opaque,
++      onTap: onTap,
++      child: Padding(
++        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            Icon(
++              icon,
++              size: 32,
++              color: active ? _active : Colors.white,
++              shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
++            ),
++            const SizedBox(height: 2),
++            Text(
++              label,
++              style: const TextStyle(
++                color: Colors.white,
++                fontSize: 12,
++                shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
++              ),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Column(
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        Obx(
++          () => _btn(
++            icon: Icons.thumb_up_alt_rounded,
++            label: NumUtils.numFormat(itemCtr.like.value),
++            active: itemCtr.hasLike.value,
++            onTap: itemCtr.actionLikeVideo,
++          ),
++        ),
++        Obx(
++          () => _btn(
++            icon: Icons.monetization_on_rounded,
++            label: NumUtils.numFormat(itemCtr.coin.value),
++            active: itemCtr.coinNum.value > 0,
++            onTap: itemCtr.actionCoinVideo,
++          ),
++        ),
++        Obx(
++          () => _btn(
++            icon: Icons.star_rounded,
++            label: NumUtils.numFormat(itemCtr.fav.value),
++            active: itemCtr.hasFav.value,
++            onTap: () => itemCtr.showFavBottomSheet(context),
++          ),
++        ),
++        Obx(
++          () => _btn(
++            icon: Icons.comment_rounded,
++            label: NumUtils.numFormat(itemCtr.reply.value),
++            onTap: () =>
++                MainReplyPage.toMainReplyPage(oid: item.aid, replyType: 1),
++          ),
++        ),
++        Obx(
++          () => _btn(
++            icon: Icons.share_rounded,
++            label: NumUtils.numFormat(itemCtr.share.value),
++            onTap: () => ShareUtils.shareText(
++              '${item.title} https://b23.tv/${item.bvid}',
++            ),
++          ),
++        ),
++        Obx(
++          () => _btn(
++            icon: danmakuOn.value
++                ? Icons.subtitles_rounded
++                : Icons.subtitles_off_outlined,
++            label: danmakuOn.value ? '彈幕開' : '彈幕關',
++            onTap: danmakuOn.toggle,
++          ),
++        ),
++        _btn(
++          icon: Icons.slideshow_rounded,
++          label: '完整影片',
++          onTap: () {
++            final progress = ctr.currentPosition.inMilliseconds;
++            PageUtils.toVideoPage(
++              aid: item.aid,
++              bvid: item.bvid,
++              cid: item.cid,
++              cover: item.cover,
++              title: item.title,
++              progress: progress > 0 ? progress : null,
++              isVertical: true,
++            );
++          },
++        ),
++      ],
++    );
++  }
++}
++
++/// 底部細進度條。用自訂的水平拖動辨識器，首頁 TabBarView 的左右滑動
++/// 不會搶走拖動。
++class _ProgressBar extends StatefulWidget {
++  const _ProgressBar({required this.ctr});
++
++  final ReelsController ctr;
++
++  @override
++  State<_ProgressBar> createState() => _ProgressBarState();
++}
++
++class _ProgressBarState extends State<_ProgressBar> {
++  double? _drag;
++
++  double _value(Offset local, double width) =>
++      width <= 0 ? 0 : (local.dx / width).clamp(0.0, 1.0);
++
++  void _seek(double value) {
++    final total = widget.ctr.duration.value;
++    widget.ctr.seekTo(
++      Duration(milliseconds: (total.inMilliseconds * value).round()),
++    );
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return LayoutBuilder(
++      builder: (context, constraints) {
++        final width = constraints.maxWidth;
++        return RawGestureDetector(
++          behavior: HitTestBehavior.opaque,
++          gestures: {
++            CustomHorizontalDragGestureRecognizer:
++                GestureRecognizerFactoryWithHandlers<
++                  CustomHorizontalDragGestureRecognizer
++                >(CustomHorizontalDragGestureRecognizer.new, (instance) {
++                  instance
++                    ..onStart = (d) {
++                      setState(() => _drag = _value(d.localPosition, width));
++                    }
++                    ..onUpdate = (d) {
++                      setState(() => _drag = _value(d.localPosition, width));
++                    }
++                    ..onEnd = (_) {
++                      if (_drag case final v?) _seek(v);
++                      setState(() => _drag = null);
++                    }
++                    ..onCancel = () => setState(() => _drag = null);
++                }),
++            TapGestureRecognizer:
++                GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
++                  TapGestureRecognizer.new,
++                  (instance) => instance.onTapUp = (d) =>
++                      _seek(_value(d.localPosition, width)),
++                ),
++          },
++          // 觸控區至少 28dp 高
++          child: SizedBox(
++            height: 28,
++            child: Align(
++              alignment: Alignment.bottomCenter,
++              child: AnimatedBuilder(
++                animation: Listenable.merge([
++                  widget.ctr.position,
++                  widget.ctr.duration,
++                ]),
++                builder: (context, _) {
++                  final total = widget.ctr.duration.value.inMilliseconds;
++                  final value =
++                      _drag ??
++                      (total > 0
++                          ? (widget.ctr.position.value.inMilliseconds / total)
++                                .clamp(0.0, 1.0)
++                          : 0.0);
++                  final h = _drag != null ? 5.0 : 3.0;
++                  return Stack(
++                    clipBehavior: Clip.none,
++                    children: [
++                      SizedBox(
++                        height: h,
++                        width: width,
++                        child: ColoredBox(
++                          color: Colors.white.withValues(alpha: .3),
++                        ),
++                      ),
++                      SizedBox(
++                        height: h,
++                        width: width * value,
++                        child: const ColoredBox(color: Color(0xFFFB7299)),
++                      ),
++                      if (_drag != null)
++                        Positioned(
++                          left: width * value - 6,
++                          top: -4,
++                          child: const SizedBox.square(
++                            dimension: 13,
++                            child: DecoratedBox(
++                              decoration: BoxDecoration(
++                                color: Color(0xFFFB7299),
++                                shape: BoxShape.circle,
++                              ),
++                            ),
++                          ),
++                        ),
++                    ],
++                  );
++                },
++              ),
++            ),
++          ),
++        );
++      },
++    );
++  }
++}
++
++/// 輕量彈幕：直接使用 canvas_danmaku 的 [DanmakuScreen]，自己依播放位置
++/// 載入彈幕分段（不使用綁定 PlPlayerController 的 PlDanmaku）。
++/// 簡化：不套用使用者的彈幕過濾規則與合併，略過高級彈幕（mode 7）。
++class _ReelsDanmaku extends StatefulWidget {
++  const _ReelsDanmaku({
++    super.key,
++    required this.ctr,
++    required this.cid,
++    required this.size,
++  });
++
++  final ReelsController ctr;
++  final int cid;
++  final Size size;
++
++  @override
++  State<_ReelsDanmaku> createState() => _ReelsDanmakuState();
++}
++
++class _ReelsDanmakuState extends State<_ReelsDanmaku> {
++  DanmakuController<DanmakuExtra>? _dm;
++  final Map<int, List<DanmakuElem>> _byTime = {};
++  final Set<int> _requested = {};
++  int _lastAdded = -1;
++  int _lastPos = 0;
++  Worker? _playingWorker;
++
++  @override
++  void initState() {
++    super.initState();
++    widget.ctr.position.addListener(_onPosition);
++    _playingWorker = ever(widget.ctr.playing, (playing) {
++      if (playing) {
++        _dm?.resume();
++      } else {
++        _dm?.pause();
++      }
++    });
++    _query(DmUtils.calcSegment(widget.ctr.position.value.inMilliseconds));
++  }
++
++  Future<void> _query(int segment) async {
++    if (!_requested.add(segment)) return;
++    final res = await DmGrpc.dmSegMobile(
++      cid: widget.cid,
++      segmentIndex: segment + 1,
++    );
++    if (!mounted) return;
++    if (res case Success(:final response)) {
++      for (final e in response.elems) {
++        (_byTime[e.progress ~/ 100] ??= []).add(e);
++      }
++    } else {
++      _requested.remove(segment);
++    }
++  }
++
++  void _onPosition() {
++    final dm = _dm;
++    if (dm == null || !widget.ctr.playing.value) return;
++    var pos = widget.ctr.position.value.inMilliseconds;
++    // 拖動進度後清掉畫面上的彈幕
++    if ((pos - _lastPos).abs() > 2000) dm.clear();
++    _lastPos = pos;
++    pos -= pos % 100;
++    if (pos == _lastAdded) return;
++    _lastAdded = pos;
++    final segment = DmUtils.calcSegment(pos);
++    if (!_requested.contains(segment)) {
++      _query(segment);
++      return;
++    }
++    final list = _byTime[pos ~/ 100];
++    if (list == null) return;
++    final weight = DanmakuOptions.danmakuWeight;
++    final colorful = DanmakuOptions.blockColorful;
++    for (final e in list) {
++      if (e.weight < weight || e.mode == 7) continue;
++      dm.addDanmaku(
++        DanmakuContentItem(
++          e.content,
++          color: colorful ? Colors.white : DmUtils.decimalToColor(e.color),
++          type: DmUtils.getPosition(e.mode),
++          extra: VideoDanmaku(id: e.id.toInt(), mid: e.midHash),
++        ),
++      );
++    }
++  }
++
++  @override
++  void dispose() {
++    widget.ctr.position.removeListener(_onPosition);
++    _playingWorker?.dispose();
++    _dm = null;
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return DanmakuScreen<DanmakuExtra>(
++      createdController: (e) => _dm = e,
++      option: DanmakuOptions.get(notFullscreen: true),
++      size: widget.size,
++    );
++  }
++}

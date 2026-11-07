@@ -5,7 +5,9 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
 import 'package:PiliPlus/common/widgets/video_card/vertical_video_card_frame.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pbenum.dart'
     show PlaylistSource;
 import 'package:PiliPlus/models/common/badge_type.dart';
@@ -39,7 +41,14 @@ class FavVideoCardH extends StatelessWidget {
 
   bool get isSort => ctr == null;
 
-  void _onTap() {
+  /// A normal video that is not removed.
+  bool get _canPreview =>
+      item.bvid != null &&
+      item.type != 12 &&
+      item.type != 24 &&
+      !const [1, 9].contains(item.attr);
+
+  void _onTap(CardPreview preview) {
     // 0/4/16/...: 正常；9: up自己删除；1: 其他原因删除
     if (const [1, 9].contains(item.attr)) {
       Get.toNamed('/member?mid=${item.upper?.mid}');
@@ -61,7 +70,7 @@ class FavVideoCardH extends StatelessWidget {
         );
         break;
       default:
-        ctr!.onViewFav(item, index);
+        ctr!.onViewFav(item, index, preview.take());
         break;
     }
   }
@@ -71,11 +80,18 @@ class FavVideoCardH extends StatelessWidget {
     final isOwner = !isSort && ctr!.isOwner;
     late final enableMultiSelect = ctr?.enableMultiSelect.value ?? false;
     final colorScheme = ColorScheme.of(context);
+    final preview = CardPreview(
+      item: item,
+      canPreview: _canPreview,
+      bvid: item.bvid ?? '',
+      suspended: isSort || enableMultiSelect,
+    );
 
     final onLongPress = isSort || enableMultiSelect
         ? null
         : isOwner && !enableMultiSelect
         ? () {
+            VideoPreview.stop();
             ctr!
               ..enableMultiSelect.value = true
               ..onSelect(item);
@@ -89,12 +105,12 @@ class FavVideoCardH extends StatelessWidget {
         ? null
         : enableMultiSelect
         ? () => ctr!.onSelect(item)
-        : _onTap;
+        : () => _onTap(preview);
 
     if (vertical) {
       final textTheme = TextTheme.of(context);
       return VerticalVideoCardFrame(
-        cover: _cover(colorScheme),
+        cover: _cover(colorScheme, preview, overlay: false),
         title: Text(
           item.title!,
           maxLines: 2,
@@ -117,30 +133,34 @@ class FavVideoCardH extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+        preview: preview,
       );
     }
 
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Style.safeSpace,
-            vertical: 5,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AspectRatio(
-                aspectRatio: Style.aspectRatio,
-                child: _cover(colorScheme),
-              ),
-              const SizedBox(width: 10),
-              content(context, colorScheme, isOwner),
-            ],
+    return preview.wrapTarget(
+      Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          onTapDown: preview.onTapDown,
+          onLongPress: preview.longPressOr(onLongPress),
+          onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Style.safeSpace,
+              vertical: 5,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: Style.aspectRatio,
+                  child: _cover(colorScheme, preview),
+                ),
+                const SizedBox(width: 10),
+                content(context, colorScheme, isOwner),
+              ],
+            ),
           ),
         ),
       ),
@@ -148,7 +168,11 @@ class FavVideoCardH extends StatelessWidget {
   }
 
   // Cover with badges and the multi-select mask, shared by both layouts.
-  Widget _cover(ColorScheme colorScheme) {
+  Widget _cover(
+    ColorScheme colorScheme,
+    CardPreview preview, {
+    bool overlay = true,
+  }) {
     return LayoutBuilder(
       builder: (context, boxConstraints) {
         double maxWidth = boxConstraints.maxWidth;
@@ -182,6 +206,7 @@ class FavVideoCardH extends StatelessWidget {
                 bottom: null,
                 left: null,
               ),
+            if (overlay) preview.overlay(radius: Style.mdRadius),
             if (!isSort)
               Positioned.fill(
                 child: selectMask(

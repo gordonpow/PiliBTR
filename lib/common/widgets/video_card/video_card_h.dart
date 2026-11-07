@@ -4,8 +4,10 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
 import 'package:PiliPlus/common/widgets/video_card/vertical_video_card_frame.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/horizontal_video_model.dart';
@@ -27,6 +29,9 @@ class VideoCardH extends StatelessWidget {
     this.vertical = false,
   });
   final HorizontalVideoModel videoItem;
+
+  /// Custom tap. When it opens the video it should continue from the
+  /// preview: use [VideoPreview.takeProgress] with the bvid.
   final VoidCallback? onTap;
   final ValueChanged<int>? onViewLater;
   final VoidCallback? onRemove;
@@ -40,54 +45,74 @@ class VideoCardH extends StatelessWidget {
     cover: videoItem.cover,
   );
 
+  /// A normal video (not a course, live, or bangumi) with a bvid.
+  static bool canPreviewItem(HorizontalVideoModel item) =>
+      item.bvid != null &&
+      item.isPugv != true &&
+      item.isLive != true &&
+      item.redirectUrl?.isNotEmpty != true;
+
+  CardPreview get _preview => CardPreview(
+    item: videoItem,
+    canPreview: canPreviewItem(videoItem),
+    aid: videoItem.aid,
+    bvid: videoItem.bvid ?? '',
+    cid: videoItem.cid,
+  );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if (vertical) return _buildVertical(theme);
-    return Material(
-      type: .transparency,
-      child: Stack(
-        clipBehavior: .none,
-        children: [
-          InkWell(
-            onLongPress: onLongPress,
-            onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-            onTap: onTap ?? () => pushVideoH(videoItem),
-            child: Padding(
-              padding: const .symmetric(
-                horizontal: Style.safeSpace,
-                vertical: 5,
-              ),
-              child: Row(
-                crossAxisAlignment: .start,
-                children: [
-                  AspectRatio(
-                    aspectRatio: Style.aspectRatio,
-                    child: _buildCover(theme),
-                  ),
-                  const SizedBox(width: 10),
-                  content(theme),
-                ],
+    final preview = _preview;
+    if (vertical) return _buildVertical(theme, preview);
+    return preview.wrapTarget(
+      Material(
+        type: .transparency,
+        child: Stack(
+          clipBehavior: .none,
+          children: [
+            InkWell(
+              onTapDown: preview.onTapDown,
+              onLongPress: () => preview.longPress(onLongPress),
+              onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+              onTap:
+                  onTap ?? () => pushVideoH(videoItem, preview: preview.take()),
+              child: Padding(
+                padding: const .symmetric(
+                  horizontal: Style.safeSpace,
+                  vertical: 5,
+                ),
+                child: Row(
+                  crossAxisAlignment: .start,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: Style.aspectRatio,
+                      child: _buildCover(theme, preview),
+                    ),
+                    const SizedBox(width: 10),
+                    content(theme),
+                  ],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 12,
-            width: 29,
-            height: 29,
-            child: VideoPopupMenu(
-              iconSize: 17,
-              videoItem: videoItem,
-              onRemove: onRemove,
+            Positioned(
+              bottom: 0,
+              right: 12,
+              width: 29,
+              height: 29,
+              child: VideoPopupMenu(
+                iconSize: 17,
+                videoItem: videoItem,
+                onRemove: onRemove,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildVertical(ThemeData theme) {
+  Widget _buildVertical(ThemeData theme, CardPreview preview) {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final titleList = videoItem.titleList;
@@ -158,7 +183,7 @@ class VideoCardH extends StatelessWidget {
       ],
     );
     return VerticalVideoCardFrame(
-      cover: _buildCover(theme),
+      cover: _buildCover(theme, preview),
       title: title,
       stats: stats,
       footer: Text(
@@ -176,13 +201,14 @@ class VideoCardH extends StatelessWidget {
         videoItem: videoItem,
         onRemove: onRemove,
       ),
-      onTap: onTap ?? () => pushVideoH(videoItem),
+      onTap: onTap ?? () => pushVideoH(videoItem, preview: preview.take()),
       onLongPress: onLongPress,
       onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+      preview: preview,
     );
   }
 
-  Widget _buildCover(ThemeData theme) {
+  Widget _buildCover(ThemeData theme, CardPreview preview) {
     return LayoutBuilder(
       builder: (context, boxConstraints) {
         final double maxWidth = boxConstraints.maxWidth;
@@ -237,6 +263,8 @@ class VideoCardH extends StatelessWidget {
                 bottom: 6.0,
                 type: .gray,
               ),
+            // The vertical frame adds its own overlay.
+            if (!vertical) preview.overlay(radius: Style.mdRadius),
           ],
         );
       },
@@ -325,7 +353,12 @@ class VideoCardH extends StatelessWidget {
   }
 }
 
-Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
+/// [preview]: cid and position of the card preview: the video page
+/// continues from there.
+Future<void> pushVideoH(
+  HorizontalVideoModel videoItem, {
+  PreviewProgress? preview,
+}) async {
   if (videoItem.isPugv ?? false) {
     PageUtils.viewPugv(seasonId: videoItem.seasonId);
     return;
@@ -343,8 +376,8 @@ Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
     return;
   }
 
-  int? cid = videoItem.cid;
-  Dimension? dimension = videoItem.dimension;
+  int? cid = preview?.cid ?? videoItem.cid;
+  Dimension? dimension = cid == videoItem.cid ? videoItem.dimension : null;
   if (cid == null) {
     if (await SearchHttp.ab2cWithDimension(
           aid: videoItem.aid,
@@ -362,6 +395,7 @@ Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
       cover: videoItem.cover,
       title: videoItem.title,
       dimension: dimension,
+      progress: preview?.ms,
     );
   }
 }

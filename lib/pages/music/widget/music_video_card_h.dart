@@ -4,7 +4,9 @@ import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/marquee.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
 import 'package:PiliPlus/common/widgets/video_card/vertical_video_card_frame.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
@@ -34,11 +36,17 @@ class MusicVideoCardH extends StatelessWidget {
       cover: videoItem.cover,
       bvid: videoItem.bvid,
     );
+    final preview = CardPreview(
+      item: videoItem,
+      canPreview: videoItem.bvid != null,
+      bvid: videoItem.bvid ?? '',
+      cid: videoItem.cid,
+    );
     if (vertical) {
       final theme = Theme.of(context);
       final textTheme = theme.textTheme;
       return VerticalVideoCardFrame(
-        cover: _cover(),
+        cover: _cover(preview, overlay: false),
         title: Text(
           videoItem.title!,
           maxLines: 2,
@@ -68,40 +76,44 @@ class MusicVideoCardH extends StatelessWidget {
             color: theme.colorScheme.outline,
           ),
         ),
-        onTap: _onTap,
+        onTap: () => _onTap(preview.take()),
         onLongPress: onLongPress,
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+        preview: preview,
       );
     }
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: _onTap,
-        onLongPress: onLongPress,
-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Style.safeSpace,
-            vertical: 5,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AspectRatio(
-                aspectRatio: Style.aspectRatio,
-                child: _cover(),
-              ),
-              const SizedBox(width: 10),
-              content(context),
-            ],
+    return preview.wrapTarget(
+      Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => _onTap(preview.take()),
+          onTapDown: preview.onTapDown,
+          onLongPress: preview.longPressOr(onLongPress),
+          onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Style.safeSpace,
+              vertical: 5,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: Style.aspectRatio,
+                  child: _cover(preview),
+                ),
+                const SizedBox(width: 10),
+                content(context),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _onTap() async {
-    int? cid = videoItem.cid;
+  Future<void> _onTap(PreviewProgress? preview) async {
+    int? cid = preview?.cid ?? videoItem.cid;
     Dimension? dimension;
     if (cid == null) {
       if (await SearchHttp.ab2cWithDimension(bvid: videoItem.bvid)
@@ -117,11 +129,12 @@ class MusicVideoCardH extends StatelessWidget {
         cover: videoItem.cover,
         title: videoItem.title,
         dimension: dimension,
+        progress: preview?.ms,
       );
     }
   }
 
-  Widget _cover() {
+  Widget _cover(CardPreview preview, {bool overlay = true}) {
     return LayoutBuilder(
       builder: (context, boxConstraints) {
         double maxWidth = boxConstraints.maxWidth;
@@ -140,6 +153,7 @@ class MusicVideoCardH extends StatelessWidget {
               bottom: 6.0,
               type: PBadgeType.gray,
             ),
+            if (overlay) preview.overlay(radius: Style.mdRadius),
           ],
         );
       },

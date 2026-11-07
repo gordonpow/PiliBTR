@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/video_card/live_preview.dart';
 import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -19,10 +20,14 @@ class LiveItem extends StatelessWidget {
       title: liveItem.title.map((item) => item.text).join(),
       cover: liveItem.cover,
     );
-    return Card(
+    final preview = LiveCardPreview(item: liveItem, roomId: liveItem.roomid);
+    return preview.wrapTarget(Card(
       child: InkWell(
-        onTap: () => PageUtils.toLiveRoom(liveItem.roomid),
-        onLongPress: onLongPress,
+        onTap: () {
+          preview.stop();
+          PageUtils.toLiveRoom(liveItem.roomid);
+        },
+        onLongPress: () => preview.longPress(onLongPress),
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
         borderRadius: const .all(.circular(12)),
         child: Column(
@@ -52,6 +57,9 @@ class LiveItem extends StatelessWidget {
                           liveItem.cateName,
                         ),
                       ),
+                      preview.overlay(
+                        radius: const .vertical(top: .circular(12)),
+                      ),
                     ],
                   );
                 },
@@ -61,7 +69,7 @@ class LiveItem extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget liveContent(ThemeData theme) => Expanded(

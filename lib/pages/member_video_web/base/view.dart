@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -64,18 +65,20 @@ abstract class BaseVideoWebState<
       ),
       body: refreshIndicator(
         onRefresh: controller.onRefresh,
-        child: CustomScrollView(
-          physics: ReloadScrollPhysics(controller: controller),
-          slivers: [
-            SliverPadding(
-              padding: .only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+        child: SwipePreviewDetector(
+          child: CustomScrollView(
+            physics: ReloadScrollPhysics(controller: controller),
+            slivers: [
+              SliverPadding(
+                padding: .only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+                ),
+                sliver: Obx(
+                  () => buildBody(colorScheme, controller.loadingState.value),
+                ),
               ),
-              sliver: Obx(
-                () => buildBody(colorScheme, controller.loadingState.value),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

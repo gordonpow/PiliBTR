@@ -4,6 +4,9 @@ abstract final class Api {
   // 推荐视频
   static const String recommendListApp =
       '${HttpString.appBaseUrl}/x/v2/feed/index';
+  // 豎屏（story）推薦
+  static const String storyFeed =
+      '${HttpString.appBaseUrl}/x/v2/feed/index/story';
   static const String recommendListWeb =
       '/x/web-interface/wbi/index/top/feed/rcmd';
 

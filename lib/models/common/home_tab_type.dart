@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/rank/controller.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/pages/rcmd/view.dart';
+import 'package:PiliPlus/pages/reels/feed.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
@@ -20,6 +21,7 @@ enum HomeTabType implements EnumWithLabel {
   rank('分區'),
   bangumi('番劇'),
   cinema('影視'),
+  reels('豎屏'),
   ;
 
   @override
@@ -33,6 +35,7 @@ enum HomeTabType implements EnumWithLabel {
     HomeTabType.rank => Get.find<RankController>,
     HomeTabType.bangumi ||
     HomeTabType.cinema => () => Get.find<PgcController>(tag: name),
+    HomeTabType.reels => Get.find<ReelsFeedController>,
   };
 
   Widget get page => switch (this) {
@@ -42,5 +45,16 @@ enum HomeTabType implements EnumWithLabel {
     HomeTabType.rank => const RankPage(),
     HomeTabType.bangumi => const PgcPage(tabType: HomeTabType.bangumi),
     HomeTabType.cinema => const PgcPage(tabType: HomeTabType.cinema),
+    HomeTabType.reels => const ReelsFeedPage(),
   };
+
+  static const List<HomeTabType> defaultOrder = [
+    live,
+    rcmd,
+    reels,
+    hot,
+    rank,
+    bangumi,
+    cinema,
+  ];
 }

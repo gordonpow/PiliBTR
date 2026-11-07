@@ -49,6 +49,7 @@ import 'package:PiliPlus/pages/music/view.dart';
 import 'package:PiliPlus/pages/my_reply/view.dart';
 import 'package:PiliPlus/pages/popular_precious/view.dart';
 import 'package:PiliPlus/pages/popular_series/view.dart';
+import 'package:PiliPlus/pages/reels/view.dart';
 import 'package:PiliPlus/pages/search/view.dart';
 import 'package:PiliPlus/pages/search_result/view.dart';
 import 'package:PiliPlus/pages/search_trending/view.dart';
@@ -105,6 +106,8 @@ class Routes {
     GetPage(name: '/fan', page: () => const FansPage()),
     // 直播详情
     GetPage(name: '/liveRoom', page: () => const LiveRoomPage()),
+    // 豎屏模式
+    GetPage(name: '/reels', page: () => const ReelsPage()),
     // 用户中心
     GetPage(name: '/member', page: () => const MemberPage()),
     GetPage(name: '/memberSearch', page: () => const MemberSearchPage()),

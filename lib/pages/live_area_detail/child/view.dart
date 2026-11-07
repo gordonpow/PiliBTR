@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/skeleton/video_card_v.dart';
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -9,6 +10,7 @@ import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dar
 import 'package:PiliPlus/pages/live/widgets/live_item_app.dart';
 import 'package:PiliPlus/pages/live_area_detail/child/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
@@ -55,7 +57,7 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
     super.build(context);
     return refreshIndicator(
       onRefresh: _controller.onRefresh,
-      child: CustomScrollView(
+      child: SwipePreviewDetector(child: CustomScrollView(
         controller: _controller.scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -68,7 +70,7 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
             sliver: Obx(() => _buildBody(_controller.loadingState.value)),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -78,6 +80,7 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
     maxCrossAxisExtent: Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
     mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    fixedCrossAxisCount: VideoCardStyle.fixedColumns,
   );
 
   Widget _buildBody(LoadingState<List<CardLiveItem>?> loadingState) {

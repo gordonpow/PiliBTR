@@ -67,9 +67,27 @@ class HomeController extends GetxController
   void setTabConfig() {
     final tabs = GStorage.setting.get(SettingBoxKey.tabBarSort) as List?;
     if (tabs != null) {
-      this.tabs = tabs.map((i) => HomeTabType.values[i]).toList();
+      final list = tabs.map((i) => HomeTabType.values[i]).toList();
+      // 一次性遷移：已自訂排序的使用者補上豎屏分頁
+      if (GStorage.setting.get('homeTabReelsV1') != true) {
+        GStorage.setting.put('homeTabReelsV1', true);
+        if (!list.contains(HomeTabType.reels)) {
+          final rcmdIndex = list.indexOf(HomeTabType.rcmd);
+          list.insert(
+            rcmdIndex >= 0 ? rcmdIndex + 1 : min(1, list.length),
+            HomeTabType.reels,
+          );
+          GStorage.setting.put(
+            SettingBoxKey.tabBarSort,
+            list.map((e) => e.index).toList(),
+          );
+        }
+      }
+      this.tabs = list;
     } else {
-      this.tabs = HomeTabType.values;
+      // 沒有自訂排序，之後存下的排序已包含豎屏，不需遷移
+      GStorage.setting.put('homeTabReelsV1', true);
+      this.tabs = HomeTabType.defaultOrder;
     }
 
     tabController = TabController(

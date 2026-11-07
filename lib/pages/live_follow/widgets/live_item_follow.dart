@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/video_card/live_preview.dart';
 import 'package:PiliPlus/models_new/live/live_follow/item.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -21,10 +22,14 @@ class LiveCardVFollow extends StatelessWidget {
       title: liveItem.title,
       cover: liveItem.roomCover,
     );
-    return Card(
+    final preview = LiveCardPreview(item: liveItem, roomId: liveItem.roomid);
+    return preview.wrapTarget(Card(
       child: InkWell(
-        onTap: () => PageUtils.toLiveRoom(liveItem.roomid),
-        onLongPress: onLongPress,
+        onTap: () {
+          preview.stop();
+          PageUtils.toLiveRoom(liveItem.roomid);
+        },
+        onLongPress: () => preview.longPress(onLongPress),
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
         borderRadius: const .all(.circular(12)),
         child: Column(
@@ -51,6 +56,9 @@ class LiveCardVFollow extends StatelessWidget {
                         bottom: 0,
                         child: videoStat(),
                       ),
+                      preview.overlay(
+                        radius: const .vertical(top: .circular(12)),
+                      ),
                     ],
                   );
                 },
@@ -60,7 +68,7 @@ class LiveCardVFollow extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget liveContent(BuildContext context) {

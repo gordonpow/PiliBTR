@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/video_card/live_preview.dart';
 import 'package:PiliPlus/models_new/live/live_search/room_item.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -21,10 +22,14 @@ class LiveCardVSearch extends StatelessWidget {
       title: item.title,
       cover: item.cover,
     );
-    return Card(
+    final preview = LiveCardPreview(item: item, roomId: item.roomid);
+    return preview.wrapTarget(Card(
       child: InkWell(
-        onTap: () => PageUtils.toLiveRoom(item.roomid),
-        onLongPress: onLongPress,
+        onTap: () {
+          preview.stop();
+          PageUtils.toLiveRoom(item.roomid);
+        },
+        onLongPress: () => preview.longPress(onLongPress),
         onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
         borderRadius: const .all(.circular(12)),
         child: Column(
@@ -51,6 +56,9 @@ class LiveCardVSearch extends StatelessWidget {
                         bottom: 0,
                         child: videoStat(),
                       ),
+                      preview.overlay(
+                        radius: const .vertical(top: .circular(12)),
+                      ),
                     ],
                   );
                 },
@@ -71,7 +79,7 @@ class LiveCardVSearch extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget videoStat() {

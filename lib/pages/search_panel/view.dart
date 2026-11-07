@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -51,18 +52,20 @@ abstract class CommonSearchPanelState<
     super.build(context);
     return refreshIndicator(
       onRefresh: controller.onRefresh,
-      child: CustomScrollView(
-        controller: controller.scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          ?buildHeader(),
-          SliverPadding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+      child: SwipePreviewDetector(
+        child: CustomScrollView(
+          controller: controller.scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            ?buildHeader(),
+            SliverPadding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
+              ),
+              sliver: Obx(() => _buildBody(controller.loadingState.value)),
             ),
-            sliver: Obx(() => _buildBody(controller.loadingState.value)),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

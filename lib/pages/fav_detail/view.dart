@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
@@ -105,26 +106,28 @@ class _FavDetailPageState extends State<FavDetailPage>
             ),
             body: refreshIndicator(
               onRefresh: controller.onRefresh,
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                controller: controller.scrollController,
-                slivers: [
-                  _buildHeader(enableMultiSelect, theme),
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      left: padding.left,
-                      right: padding.right,
-                      bottom: padding.bottom + 100,
-                    ),
-                    sliver: Obx(
-                      () => _buildBody(
-                        enableMultiSelect,
-                        theme,
-                        controller.loadingState.value,
+              child: SwipePreviewDetector(
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  controller: controller.scrollController,
+                  slivers: [
+                    _buildHeader(enableMultiSelect, theme),
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        left: padding.left,
+                        right: padding.right,
+                        bottom: padding.bottom + 100,
+                      ),
+                      sliver: Obx(
+                        () => _buildBody(
+                          enableMultiSelect,
+                          theme,
+                          controller.loadingState.value,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

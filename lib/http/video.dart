@@ -19,6 +19,7 @@ import 'package:PiliPlus/models_new/pgc/pgc_rank/pgc_rank_item_model.dart';
 import 'package:PiliPlus/models_new/popular/popular_precious/data.dart';
 import 'package:PiliPlus/models_new/popular/popular_series_list/list.dart';
 import 'package:PiliPlus/models_new/popular/popular_series_one/data.dart';
+import 'package:PiliPlus/models_new/story/story_item.dart';
 import 'package:PiliPlus/models_new/triple/pgc_triple.dart';
 import 'package:PiliPlus/models_new/triple/ugc_triple.dart';
 import 'package:PiliPlus/models_new/video/video_ai_conclusion/data.dart';
@@ -174,6 +175,89 @@ abstract final class VideoHttp {
       return Success(list);
     } else {
       return Error(res.data['message']);
+    }
+  }
+
+  /// 豎屏（story）推薦。不一定都是豎屏影片，由呼叫端依 [StoryItem.isVertical]
+  /// 篩選。[aid] 給的話會接續該影片的推薦。逾時時重試 1 次。
+  static Future<LoadingState<List<StoryItem>>> storyFeed({
+    int? aid,
+    required int displayId,
+  }) async {
+    final params = {
+      'build': 8430300,
+      'c_locale': 'zh_CN',
+      'channel': 'master',
+      'column': 2,
+      'device': 'phone',
+      'device_name': 'android',
+      'device_type': 0,
+      'disable_rcmd': 0,
+      'flush': 8,
+      'fnval': 272,
+      'fnver': 0,
+      'force_host': 2, //使用https
+      'fourk': 1,
+      'guidance': 1,
+      'https_url_req': 1,
+      'mobi_app': 'android_i',
+      'network': 'wifi',
+      'platform': 'android',
+      'player_net': 1,
+      'qn': 32,
+      'recsys_mode': 0,
+      's_locale': 'zh_CN',
+      'splash_id': '',
+      'statistics': Constants.statisticsApp,
+      'voice_balance': 0,
+      'aid': ?aid,
+      'display_id': displayId,
+      'request_from': 1,
+      'from_spmid': 'main.ugc-video-detail.0.0',
+    };
+    final options = Options(
+      headers: {
+        'buvid': Accounts.get(.recommend).buvid,
+        'fp_local': '1111111111111111111111111111111111111111111111111111111111111111',
+        'fp_remote': '1111111111111111111111111111111111111111111111111111111111111111',
+        'session_id': '11111111',
+        'env': 'prod',
+        'app-key': 'android_hd',
+        'User-Agent': Constants.userAgent,
+        'x-bili-trace-id': Constants.traceId,
+        'x-bili-aurora-eid': '',
+        'x-bili-aurora-zone': '',
+        'bili-http-engine': 'cronet',
+      },
+    );
+    var res = await Request().get(
+      Api.storyFeed,
+      queryParameters: params,
+      options: options,
+    );
+    // 逾時或網路錯誤（沒有 code）時重試 1 次
+    if (res.data is! Map || res.data['code'] == null) {
+      res = await Request().get(
+        Api.storyFeed,
+        queryParameters: params,
+        options: options,
+      );
+    }
+    if (res.data is Map && res.data['code'] == 0) {
+      final list = <StoryItem>[];
+      for (final i in (res.data['data']?['items'] as List?) ?? const []) {
+        try {
+          final item = StoryItem.fromJson(i);
+          if (item == null) continue;
+          if (GlobalData().blackMids.contains(item.ownerMid)) continue;
+          list.add(item);
+        } catch (_) {
+          // 單筆格式異常不影響其他影片
+        }
+      }
+      return Success(list);
+    } else {
+      return Error(res.data is Map ? res.data['message'] : null);
     }
   }
 

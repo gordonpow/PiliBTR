@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/skeleton/video_card_v.dart';
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
@@ -18,6 +19,7 @@ import 'package:PiliPlus/pages/live_area/view.dart';
 import 'package:PiliPlus/pages/live_follow/view.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -58,7 +60,7 @@ class _LivePageState extends State<LivePage>
       decoration: const BoxDecoration(borderRadius: Style.mdRadius),
       child: refreshIndicator(
         onRefresh: controller.onRefresh,
-        child: CustomScrollView(
+        child: SwipePreviewDetector(child: CustomScrollView(
           controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -66,7 +68,7 @@ class _LivePageState extends State<LivePage>
             Obx(() => _buildBody(controller.loadingState.value)),
             const SliverPadding(padding: .only(bottom: 100)),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -188,6 +190,7 @@ class _LivePageState extends State<LivePage>
     maxCrossAxisExtent: Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
     mainAxisExtent: textScaler.scale(90),
+    fixedCrossAxisCount: VideoCardStyle.fixedColumns,
   );
 
   Widget _buildBody(LoadingState<List?> loadingState) {

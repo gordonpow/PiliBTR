@@ -10,6 +10,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -27,7 +28,8 @@ import 'package:media_kit_video/media_kit_video.dart';
 abstract final class MiniPlayer {
   static OverlayEntry? _entry;
   static PlPlayerController? _ctr;
-  static Map<String, dynamic>? _args;
+  static Object? _args;
+  static bool _isLive = false;
   static String? _heroTag;
 
   /// Setting: open the mini player when the user leaves a playing video.
@@ -201,18 +203,21 @@ abstract final class MiniPlayer {
   static final hidden = false.obs;
 
   /// Shows the mini player for [ctr]. [args] are the arguments of the
-  /// video page route. Returns false if it cannot show.
+  /// video page route (a map), or the room id (int) of a live room if
+  /// [isLive]. Returns false if it cannot show.
   static bool show({
     required PlPlayerController ctr,
-    required Map args,
+    required Object args,
     required String heroTag,
     required bool wasPlaying,
+    bool isLive = false,
   }) {
     final overlay = Get.key.currentState?.overlay;
     if (overlay == null || ctr.videoController == null) return false;
     close();
     _ctr = ctr;
-    _args = Map<String, dynamic>.from(args);
+    _isLive = isLive;
+    _args = args is Map ? Map<String, dynamic>.from(args) : args;
     _heroTag = heroTag;
     // A swipe preview gives its place to the window: the window continues
     // from there.
@@ -248,8 +253,9 @@ abstract final class MiniPlayer {
     final ctr = _ctr!;
     _removeEntry();
     if (ctr.playerStatus.isPlaying) ctr.pause();
-    // The new page can keep the open streams and their buffer.
-    ctr.reuseNextSource = true;
+    // The new page can keep the open streams and their buffer. A live
+    // stream always opens again.
+    ctr.reuseNextSource = !_isLive;
     _release(ctr);
     _clear();
   }
@@ -273,6 +279,7 @@ abstract final class MiniPlayer {
   static void _clear() {
     _ctr = null;
     _args = null;
+    _isLive = false;
     _heroTag = null;
   }
 
@@ -281,8 +288,14 @@ abstract final class MiniPlayer {
     final ctr = _ctr;
     final args = _args;
     if (ctr == null || args == null) return;
-    args['progress'] = ctr.positionInMilliseconds;
     // The new page calls [handOver] when it gets the player.
+    if (_isLive) {
+      // The live room connects again: no progress.
+      if (args is int) PageUtils.toLiveRoom(args);
+      return;
+    }
+    if (args is! Map<String, dynamic>) return;
+    args['progress'] = ctr.positionInMilliseconds;
     Get.toNamed('/videoV', arguments: args, preventDuplicates: false);
   }
 }
@@ -711,6 +724,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!MiniPlayer._isLive)
                           IconButton(
                             tooltip: '倒退 10 秒',
                             iconSize: 22,
@@ -729,6 +743,7 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
                                 ? widget.ctr.pause()
                                 : widget.ctr.play(hideControls: false),
                           ),
+                          if (!MiniPlayer._isLive)
                           IconButton(
                             tooltip: '快轉 10 秒',
                             iconSize: 22,

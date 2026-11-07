@@ -404,7 +404,7 @@ List<SettingsModel> get styleSettings => [
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.tabBarSort,
-        'defaultBars': HomeTabType.values,
+        'defaultBars': HomeTabType.defaultOrder,
         'title': '首頁標籤頁',
       },
     ),

@@ -20,6 +20,7 @@ import 'package:PiliPlus/pages/pgc/widgets/pgc_card_v_timeline.dart';
 import 'package:PiliPlus/pages/pgc_index/controller.dart';
 import 'package:PiliPlus/pages/pgc_index/view.dart';
 import 'package:PiliPlus/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
@@ -306,6 +307,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
     maxCrossAxisExtent: Grid.smallCardWidth * 0.6,
     childAspectRatio: 0.75,
     mainAxisExtent: MediaQuery.textScalerOf(context).scale(50),
+    fixedCrossAxisCount: VideoCardStyle.fixedColumns,
   );
 
   Widget _buildRcmdBody(LoadingState<List<PgcIndexItem>?> loadingState) {

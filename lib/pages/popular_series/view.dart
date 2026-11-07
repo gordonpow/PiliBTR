@@ -7,6 +7,7 @@ import 'package:PiliPlus/common/widgets/scroll_physics.dart'
     show ReloadScrollPhysics;
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -77,9 +78,11 @@ class _PopularSeriesPageState extends State<PopularSeriesPage>
                   vertical: true,
                   onTap: () {
                     final config = _controller.config.value;
+                    final preview = VideoPreview.takeProgress(item.bvid ?? '');
                     PageUtils.toVideoPage(
                       bvid: item.bvid,
-                      cid: item.cid!,
+                      cid: preview?.cid ?? item.cid!,
+                      progress: preview?.ms,
                       dimension: item.dimension,
                       extraArguments: {
                         'sourceType': SourceType.playlist,

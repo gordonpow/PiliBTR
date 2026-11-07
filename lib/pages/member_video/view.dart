@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -138,16 +139,18 @@ class _MemberVideoState extends State<MemberVideo>
     super.build(context);
     final theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
-    Widget child = CustomScrollView(
-      physics: ReloadScrollPhysics(controller: _controller),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.only(bottom: padding.bottom + 100),
-          sliver: Obx(
-            () => _buildBody(theme, _controller.loadingState.value),
+    Widget child = SwipePreviewDetector(
+      child: CustomScrollView(
+        physics: ReloadScrollPhysics(controller: _controller),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.only(bottom: padding.bottom + 100),
+            sliver: Obx(
+              () => _buildBody(theme, _controller.loadingState.value),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
     if (_controller.isVideo && _controller.fromViewAid?.isNotEmpty == true) {
       child = ScaffoldLayout(

@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart'
+    show PreviewProgress;
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
@@ -58,9 +60,14 @@ class FavSearchController
 
   @override
   // TODO: dimension
-  void onViewFav(FavDetailItemModel item, int? index) => PageUtils.toVideoPage(
+  void onViewFav(
+    FavDetailItemModel item,
+    int? index, [
+    PreviewProgress? preview,
+  ]) => PageUtils.toVideoPage(
     bvid: item.bvid,
-    cid: item.ugc!.firstCid!,
+    cid: preview?.cid ?? item.ugc!.firstCid!,
+    progress: preview?.ms,
     cover: item.cover,
     title: item.title,
     extraArguments: {

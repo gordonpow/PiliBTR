@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 /// The layout of a vertical video card, the same as the home page card
@@ -19,6 +20,7 @@ class VerticalVideoCardFrame extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.onSecondaryTap,
+    this.preview,
   });
 
   /// Fills the 16:10 cover area. It gets tight constraints; use a
@@ -39,8 +41,16 @@ class VerticalVideoCardFrame extends StatelessWidget {
   final Widget? action;
 
   final VoidCallback? onTap;
+
+  /// The long press action when the card does not preview (the second long
+  /// press when it does).
   final VoidCallback? onLongPress;
   final VoidCallback? onSecondaryTap;
+
+  /// Preview of the cover: long press plays it, [onLongPress] runs when it
+  /// already plays. The caller takes the preview position in [onTap] with
+  /// [CardPreview.take].
+  final CardPreview? preview;
 
   static const TextStyle titleStyle = TextStyle(height: 1.38);
 
@@ -51,7 +61,10 @@ class VerticalVideoCardFrame extends StatelessWidget {
     final card = Card(
       child: InkWell(
         onTap: onTap,
-        onLongPress: onLongPress,
+        onTapDown: preview?.onTapDown,
+        onLongPress: preview == null
+            ? onLongPress
+            : preview!.longPressOr(onLongPress),
         onSecondaryTap: onSecondaryTap,
         borderRadius: _radius,
         child: Column(
@@ -63,7 +76,12 @@ class VerticalVideoCardFrame extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
-                child: cover,
+                child: preview == null
+                    ? cover
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [cover, preview!.overlay()],
+                      ),
               ),
             ),
             Expanded(
@@ -89,19 +107,24 @@ class VerticalVideoCardFrame extends StatelessWidget {
         ),
       ),
     );
-    if (action == null) return card;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned.fill(child: card),
-        Positioned(
-          right: -5,
-          bottom: -2,
-          width: 29,
-          height: 29,
-          child: action!,
-        ),
-      ],
-    );
+    final Widget result;
+    if (action == null) {
+      result = card;
+    } else {
+      result = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(child: card),
+          Positioned(
+            right: -5,
+            bottom: -2,
+            width: 29,
+            height: 29,
+            child: action!,
+          ),
+        ],
+      );
+    }
+    return preview?.wrapTarget(result) ?? result;
   }
 }

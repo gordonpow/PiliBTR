@@ -3,8 +3,7 @@ import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
-import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
 import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
@@ -94,24 +93,18 @@ class VideoCardV extends StatelessWidget {
     final canPreview =
         videoItem.goto == 'av' &&
         (videoItem.bvid != null || videoItem.aid != null);
+    final preview = CardPreview(
+      item: videoItem,
+      canPreview: canPreview,
+      aid: videoItem.aid,
+      bvid: videoItem.bvid ?? (canPreview ? IdUtils.av2bv(videoItem.aid!) : ''),
+      cid: videoItem.cid,
+    );
     // Long press plays a preview in the card. A second long press on the
     // playing card shows the old menu.
-    void onLongPress() =>
-        canPreview &&
-            VideoPreview.enabled &&
-            VideoPreview.active.value != videoItem
-        ? VideoPreview.start(videoItem)
-        : onMore();
-    void onTap() {
-      // Continue from the preview position (the preview knows the cid).
-      final preview = VideoPreview.active.value == videoItem
-          ? VideoPreview.progressOf(
-              videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
-            )
-          : null;
-      VideoPreview.stop(videoItem);
-      onPushDetail(preview);
-    }
+    void onLongPress() => preview.longPress(onMore);
+    // Continue from the preview position (the preview knows the cid).
+    void onTap() => onPushDetail(preview.take());
 
     final card = Stack(
       clipBehavior: Clip.none,
@@ -121,13 +114,7 @@ class VideoCardV extends StatelessWidget {
             onTap: onTap,
             // Get the preview streams early: the long press needs about
             // half a second more, so the preview starts faster.
-            onTapDown: canPreview
-                ? (_) => VideoPreview.prefetch(
-                    aid: videoItem.aid,
-                    bvid: videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
-                    cid: videoItem.cid,
-                  )
-                : null,
+            onTapDown: preview.onTapDown,
             onLongPress: onLongPress,
             onSecondaryTap: PlatformUtils.isMobile ? null : onMore,
             borderRadius: const .all(.circular(12)),
@@ -159,28 +146,9 @@ class VideoCardV extends StatelessWidget {
                                 videoItem.duration,
                               ),
                             ),
-                          if (canPreview)
-                            Positioned.fill(
-                              child: ValueListenableBuilder(
-                                valueListenable: VideoPreview.active,
-                                builder: (context, active, _) =>
-                                    active == videoItem
-                                    ? ClipRRect(
-                                        borderRadius: const .vertical(
-                                          top: .circular(12),
-                                        ),
-                                        child: InlineVideoPreview(
-                                          item: videoItem,
-                                          aid: videoItem.aid,
-                                          bvid:
-                                              videoItem.bvid ??
-                                              IdUtils.av2bv(videoItem.aid!),
-                                          cid: videoItem.cid,
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ),
+                          preview.overlay(
+                            radius: const .vertical(top: .circular(12)),
+                          ),
                         ],
                       );
                     },
@@ -205,16 +173,7 @@ class VideoCardV extends StatelessWidget {
           ),
       ],
     );
-    if (!canPreview) return card;
-    return SwipePreviewTarget(
-      item: videoItem,
-      onPrefetch: () => VideoPreview.prefetch(
-        aid: videoItem.aid,
-        bvid: videoItem.bvid ?? IdUtils.av2bv(videoItem.aid!),
-        cid: videoItem.cid,
-      ),
-      child: card,
-    );
+    return preview.wrapTarget(card);
   }
 
   Widget content(BuildContext context) {

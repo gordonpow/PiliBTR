@@ -19,6 +19,9 @@ import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:media_kit/media_kit.dart' hide Subtitle;
 import 'package:media_kit_video/media_kit_video.dart';
 
+/// Cid and position (milliseconds) of a preview.
+typedef PreviewProgress = ({int cid, int ms});
+
 /// Streams of a preview: video, optional audio, and the cid.
 typedef PreviewSource = ({String video, String? audio, int cid});
 
@@ -85,6 +88,12 @@ abstract final class VideoPreview {
     return created;
   }
 
+  /// For other preview widgets that share the player (live preview).
+  static Future<(Player, VideoController)> acquire(Object owner) =>
+      _acquire(owner);
+
+  static void release(Object owner) => _release(owner);
+
   static void _release(Object owner) {
     if (_owner != owner) return;
     _owner = null;
@@ -131,6 +140,15 @@ abstract final class VideoPreview {
     final p = _progress;
     if (p == null || p.bvid != bvid) return null;
     return (cid: p.cid, ms: p.ms);
+  }
+
+  /// Like [progressOf], but only while a card previews [bvid] now, and it
+  /// stops the preview. For a card that opens the video on tap.
+  static PreviewProgress? takeProgress(String bvid) {
+    if (active.value == null) return null;
+    final p = progressOf(bvid);
+    if (p != null) stop();
+    return p;
   }
 
   /// Recent source requests by bvid. The play URLs expire after some time,

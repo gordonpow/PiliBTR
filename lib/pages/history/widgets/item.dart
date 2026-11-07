@@ -1,6 +1,8 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models_new/history/list.dart';
@@ -34,132 +36,153 @@ class HistoryItem extends StatelessWidget {
     final business = item.history.business;
     final enableMultiSelect = ctr.enableMultiSelect.value;
 
+    // Only normal videos (archive) preview.
+    final oid = item.history.oid;
+    final canPreview =
+        business == 'archive' && (item.history.bvid != null || oid != null);
+    final preview = CardPreview(
+      item: item,
+      canPreview: canPreview,
+      aid: oid,
+      bvid: canPreview ? item.history.bvid ?? IdUtils.av2bv(oid!) : '',
+      cid: item.history.cid,
+      suspended: enableMultiSelect,
+    );
+
     final onLongPress = enableMultiSelect
         ? null
-        : () => ctr
-            ..enableMultiSelect.value = true
-            ..onSelect(item);
+        : () {
+            VideoPreview.stop();
+            ctr
+              ..enableMultiSelect.value = true
+              ..onSelect(item);
+          };
 
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: enableMultiSelect
-            ? () => ctr.onSelect(item)
-            : () => onPushHistory(item),
-        onLongPress: onLongPress,
-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Style.safeSpace,
-                vertical: 5,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AspectRatio(
-                    aspectRatio: Style.aspectRatio,
-                    child: LayoutBuilder(
-                      builder: (context, boxConstraints) {
-                        double maxWidth = boxConstraints.maxWidth;
-                        double maxHeight = boxConstraints.maxHeight;
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            NetworkImgLayer(
-                              src: item.cover?.isNotEmpty == true
-                                  ? item.cover
-                                  : item.covers?.firstOrNull ?? '',
-                              width: maxWidth,
-                              height: maxHeight,
-                            ),
-                            ?item.label,
-                            if (hasDuration)
-                              ...item.progressIndicator(theme.colorScheme),
-                            Positioned.fill(
-                              child: selectMask(
-                                theme.colorScheme,
-                                item.checked,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  content(theme),
-                ],
-              ),
-            ),
-            Positioned(
-              right: 12,
-              bottom: 0,
-              width: 29,
-              height: 29,
-              child: PopupMenuButton(
-                padding: EdgeInsets.zero,
-                tooltip: '功能選單',
-                icon: Icon(
-                  Icons.more_vert_outlined,
-                  color: theme.colorScheme.outline,
-                  size: 18,
+    return preview.wrapTarget(
+      Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enableMultiSelect
+              ? () => ctr.onSelect(item)
+              : () => onPushHistory(item, preview: preview.take()),
+          onTapDown: preview.onTapDown,
+          onLongPress: preview.longPressOr(onLongPress),
+          onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Style.safeSpace,
+                  vertical: 5,
                 ),
-                position: PopupMenuPosition.under,
-                itemBuilder: (_) => [
-                  if (item.authorMid != null &&
-                      item.authorName?.isNotEmpty == true)
-                    PopupMenuItem(
-                      onTap: () => Get.toNamed('/member?mid=${item.authorMid}'),
-                      height: 38,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            MdiIcons.accountCircleOutline,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '訪問：${item.authorName}',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ],
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: Style.aspectRatio,
+                      child: LayoutBuilder(
+                        builder: (context, boxConstraints) {
+                          double maxWidth = boxConstraints.maxWidth;
+                          double maxHeight = boxConstraints.maxHeight;
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              NetworkImgLayer(
+                                src: item.cover?.isNotEmpty == true
+                                    ? item.cover
+                                    : item.covers?.firstOrNull ?? '',
+                                width: maxWidth,
+                                height: maxHeight,
+                              ),
+                              ?item.label,
+                              if (hasDuration)
+                                ...item.progressIndicator(theme.colorScheme),
+                              preview.overlay(radius: Style.mdRadius),
+                              Positioned.fill(
+                                child: selectMask(
+                                  theme.colorScheme,
+                                  item.checked,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
-                  if (business != 'pgc' &&
-                      item.badge != '番剧' &&
-                      item.tagName?.contains('动画') != true &&
-                      business != 'live' &&
-                      business?.contains('article') != true)
+                    const SizedBox(width: 10),
+                    content(theme),
+                  ],
+                ),
+              ),
+              Positioned(
+                right: 12,
+                bottom: 0,
+                width: 29,
+                height: 29,
+                child: PopupMenuButton(
+                  padding: EdgeInsets.zero,
+                  tooltip: '功能選單',
+                  icon: Icon(
+                    Icons.more_vert_outlined,
+                    color: theme.colorScheme.outline,
+                    size: 18,
+                  ),
+                  position: PopupMenuPosition.under,
+                  itemBuilder: (_) => [
+                    if (item.authorMid != null &&
+                        item.authorName?.isNotEmpty == true)
+                      PopupMenuItem(
+                        onTap: () =>
+                            Get.toNamed('/member?mid=${item.authorMid}'),
+                        height: 38,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              MdiIcons.accountCircleOutline,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '訪問：${item.authorName}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (business != 'pgc' &&
+                        item.badge != '番剧' &&
+                        item.tagName?.contains('动画') != true &&
+                        business != 'live' &&
+                        business?.contains('article') != true)
+                      PopupMenuItem(
+                        onTap: () =>
+                            UserHttp.toViewLater(bvid: item.history.bvid),
+                        height: 38,
+                        child: const Row(
+                          children: [
+                            Icon(Icons.watch_later_outlined, size: 16),
+                            SizedBox(width: 6),
+                            Text('稍後再看', style: TextStyle(fontSize: 13)),
+                          ],
+                        ),
+                      ),
                     PopupMenuItem(
-                      onTap: () =>
-                          UserHttp.toViewLater(bvid: item.history.bvid),
+                      onTap: () => onDelete(item.kid!, business!),
                       height: 38,
                       child: const Row(
                         children: [
-                          Icon(Icons.watch_later_outlined, size: 16),
+                          Icon(Icons.close_outlined, size: 16),
                           SizedBox(width: 6),
-                          Text('稍後再看', style: TextStyle(fontSize: 13)),
+                          Text('刪除記錄', style: TextStyle(fontSize: 13)),
                         ],
                       ),
                     ),
-                  PopupMenuItem(
-                    onTap: () => onDelete(item.kid!, business!),
-                    height: 38,
-                    child: const Row(
-                      children: [
-                        Icon(Icons.close_outlined, size: 16),
-                        SizedBox(width: 6),
-                        Text('刪除記錄', style: TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -216,7 +239,12 @@ class HistoryItem extends StatelessWidget {
   }
 }
 
-Future<void> onPushHistory(HistoryItemModel item) async {
+/// [preview]: position of the card preview, it overrides the history
+/// progress.
+Future<void> onPushHistory(
+  HistoryItemModel item, {
+  PreviewProgress? preview,
+}) async {
   final business = item.history.business;
   if (business?.contains('article') == true) {
     PageUtils.toDupNamed(
@@ -251,7 +279,7 @@ Future<void> onPushHistory(HistoryItemModel item) async {
   } else {
     final aid = item.history.oid!;
     final bvid = item.history.bvid ?? IdUtils.av2bv(aid);
-    int? cid = item.history.cid;
+    int? cid = preview?.cid ?? item.history.cid;
     Dimension? dimension;
     if (cid == null) {
       if (await SearchHttp.ab2cWithDimension(
@@ -273,7 +301,7 @@ Future<void> onPushHistory(HistoryItemModel item) async {
         cover: item.cover,
         title: item.title,
         dimension: dimension,
-        progress: item.playbackProgress,
+        progress: preview?.ms ?? item.playbackProgress,
       );
     }
   }

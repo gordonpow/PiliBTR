@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -44,20 +45,22 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
     super.build(context);
     return refreshIndicator(
       onRefresh: _laterController.onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        controller: _laterController.scrollController,
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.only(
-              top: 7,
-              bottom: MediaQuery.viewPaddingOf(context).bottom + 85,
+      child: SwipePreviewDetector(
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: _laterController.scrollController,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(
+                top: 7,
+                bottom: MediaQuery.viewPaddingOf(context).bottom + 85,
+              ),
+              sliver: Obx(
+                () => _buildBody(_laterController.loadingState.value),
+              ),
             ),
-            sliver: Obx(
-              () => _buildBody(_laterController.loadingState.value),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -78,9 +81,10 @@ class _LaterViewChildPageState extends State<LaterViewChildPage>
                     index: index,
                     videoItem: videoItem,
                     ctr: _laterController,
-                    onViewLater: (cid) => PageUtils.toVideoPage(
+                    onViewLater: (cid, progress) => PageUtils.toVideoPage(
                       bvid: videoItem.bvid,
                       cid: cid,
+                      progress: progress,
                       cover: videoItem.pic,
                       title: videoItem.title,
                       dimension: videoItem.dimension,

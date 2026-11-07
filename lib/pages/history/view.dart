@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -63,20 +64,22 @@ class _HistoryPageState extends State<HistoryPage>
     final padding = MediaQuery.viewPaddingOf(context);
     Widget child = refreshIndicator(
       onRefresh: _historyController.onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        controller: _historyController.scrollController,
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.only(
-              top: 7,
-              bottom: padding.bottom + 100,
+      child: SwipePreviewDetector(
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: _historyController.scrollController,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(
+                top: 7,
+                bottom: padding.bottom + 100,
+              ),
+              sliver: Obx(
+                () => _buildBody(_historyController.loadingState.value),
+              ),
             ),
-            sliver: Obx(
-              () => _buildBody(_historyController.loadingState.value),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
     if (widget.type != null) {

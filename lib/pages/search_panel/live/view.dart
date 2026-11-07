@@ -5,6 +5,7 @@ import 'package:PiliPlus/models/search/result.dart';
 import 'package:PiliPlus/pages/search_panel/controller.dart';
 import 'package:PiliPlus/pages/search_panel/live/widgets/item.dart';
 import 'package:PiliPlus/pages/search_panel/view.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
@@ -51,6 +52,7 @@ class _SearchLivePanelState
     mainAxisSpacing: Style.cardSpace,
     childAspectRatio: Style.aspectRatio,
     mainAxisExtent: MediaQuery.textScalerOf(context).scale(80),
+    fixedCrossAxisCount: VideoCardStyle.fixedColumns,
   );
 
   @override

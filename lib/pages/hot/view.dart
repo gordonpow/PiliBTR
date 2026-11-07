@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -61,60 +62,62 @@ class _HotPageState extends State<HotPage>
     super.build(context);
     return refreshIndicator(
       onRefresh: controller.onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        controller: controller.scrollController,
-        slivers: [
-          if (Pref.showHotRcmd)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const .only(left: 12, top: 12, right: 12),
-                child: Row(
-                  mainAxisAlignment: .spaceEvenly,
-                  children: [
-                    _buildEntranceItem(
-                      iconUrl: 'https://i0.hdslb.com/bfs/archive/a3f11218aaf4521b4967db2ae164ecd3052586b9.png',
-                      title: '排行榜',
-                      onTap: () {
-                        try {
-                          final homeController = Get.find<HomeController>();
-                          final index = homeController.tabs.indexOf(
-                            HomeTabType.rank,
-                          );
-                          if (index != -1) {
-                            homeController.tabController.animateTo(index);
-                          } else {
-                            Get.to(
-                              SimpleScaffold(
-                                appBar: AppBar(title: const Text('排行榜')),
-                                body: const ViewSafeArea(child: RankPage()),
-                              ),
+      child: SwipePreviewDetector(
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: controller.scrollController,
+          slivers: [
+            if (Pref.showHotRcmd)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const .only(left: 12, top: 12, right: 12),
+                  child: Row(
+                    mainAxisAlignment: .spaceEvenly,
+                    children: [
+                      _buildEntranceItem(
+                        iconUrl: 'https://i0.hdslb.com/bfs/archive/a3f11218aaf4521b4967db2ae164ecd3052586b9.png',
+                        title: '排行榜',
+                        onTap: () {
+                          try {
+                            final homeController = Get.find<HomeController>();
+                            final index = homeController.tabs.indexOf(
+                              HomeTabType.rank,
                             );
-                          }
-                        } catch (_) {}
-                      },
-                    ),
-                    _buildEntranceItem(
-                      iconUrl: 'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
-                      title: '每週必看',
-                      onTap: () => Get.toNamed('/popularSeries'),
-                    ),
-                    _buildEntranceItem(
-                      iconUrl: 'https://i0.hdslb.com/bfs/archive/3693ec9335b78ca57353ac0734f36a46f3d179a9.png',
-                      title: '入站必刷',
-                      onTap: () => Get.toNamed('/popularPrecious'),
-                    ),
-                  ],
+                            if (index != -1) {
+                              homeController.tabController.animateTo(index);
+                            } else {
+                              Get.to(
+                                SimpleScaffold(
+                                  appBar: AppBar(title: const Text('排行榜')),
+                                  body: const ViewSafeArea(child: RankPage()),
+                                ),
+                              );
+                            }
+                          } catch (_) {}
+                        },
+                      ),
+                      _buildEntranceItem(
+                        iconUrl: 'https://i0.hdslb.com/bfs/archive/552ebe8c4794aeef30ebd1568b59ad35f15e21ad.png',
+                        title: '每週必看',
+                        onTap: () => Get.toNamed('/popularSeries'),
+                      ),
+                      _buildEntranceItem(
+                        iconUrl: 'https://i0.hdslb.com/bfs/archive/3693ec9335b78ca57353ac0734f36a46f3d179a9.png',
+                        title: '入站必刷',
+                        onTap: () => Get.toNamed('/popularPrecious'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 7, bottom: 100),
+              sliver: Obx(
+                () => _buildBody(controller.loadingState.value),
+              ),
             ),
-          SliverPadding(
-            padding: const EdgeInsets.only(top: 7, bottom: 100),
-            sliver: Obx(
-              () => _buildBody(controller.loadingState.value),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/skeleton/msg_feed_top.dart';
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/skeleton/video_card_v.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
@@ -38,7 +39,7 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
     double padding = widget.searchType == LiveSearchType.room ? 12 : 0;
     return refreshIndicator(
       onRefresh: _controller.onRefresh,
-      child: CustomScrollView(
+      child: SwipePreviewDetector(child: CustomScrollView(
         controller: _controller.scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -52,7 +53,7 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
             sliver: Obx(() => _buildBody(_controller.loadingState.value)),
           ),
         ],
-      ),
+      )),
     );
   }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart'
+    show PreviewProgress;
 import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
@@ -19,7 +21,8 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:PiliPlus/common/widgets/zh_widgets.dart' show Text, ValueChanged;
+import 'package:PiliPlus/common/widgets/zh_widgets.dart'
+    show Text, ValueChanged;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
@@ -32,7 +35,13 @@ mixin BaseFavController
 
   ValueChanged<int>? updateCount;
 
-  void onViewFav(FavDetailItemModel item, int? index);
+  /// [preview]: cid and position of the card preview: the video page
+  /// continues from there.
+  void onViewFav(
+    FavDetailItemModel item,
+    int? index, [
+    PreviewProgress? preview,
+  ]);
 
   Future<void> onCancelFav(int index, int id, int type) async {
     final res = await FavHttp.favVideo(
@@ -229,12 +238,17 @@ class FavDetailController
   }
 
   @override
-  void onViewFav(FavDetailItemModel item, int? index) {
+  void onViewFav(
+    FavDetailItemModel item,
+    int? index, [
+    PreviewProgress? preview,
+  ]) {
     final folder = folderInfo.value;
     // TODO: dimension
     PageUtils.toVideoPage(
       bvid: item.bvid,
-      cid: item.ugc!.firstCid!,
+      cid: preview?.cid ?? item.ugc!.firstCid!,
+      progress: preview?.ms,
       cover: item.cover,
       title: item.title,
       extraArguments: isPlayAll.value

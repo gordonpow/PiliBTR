@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/skeleton/video_card_v.dart';
+import 'package:PiliPlus/common/widgets/video_card/swipe_preview.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -8,6 +9,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/live/live_follow/item.dart';
 import 'package:PiliPlus/pages/live_follow/controller.dart';
 import 'package:PiliPlus/pages/live_follow/widgets/live_item_follow.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
@@ -36,7 +38,7 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
       ),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
-        child: CustomScrollView(
+        child: SwipePreviewDetector(child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
@@ -48,7 +50,7 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
               sliver: Obx(() => _buildBody(_controller.loadingState.value)),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -59,6 +61,7 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
     maxCrossAxisExtent: Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
     mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    fixedCrossAxisCount: VideoCardStyle.fixedColumns,
   );
 
   Widget _buildBody(LoadingState<List<LiveFollowItem>?> loadingState) {

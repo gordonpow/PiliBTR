@@ -200,17 +200,63 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     }
   }
 
+  // Leave with back or swipe: keep playing in the mini player.
+  bool _toMini = false;
+  bool _miniWasPlaying = false;
+
+  void _onPopInvokedWithResult(bool didPop, Object? result) {
+    final ctr = plPlayerController;
+    final fromSwipe = MiniPlayer.takeSwipeRequest();
+    // Back to another player page (it takes the player again), or this page
+    // is below a swiped page that closes too: no mini player.
+    final backToMini =
+        MiniPlayer.enabled &&
+        !MiniPlayer.poppingPlayerPages &&
+        !ctr.sharedByOtherPage;
+    if (didPop &&
+        (fromSwipe || backToMini) &&
+        ctr.videoController != null &&
+        !ctr.isCloseAll) {
+      _toMini = true;
+      // Read before onPopInvokedWithResult: it pauses the player.
+      _miniWasPlaying = ctr.playerStatus.isPlaying;
+    }
+    ctr.onPopInvokedWithResult(didPop, result);
+  }
+
   @override
   void dispose() {
     removeObserverMobile(this);
-    videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
+    final toMini = _toMini && !plPlayerController.isCloseAll;
+    if (toMini && !PlPlayerController.isVideoPage(Get.routing.current)) {
+      // The player lives on in the mini player: give the main pages their
+      // own orientation back.
+      PlPlayerController.restoreAppRotation();
+    }
+    if (!toMini) {
+      videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
+    }
     if (Platform.isAndroid && !plPlayerController.setSystemBrightness) {
       ScreenBrightnessPlatform.instance.resetApplicationScreenBrightness();
     }
     PlPlayerController.setPlayCallBack(null);
-    plPlayerController
-      ..removeStatusLister(playerListener)
-      ..dispose();
+    plPlayerController.removeStatusLister(playerListener);
+    if (toMini) {
+      // The danmaku screen of this page goes away.
+      plPlayerController.danmakuController = null;
+      if (!MiniPlayer.show(
+        ctr: plPlayerController,
+        args: _liveRoomController.roomId,
+        heroTag: heroTag,
+        wasPlaying: _miniWasPlaying,
+        isLive: true,
+      )) {
+        videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
+        plPlayerController.dispose();
+      }
+    } else {
+      plPlayerController.dispose();
+    }
     for (final e in LiveContributionRankType.values) {
       Get.delete<ContributionRankController>(
         tag: '${_liveRoomController.roomId}${e.name}',
@@ -416,7 +462,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     }
     return popScope(
       canPop: !isFullScreen && !plPlayerController.isDesktopPip,
-      onPopInvokedWithResult: plPlayerController.onPopInvokedWithResult,
+      onPopInvokedWithResult: _onPopInvokedWithResult,
       child: player,
     );
   }

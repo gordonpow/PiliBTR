@@ -3,6 +3,8 @@ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
+import 'package:PiliPlus/common/widgets/video_card/card_preview.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models_new/later/list.dart';
@@ -24,66 +26,91 @@ class VideoCardHLater extends StatelessWidget {
   final int index;
   final BaseLaterController ctr;
   final LaterItemModel videoItem;
-  final ValueChanged<int> onViewLater;
+
+  /// Opens the video: cid and the preview position (milliseconds) if any.
+  final void Function(int cid, int? progress) onViewLater;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final enableMultiSelect = ctr.enableMultiSelect.value;
 
+    final preview = CardPreview(
+      item: videoItem,
+      canPreview:
+          videoItem.bvid != null &&
+          videoItem.isPugv != true &&
+          videoItem.isPgc != true,
+      aid: videoItem.aid,
+      bvid: videoItem.bvid ?? '',
+      cid: videoItem.cid,
+      suspended: enableMultiSelect,
+    );
+
     final onLongPress = enableMultiSelect
         ? null
-        : () => ctr
-            ..enableMultiSelect.value = true
-            ..onSelect(videoItem);
+        : () {
+            VideoPreview.stop();
+            ctr
+              ..enableMultiSelect.value = true
+              ..onSelect(videoItem);
+          };
 
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onLongPress: onLongPress,
-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-        onTap: enableMultiSelect
-            ? () => ctr.onSelect(videoItem)
-            : () => onPushLater(videoItem, onViewLater: onViewLater),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Style.safeSpace,
-            vertical: 5,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: Style.aspectRatio,
-                child: LayoutBuilder(
-                  builder: (context, boxConstraints) {
-                    final double maxWidth = boxConstraints.maxWidth;
-                    final double maxHeight = boxConstraints.maxHeight;
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        NetworkImgLayer(
-                          src: videoItem.pic,
-                          width: maxWidth,
-                          height: maxHeight,
-                          cacheWidth: videoItem.dimension?.cacheWidth,
-                        ),
-                        ?videoItem.label,
-                        ...videoItem.progressIndicator(theme.colorScheme),
-                        Positioned.fill(
-                          child: selectMask(
-                            theme.colorScheme,
-                            videoItem.checked,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+    return preview.wrapTarget(
+      Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTapDown: preview.onTapDown,
+          onLongPress: preview.longPressOr(onLongPress),
+          onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+          onTap: enableMultiSelect
+              ? () => ctr.onSelect(videoItem)
+              : () => onPushLater(
+                  videoItem,
+                  onViewLater: onViewLater,
+                  preview: preview.take(),
                 ),
-              ),
-              const SizedBox(width: 10),
-              content(context, theme),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Style.safeSpace,
+              vertical: 5,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                AspectRatio(
+                  aspectRatio: Style.aspectRatio,
+                  child: LayoutBuilder(
+                    builder: (context, boxConstraints) {
+                      final double maxWidth = boxConstraints.maxWidth;
+                      final double maxHeight = boxConstraints.maxHeight;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          NetworkImgLayer(
+                            src: videoItem.pic,
+                            width: maxWidth,
+                            height: maxHeight,
+                            cacheWidth: videoItem.dimension?.cacheWidth,
+                          ),
+                          ?videoItem.label,
+                          ...videoItem.progressIndicator(theme.colorScheme),
+                          preview.overlay(radius: Style.mdRadius),
+                          Positioned.fill(
+                            child: selectMask(
+                              theme.colorScheme,
+                              videoItem.checked,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                content(context, theme),
+              ],
+            ),
           ),
         ),
       ),
@@ -182,7 +209,8 @@ class VideoCardHLater extends StatelessWidget {
 
 Future<void> onPushLater(
   LaterItemModel item, {
-  ValueChanged<int>? onViewLater,
+  void Function(int cid, int? progress)? onViewLater,
+  PreviewProgress? preview,
 }) async {
   if (item.isPugv ?? false) {
     PageUtils.viewPugv(seasonId: item.aid);
@@ -198,6 +226,7 @@ Future<void> onPushLater(
   }
   try {
     final cid =
+        preview?.cid ??
         item.cid ??
         await SearchHttp.ab2c(
           aid: item.aid,
@@ -205,7 +234,7 @@ Future<void> onPushLater(
         );
     if (cid != null) {
       if (onViewLater != null) {
-        onViewLater(cid);
+        onViewLater(cid, preview?.ms);
       } else {
         await PageUtils.toVideoPage(
           bvid: item.bvid,
@@ -213,6 +242,7 @@ Future<void> onPushLater(
           cover: item.pic,
           title: item.title,
           dimension: item.dimension,
+          progress: preview?.ms,
           extraArguments: const {'viewLater': true},
         );
       }

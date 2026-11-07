@@ -14,7 +14,11 @@ class SwipePreviewTarget extends StatefulWidget {
     required this.item,
     required this.onPrefetch,
     required this.child,
+    this.enabled = true,
   });
+
+  /// False while the list cannot preview (multi-select, sort mode).
+  final bool enabled;
 
   /// The item given to [VideoPreview.start].
   final Object item;
@@ -28,15 +32,20 @@ class SwipePreviewTarget extends StatefulWidget {
 }
 
 class _SwipePreviewTargetState extends State<SwipePreviewTarget> {
+  /// The nearest detector above this card, if any.
+  _SwipePreviewDetectorState? _detector;
+
   @override
   void initState() {
     super.initState();
-    SwipePreviewDetector._targets.add(this);
+    _detector = context.findAncestorStateOfType<_SwipePreviewDetectorState>();
+    _detector?._targets.add(this);
   }
 
   @override
   void dispose() {
-    SwipePreviewDetector._targets.remove(this);
+    _detector?._targets.remove(this);
+    _detector = null;
     super.dispose();
   }
 
@@ -65,8 +74,6 @@ class SwipePreviewDetector extends StatefulWidget {
     defaultValue: true,
   );
 
-  static final Set<_SwipePreviewTargetState> _targets = {};
-
   @override
   State<SwipePreviewDetector> createState() => _SwipePreviewDetectorState();
 }
@@ -81,6 +88,10 @@ class _SwipePreviewDetectorState extends State<SwipePreviewDetector> {
   /// Squared distance the finger must move before it counts as a swipe
   /// (a still finger is a tap or a long press).
   static const double _slop2 = 18 * 18;
+
+  /// The cards below this detector (not a global list: another page under
+  /// this one must not be hit).
+  final Set<_SwipePreviewTargetState> _targets = {};
 
   int? _pointer;
   Offset _down = Offset.zero;
@@ -136,7 +147,11 @@ class _SwipePreviewDetectorState extends State<SwipePreviewDetector> {
   /// The finger rested for [_dwell]: preview the card under it.
   void _onRest() {
     if (!_swiping || !mounted) return;
-    for (final t in SwipePreviewDetector._targets) {
+    // A page on top of this one, or a hidden tab: do nothing.
+    if (ModalRoute.of(context)?.isCurrent == false) return;
+    if (!TickerMode.valuesOf(context).enabled) return;
+    for (final t in _targets) {
+      if (!t.widget.enabled) continue;
       if (t._globalRect?.contains(_position) ?? false) {
         final item = t.widget.item;
         if (VideoPreview.active.value != item) {

@@ -18,12 +18,15 @@ Future<void>? showFullscreenRecommendPanel(
   final navigator = Get.key.currentState;
   if (navigator == null || !context.mounted) return null;
   _videoCtr(heroTag)?.cancelUpNext();
+  // The video page route: the panel route is popped when the panel closes,
+  // and the main player resumes only while the video page is current.
+  final pageRoute = Get.routing.route;
   return navigator.push(
     PublishRoute(
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) =>
-          _RecommendPanel(heroTag: heroTag),
+          _RecommendPanel(heroTag: heroTag, pageRoute: pageRoute),
       transitionBuilder: (context, animation, secondaryAnimation, child) =>
           SlideTransition(
             position: animation.drive(
@@ -45,9 +48,10 @@ VideoDetailController? _videoCtr(String heroTag) =>
     : null;
 
 class _RecommendPanel extends StatelessWidget {
-  const _RecommendPanel({required this.heroTag});
+  const _RecommendPanel({required this.heroTag, this.pageRoute});
 
   final String heroTag;
+  final Route<dynamic>? pageRoute;
 
   /// Height of the panel as a part of the screen height.
   static const double _heightFactor = 0.6;
@@ -118,6 +122,7 @@ class _RecommendPanel extends StatelessWidget {
                         slivers: [
                           RelatedVideoPanel(
                             heroTag: heroTag,
+                            resumeRoute: pageRoute,
                             // Close the panel first: the new page opens in
                             // fullscreen and the panel must not stay on the
                             // old page.

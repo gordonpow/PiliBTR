@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/video_card/live_preview.dart';
 import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/feedback.dart';
@@ -30,12 +31,16 @@ class LiveCardVApp extends StatelessWidget {
       title: item.title,
       cover: showFirstFrame ? item.systemCover : item.cover,
     );
-    return Stack(
+    final preview = LiveCardPreview(item: item, roomId: item.roomid);
+    return preview.wrapTarget(Stack(
       children: [
         Card(
           child: InkWell(
-            onTap: () => PageUtils.toLiveRoom(item.roomid),
-            onLongPress: onLongPress,
+            onTap: () {
+              preview.stop();
+              PageUtils.toLiveRoom(item.roomid);
+            },
+            onLongPress: () => preview.longPress(onLongPress),
             onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
             borderRadius: const .all(.circular(12)),
             child: Column(
@@ -58,6 +63,9 @@ class LiveCardVApp extends StatelessWidget {
                           right: 0,
                           bottom: 0,
                           child: videoStat(),
+                        ),
+                        preview.overlay(
+                          radius: const .vertical(top: .circular(12)),
                         ),
                       ],
                     ),
@@ -151,7 +159,7 @@ class LiveCardVApp extends StatelessWidget {
             ),
           ),
       ],
-    );
+    ));
   }
 
   Widget liveContent(ThemeData theme) {
