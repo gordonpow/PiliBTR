@@ -78,6 +78,10 @@
 
 發布：v2.2.0-btr.14（2026-11-07）。尚未驗證，待使用者實機測試。
 
+| `b4a917e3d` | 推薦卡片 `track_id` 點擊歸因、App 版心跳 `/x/report/heartbeat/mobile`、推薦請求統一 HD 身分與 fp／session_id |
+
+發布：v2.2.0-btr.15（2026-11-07）。模擬器實測 App 心跳 START／END 皆 code 0；推薦是否變準待使用者長期觀察。
+
 ### 已實作、尚未 commit
 
 （無）
@@ -202,3 +206,8 @@
 | 05:41 | 推送、發布 btr.13 | `333d62559`、`6c6e27f1e`；版本號 btr.13 |
 | 06:43 | 豎屏往下滑仍慢、畫質差 | 原因：feed 固定 qn 32（480P）、只預載 1 部。改為預載 3 部、畫質跟一般設定；agy 規格審查逾時改 Haiku，採用 9／10 條；Sonnet 實作，analyze 通過，尚未驗證 |
 | 06:48 | commit、開 issue、發布 btr.14 | `436547e3c`；版本號 btr.14 |
+| 13:00 | 加上 SponsorBlock 自動跳過廣告、贊助、片頭片尾，可自訂開關 | 查到 PiliPlus 已內建「空降助手」（設定 → 其他設定，bsbsb.top，每種片段可設跳過方式），使用者選擇不修改 |
+| 13:10 | 官方 App 推薦為何比較準 | 說明差異：缺曝光／點擊回傳、裝置身分不一致、推薦帳號角色、地區與 App 端過濾 |
+| 13:20 | 實作 B-1 點擊歸因、B-2 統一裝置身分、B-3 App 版心跳 | 需求與規格寫入 `docs/work/rcmd-signal/`；agy 規格審查 4 條全採用；Sonnet 兩個子代理平行實作；HD 身分推薦 API 實測 code 0；flutter analyze 0 error、0 warning |
+| 13:10 | 開模擬器驗證 | 第一次模擬器因記憶體不足被關，改 `-memory 2048` 重開；debug 版實測 App 心跳 START／END 皆 code 0，推薦入口帶 track_id、其他入口為空；結果見 `docs/work/rcmd-signal/3-verification.md` |
+| 13:20 | commit 並發布新版 | `b4a917e3d`；版本號 btr.15 |
