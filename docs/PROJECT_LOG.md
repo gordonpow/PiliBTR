@@ -82,6 +82,11 @@
 
 發布：v2.2.0-btr.15（2026-11-07）。模擬器實測 App 心跳 START／END 皆 code 0；推薦是否變準待使用者長期觀察。
 
+| `9460b0b51` | 「我的」頁掃描 QR code：電視／盒子登入確認、網頁版登入（WebView）、相簿選圖、其他網址開啟 |
+| `69936f5bd` | 冷啟動開場動畫（可在設定關閉、點擊跳過） |
+
+發布：v2.2.0-btr.16（2026-11-07）。尚未驗證，待使用者實機測試。
+
 ### 已實作、尚未 commit
 
 （無）
@@ -211,3 +216,6 @@
 | 13:20 | 實作 B-1 點擊歸因、B-2 統一裝置身分、B-3 App 版心跳 | 需求與規格寫入 `docs/work/rcmd-signal/`；agy 規格審查 4 條全採用；Sonnet 兩個子代理平行實作；HD 身分推薦 API 實測 code 0；flutter analyze 0 error、0 warning |
 | 13:10 | 開模擬器驗證 | 第一次模擬器因記憶體不足被關，改 `-memory 2048` 重開；debug 版實測 App 心跳 START／END 皆 code 0，推薦入口帶 track_id、其他入口為空；結果見 `docs/work/rcmd-signal/3-verification.md` |
 | 13:20 | commit 並發布新版 | `b4a917e3d`；版本號 btr.15 |
+| 23:10 | 「我的」右上角新增掃描 QR code，用來登入其他裝置 | 使用者選 mobile_scanner、支援電視／網頁版登入、相簿、其他網址；網頁版確認 API 查無文件，改用 WebView 帶 cookie 開確認頁；agy 規格審查 4 條全採用；Sonnet 實作，analyze 通過 |
+| 23:30 | 新增開啟 App 動畫 | 使用者選 Flutter 開場動畫、可關閉、點擊跳過、只冷啟動；agy 審查採用 3 條、部分採用 1 條（不改 OverlayEntry，避免首頁先閃一幀）；Sonnet 實作，analyze 0 error、0 warning |
+| 23:40 | 發布 | `9460b0b51`、`69936f5bd`；版本號 btr.16 |
