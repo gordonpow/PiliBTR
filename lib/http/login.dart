@@ -68,6 +68,30 @@ abstract final class LoginHttp {
     };
   }
 
+  /// 確認電視／盒子 QR code 登入
+  static Future<({bool success, String msg})> confirmTvQrcode(
+    String authCode,
+  ) async {
+    try {
+      final res = await Request().post(
+        Api.qrcodeConfirm,
+        data: {
+          'auth_code': authCode,
+          'build': 7082000,
+          'csrf': Accounts.main.csrf,
+        },
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+      final ok = res.data['code'] == 0;
+      return (
+        success: ok,
+        msg: ok ? '登入成功' : (res.data['message']?.toString() ?? '登入失敗'),
+      );
+    } catch (e) {
+      return (success: false, msg: e.toString());
+    }
+  }
+
   // static Future queryCaptcha() async {
   //   final res = await Request().get(Api.getCaptcha);
   //   if (res.data['code'] == 0) {

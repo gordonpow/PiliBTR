@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/common/assets.dart';
@@ -164,6 +165,15 @@ class _MediaPageState extends CommonPageState<MinePage>
         spacing: 5,
         mainAxisSize: .min,
         children: [
+          if (Platform.isAndroid)
+            IconButton(
+              iconSize: iconSize,
+              padding: padding,
+              style: style,
+              tooltip: '掃描',
+              onPressed: () => Get.toNamed('/scan'),
+              icon: const Icon(Icons.qr_code_scanner),
+            ),
           if (!_mainController.hasHome) ...[
             IconButton(
               iconSize: iconSize,
