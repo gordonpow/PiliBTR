@@ -210,6 +210,10 @@ abstract final class Pref {
   static int get appLanguage =>
       _setting.get(SettingBoxKey.appLanguage, defaultValue: 0);
 
+  /// Play the PiliBTR splash animation on cold start (mobile only).
+  static bool get enableSplashAnimation =>
+      _setting.get(SettingBoxKey.enableSplashAnimation, defaultValue: true);
+
   static UpPanelPosition get upPanelPosition =>
       UpPanelPosition.values[_setting.get(
         SettingBoxKey.upPanelPosition,

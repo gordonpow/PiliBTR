@@ -7,6 +7,7 @@ import 'package:PiliPlus/common/widgets/custom_toast.dart';
 import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/common/widgets/scale_app.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
+import 'package:PiliPlus/common/widgets/splash_overlay.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
@@ -378,8 +379,39 @@ class MyApp extends StatelessWidget {
         child: child,
       );
     }
+    // Keep the same widget structure after the overlay is gone so the home
+    // page is not remounted.
+    if (_splashEnabled) {
+      final home = child;
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _splashDone,
+          // Home stays the same child so it is not rebuilt when the overlay
+          // is removed.
+          child: home,
+          builder: (context, done, home) => Stack(
+            fit: StackFit.passthrough,
+            children: [
+              home!,
+              if (!done)
+                Positioned.fill(
+                  child: SplashOverlay(
+                    onFinished: () => _splashDone.value = true,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
     return child;
   }
+
+  /// Read once at startup; the splash plays once per process.
+  static final bool _splashEnabled =
+      PlatformUtils.isMobile && Pref.enableSplashAnimation;
+  static final ValueNotifier<bool> _splashDone = ValueNotifier(false);
 
   /// from [DynamicColorBuilderState.initPlatformState]
   static Future<bool> initPlatformState() async {

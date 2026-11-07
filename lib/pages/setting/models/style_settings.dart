@@ -75,6 +75,14 @@ List<SettingsModel> get styleSettings => [
     getSubtitle: () => _languageLabel(Pref.appLanguage),
     onTap: _showLanguageDialog,
   ),
+  if (PlatformUtils.isMobile)
+    const SwitchModel(
+      title: '開場動畫',
+      subtitle: '冷啟動時播放 PiliBTR 開場動畫',
+      leading: Icon(Icons.animation),
+      setKey: SettingBoxKey.enableSplashAnimation,
+      defaultVal: true,
+    ),
   SwitchModel(
     title: '橫向螢幕適配',
     subtitle: '啟用橫向螢幕佈局與邏輯，平板、摺疊螢幕等可開啟；建議全螢幕方向設為【不改變當前方向】',
