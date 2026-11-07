@@ -69,9 +69,9 @@
 
 發布：v2.2.0-btr.12（2026-11-07）。
 
-### 已實作、尚未 commit
+### 已實作、尚未 commit（`docs/work/reels-preload/`）
 
-- 無
+- 豎屏模式換片加速：第二個播放器預載下一部、直接使用 story feed 附帶的播放網址。程式碼驗證通過（Haiku），功能待使用者測試；F-1 已修正（出錯重試改從原位置繼續，analyze 通過，待使用者測試）；F-3（快速連滑可能錯片，未重現）待決定是否修。
 
 ### 待辦
 
@@ -183,3 +183,9 @@
 | 20:10 | 豎屏模式直接開始；模擬器刪除舊版重灌最新版 | 實測 story API 可用（免登入、台灣可用）；Opus 審查規格後改用專屬播放器；Sonnet 實作與程式碼驗證；release 版已裝到模擬器 |
 | 20:40 | 使用者直接在子代理要求豎屏分頁改為卡片格線、播完自動下一部 | 已完成並重新安裝 |
 | 20:50 | commit、發布 btr.12、加上 issue | `6871e45f2`；版本號 btr.12 |
+| 21:00 | 豎屏向上滑下一部載入很慢 | 選做 A（雙播放器預載）與 D（使用 player_preload）；Sonnet 實作，Haiku 驗證並安裝到模擬器 |
+| 21:05 | 驗證與檢查改用最小的模型 | dev-workflow、CLAUDE.md、記憶改為 Haiku 驗證 |
+| 21:10 | agy（Gemini）改為 auto mode、不再詢問 | settings.json：agentMode auto、toolPermission always-proceed、enableTerminalSandbox true |
+| 05:27 | 改用 Claude 與 agy 模型分工 | Opus 規劃、Sonnet 實作、Haiku 檢查、agy `gemini-3.8-flash-high` 審查；更新 dev-workflow、CLAUDE.md、記憶 |
+| 05:27 | 修正 F-1（預載影片出錯重試從 0 秒播放） | `_onSlotError` 重試前把目前位置存入 `_startAt`；analyze 通過，待使用者測試 |
+| 05:32 | 關閉縮小視窗功能時，全螢幕往下滑沒反應 | `pl_player/view/view.dart`：不能縮成小視窗時改為退出全螢幕回影片詳細頁；analyze 通過，待使用者測試 |

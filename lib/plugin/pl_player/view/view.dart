@@ -1081,6 +1081,12 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             // Fullscreen: straight down on the center zone also shrinks
             // the video to the mini player.
             if (canMini) _startMiniSwipe(details, cumulativeDelta);
+            // Mini player off (or it could not start): exit fullscreen
+            // back to the video page instead.
+            if (_gestureType != .mini) {
+              _gestureType = .center_down;
+              plPlayerController.triggerFullScreen(status: false);
+            }
             return;
           }
           // 全屏
