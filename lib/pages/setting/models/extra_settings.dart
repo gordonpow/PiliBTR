@@ -238,7 +238,7 @@ List<SettingsModel> get extraSettings => [
     title: '啟用HTTP/2',
     leading: Icon(Icons.swap_horizontal_circle_outlined),
     setKey: SettingBoxKey.enableHttp2,
-    defaultVal: false,
+    defaultVal: true,
     needReboot: true,
   ),
   const NormalModel(

@@ -99,6 +99,7 @@ abstract final class SettingBoxKey {
       badCertificateCallback = 'badCertificateCallback',
       continuePlayingPart = 'continuePlayingPart',
       cdnSpeedTest = 'cdnSpeedTest',
+      speedUnit = 'speedUnit',
       horizontalPreview = 'horizontalPreview',
       banWordForReply = 'banWordForReply',
       banWordForZone = 'banWordForZone',
@@ -163,6 +164,7 @@ abstract final class SettingBoxKey {
       btrEnable = 'btrEnable',
       btrPlayback = 'btrPlayback',
       btrCdnMode = 'btrCdnMode',
+      btrCdnLocaleDefaultV1 = 'btrCdnLocaleDefaultV1',
       btrCustomCdn = 'btrCustomCdn',
       btrAutoThreads = 'btrAutoThreads',
       btrThreads = 'btrThreads',
@@ -255,6 +257,7 @@ abstract final class SettingBoxKey {
       recommendCardWidth = 'recommendCardWidth',
       videoCardColumnsPortrait = 'videoCardColumnsPortrait',
       videoCardColumnsLandscape = 'videoCardColumnsLandscape',
+      videoPageRelatedColumns = 'videoPageRelatedColumns',
       appLanguage = 'appLanguage',
       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
       upPanelPosition = 'upPanelPosition',
@@ -283,7 +286,8 @@ abstract final class LocalCacheKey {
       danmakuFilterRules = 'danmakuFilterRules',
       mixinKey = 'mixinKey',
       timeStamp = 'timeStamp',
-      settingsSearchHistory = 'settingsSearchHistory';
+      settingsSearchHistory = 'settingsSearchHistory',
+      exportRecords = 'exportRecords';
 }
 
 abstract final class VideoBoxKey {

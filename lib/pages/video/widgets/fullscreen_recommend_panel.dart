@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:PiliPlus/pages/common/publish/publish_route.dart';
+import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/related/view.dart';
 import 'package:get/get.dart';
 
@@ -16,6 +17,7 @@ Future<void>? showFullscreenRecommendPanel(
 }) {
   final navigator = Get.key.currentState;
   if (navigator == null || !context.mounted) return null;
+  _videoCtr(heroTag)?.cancelUpNext();
   return navigator.push(
     PublishRoute(
       barrierColor: Colors.transparent,
@@ -36,6 +38,11 @@ Future<void>? showFullscreenRecommendPanel(
     ),
   );
 }
+
+VideoDetailController? _videoCtr(String heroTag) =>
+    Get.isRegistered<VideoDetailController>(tag: heroTag)
+    ? Get.find<VideoDetailController>(tag: heroTag)
+    : null;
 
 class _RecommendPanel extends StatelessWidget {
   const _RecommendPanel({required this.heroTag});
@@ -99,16 +106,25 @@ class _RecommendPanel extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    child: CustomScrollView(
-                      slivers: [
-                        RelatedVideoPanel(
-                          heroTag: heroTag,
-                          // Close the panel first: the new page opens in
-                          // fullscreen and the panel must not stay on the
-                          // old page.
-                          beforeOpen: Navigator.of(context).pop,
-                        ),
-                      ],
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollUpdateNotification &&
+                            notification.dragDetails != null) {
+                          _videoCtr(heroTag)?.cancelUpNext();
+                        }
+                        return false;
+                      },
+                      child: CustomScrollView(
+                        slivers: [
+                          RelatedVideoPanel(
+                            heroTag: heroTag,
+                            // Close the panel first: the new page opens in
+                            // fullscreen and the panel must not stay on the
+                            // old page.
+                            beforeOpen: Navigator.of(context).pop,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

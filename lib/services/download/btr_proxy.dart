@@ -15,7 +15,7 @@ import 'dart:typed_data';
 
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/services/download/btr_cdn.dart'
-    show BtrNodePool, btrDio;
+    show BtrNode, BtrNodePool, btrDio;
 import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:dio/dio.dart';
@@ -77,6 +77,15 @@ abstract final class BtrProxy {
     }
   }
 
+  /// Bytes served to the player and CDN nodes for [originalUrl], or null when
+  /// that URL is not proxied.
+  static ({int served, List<BtrNode> nodes})? statsFor(String originalUrl) {
+    final id = _idByUrl[originalUrl.http2https];
+    final source = id == null ? null : _sources[id];
+    if (source == null) return null;
+    return (served: source.served, nodes: source.pool.nodes);
+  }
+
   static Future<HttpServer> _ensureServer() {
     if (_server case final server?) return Future.value(server);
     return _starting ??= HttpServer.bind(InternetAddress.loopbackIPv4, 0).then(
@@ -120,6 +129,9 @@ class _BtrSource {
 
   final String url;
   final BtrNodePool pool;
+
+  /// Bytes written to the player's responses.
+  int served = 0;
 
   static const _firstPiece = 128 * 1024;
   static const _maxWindowBytes = 64 * 1024 * 1024;
@@ -306,7 +318,12 @@ class _BtrSource {
       await res.close();
       return;
     }
-    await res.addStream(response.data!.stream);
+    await res.addStream(
+      response.data!.stream.map((c) {
+        served += c.length;
+        return c;
+      }),
+    );
     await res.close();
   }
 
@@ -322,7 +339,12 @@ class _BtrSource {
     if (response.statusCode != 206) {
       throw Exception('fallback status ${response.statusCode}');
     }
-    await res.addStream(response.data!.stream);
+    await res.addStream(
+      response.data!.stream.map((c) {
+        served += c.length;
+        return c;
+      }),
+    );
   }
 }
 
@@ -449,6 +471,7 @@ class _Pump {
         final ms = head.age.inMilliseconds.toDouble();
         _pieceMs = _pieceMs == 0 ? ms : _pieceMs * 0.8 + ms * 0.2;
         res.add(bytes);
+        source.served += bytes.length;
         position += bytes.length;
         fill();
         await res.flush();

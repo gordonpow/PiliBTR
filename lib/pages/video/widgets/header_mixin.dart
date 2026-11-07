@@ -1,4 +1,5 @@
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/menu_row.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
@@ -48,6 +49,9 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
       iconSize: 24,
     );
   }
+
+  /// 彈幕列表（由 HeaderControlState 實作；直播沒有）
+  void showDanmakuPool() {}
 
   /// 弹幕功能
   void showSetDanmaku({bool isLive = false}) {
@@ -181,6 +185,17 @@ mixin HeaderMixin<T extends StatefulWidget> on State<T> {
                     ),
                     const SizedBox(height: 10),
                     if (!isLive) ...[
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(CustomIcons.dm_on, size: 20),
+                        title: const Text('彈幕列表'),
+                        trailing: const Icon(Icons.chevron_right, size: 20),
+                        onTap: () {
+                          Get.back();
+                          showDanmakuPool();
+                        },
+                      ),
                       Row(
                         mainAxisAlignment: .spaceBetween,
                         children: [

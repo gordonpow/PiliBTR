@@ -165,9 +165,15 @@ class DownloadManager {
 
     // 1. Total size, and check range support.
     int? total;
+    var rangeUnsupported = false;
     try {
       for (final node in _pool.nodes.take(3)) {
-        total = await _probe(node.url);
+        final size = await _probe(node.url);
+        if (size == _noRange) {
+          rangeUnsupported = true;
+          break;
+        }
+        total = size;
         if (total != null) break;
       }
     } catch (e) {
@@ -177,8 +183,20 @@ class DownloadManager {
       }
     }
     if (total == null) {
-      if (kDebugMode) debugPrint('BTR: range not supported, single connection');
-      return _startSingle();
+      if (rangeUnsupported) {
+        if (kDebugMode) {
+          debugPrint('BTR: range not supported, single connection');
+        }
+        return _startSingle();
+      }
+      // Every probe failed (network error, or an expired link: 403). The
+      // single connection would delete the resume state (.btr) and fail
+      // the same way, so fail here and keep the progress for a retry.
+      if (_status == DownloadStatus.downloading) {
+        _status = DownloadStatus.failDownload;
+      }
+      onDone(StateError('BTR: probe failed'));
+      return;
     }
     _total = total;
 
@@ -262,7 +280,11 @@ class DownloadManager {
     }
   }
 
-  /// Returns the total size when [url] supports range requests.
+  /// [_probe] result: the server answered, but without range support.
+  static const int _noRange = -1;
+
+  /// Returns the total size when [url] supports range requests, [_noRange]
+  /// when the server answers without range support, null on an error.
   Future<int?> _probe(String url) async {
     try {
       final response = await Request.http11Dio.get<ResponseBody>(
@@ -274,6 +296,7 @@ class DownloadManager {
         cancelToken: _cancelToken,
       );
       await response.data?.stream.drain<void>().catchError((_) {});
+      if (response.statusCode == 200) return _noRange;
       if (response.statusCode != 206) return null;
       final range = response.headers.value('content-range');
       if (range == null) return null;

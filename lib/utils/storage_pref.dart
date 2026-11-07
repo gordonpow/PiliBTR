@@ -200,6 +200,12 @@ abstract final class Pref {
   static int get videoCardColumnsLandscape =>
       _setting.get(SettingBoxKey.videoCardColumnsLandscape, defaultValue: 0);
 
+  /// Columns of the related video list in the video page side pane.
+  /// 0: automatic (from [recommendCardWidth]).
+  static int get videoPageRelatedColumns => _setting
+      .get(SettingBoxKey.videoPageRelatedColumns, defaultValue: 0)
+      .clamp(0, 4);
+
   /// Chinese script: 0 follows the system, 1 Traditional, 2 Simplified.
   static int get appLanguage =>
       _setting.get(SettingBoxKey.appLanguage, defaultValue: 0);
@@ -457,6 +463,12 @@ abstract final class Pref {
   static bool get continuePlayingPart =>
       _setting.get(SettingBoxKey.continuePlayingPart, defaultValue: true);
 
+  static int get speedUnit =>
+      (_setting.get(SettingBoxKey.speedUnit, defaultValue: 0) as int).clamp(
+        0,
+        3,
+      );
+
   static bool get cdnSpeedTest =>
       _setting.get(SettingBoxKey.cdnSpeedTest, defaultValue: true);
 
@@ -502,7 +514,7 @@ abstract final class Pref {
   }
 
   static bool get preInitPlayer =>
-      _setting.get(SettingBoxKey.preInitPlayer, defaultValue: false);
+      _setting.get(SettingBoxKey.preInitPlayer, defaultValue: true);
 
   static bool get mainTabBarView =>
       _setting.get(SettingBoxKey.mainTabBarView, defaultValue: false);
@@ -795,7 +807,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.enableSystemProxy, defaultValue: false);
 
   static bool get enableHttp2 =>
-      _setting.get(SettingBoxKey.enableHttp2, defaultValue: false);
+      _setting.get(SettingBoxKey.enableHttp2, defaultValue: true);
 
   static ReplySortType get replySortType =>
       ReplySortType.values[_setting.get(
@@ -959,7 +971,7 @@ abstract final class Pref {
   static PlayRepeat get playRepeat =>
       PlayRepeat.values[_video.get(
         VideoBoxKey.playRepeat,
-        defaultValue: PlayRepeat.pause.index,
+        defaultValue: PlayRepeat.autoPlayRelated.index,
       )];
 
   static int get cacheVideoFit =>

@@ -17,6 +17,7 @@ import 'package:PiliPlus/models_new/video/video_detail/data.dart';
 import 'package:PiliPlus/models_new/video/video_detail/episode.dart' as ugc;
 import 'package:PiliPlus/models_new/video/video_detail/page.dart';
 import 'package:PiliPlus/services/download/download_manager.dart';
+import 'package:PiliPlus/utils/speed_format.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
@@ -47,6 +48,38 @@ class DownloadService extends GetxService {
   int? _curCid;
   int? get curCid => _curCid;
   final curDownload = Rxn<BiliDownloadEntryInfo>();
+
+  /// Download speed of the current entry, bytes per second (video and
+  /// audio streams together). 0 when nothing downloads.
+  final speed = 0.0.obs;
+  final _meter = SpeedMeter();
+
+  /// Received bytes of the video (0) and audio (1) stream.
+  final _received = [0, 0];
+  Timer? _speedTimer;
+
+  void _onBytes(int stream, int received) {
+    _received[stream] = received;
+    _meter.update(_received[0] + _received[1]);
+  }
+
+  /// Measures from the current totals (a resumed download starts with the
+  /// bytes it had: no jump of the speed).
+  void _startSpeed() {
+    _received[0] = _received[1] = 0;
+    _meter.reset();
+    _speedTimer?.cancel();
+    _speedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final downloading = curDownload.value?.status.isDownloading ?? false;
+      speed.value = downloading ? _meter.bytesPerSec : 0;
+    });
+  }
+
+  void _stopSpeed() {
+    _speedTimer?.cancel();
+    _speedTimer = null;
+    speed.value = 0;
+  }
   void _updateCurStatus(DownloadStatus status) {
     if (curDownload.value != null) {
       curDownload
@@ -467,10 +500,14 @@ class DownloadService extends GetxService {
         _downloadCover(entry: entry),
       ]);
 
-      if (curDownload.value?.cid != entry.cid) {
+      // Paused (or another entry started) while the play url loaded: do not
+      // start the download.
+      if (curDownload.value?.cid != entry.cid ||
+          entry.status == DownloadStatus.pause) {
         return;
       }
 
+      _startSpeed();
       switch (mediaFileInfo) {
         case Type1 mediaFileInfo:
           final first = mediaFileInfo.segmentList.first;
@@ -493,7 +530,8 @@ class DownloadService extends GetxService {
             _audioDownloadManager = DownloadManager(
               url: audio.first.baseUrl,
               path: path.join(videoDir.path, PathUtils.audioNameType2),
-              onReceiveProgress: null,
+              // Only for the speed; the entry shows the video progress.
+              onReceiveProgress: (received, _) => _onBytes(1, received),
               onDone: _onAudioDone,
             );
           }
@@ -531,6 +569,7 @@ class DownloadService extends GetxService {
         ..downloadedBytes = progress
         ..status = DownloadStatus.downloading;
       curDownload.refresh();
+      _onBytes(0, progress);
     }
   }
 
@@ -647,6 +686,7 @@ class DownloadService extends GetxService {
     required bool isDelete,
     bool downloadNext = true,
   }) async {
+    _stopSpeed();
     await _downloadManager?.cancel(isDelete: isDelete);
     await _audioDownloadManager?.cancel(isDelete: isDelete);
     _downloadManager = null;

@@ -23,8 +23,6 @@ import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
-import 'package:PiliPlus/pages/setting/models/play_settings.dart'
-    show showPlayerVolumeDialog;
 import 'package:PiliPlus/pages/setting/widgets/popup_item.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/local/controller.dart';
@@ -458,15 +456,6 @@ class HeaderControlState extends State<HeaderControl>
                     ),
                     title: const Text('播放地址', style: titleStyle),
                   ),
-                  ListTile(
-                    dense: true,
-                    onTap: () {
-                      Get.back();
-                      videoDetailCtr.queryVideoUrl(fromReset: true);
-                    },
-                    leading: const Icon(Icons.refresh_outlined, size: 20),
-                    title: const Text('過載影片', style: titleStyle),
-                  ),
                 ],
                 PopupListTile<SuperResolutionType>(
                   dense: true,
@@ -490,24 +479,6 @@ class HeaderControlState extends State<HeaderControl>
                   descPosType: .subtitle,
                   descStyle: subTitleStyle,
                 ),
-                if (PlatformUtils.isMobile)
-                  if (plPlayerController.videoPlayerController
-                      case final player?)
-                    Builder(
-                      builder: (context) => ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.volume_up, size: 20),
-                        title: const Text('播放器音量'),
-                        subtitle: Text(
-                          '當前: ${Pref.playerVolume.toStringAsFixed(0)}%',
-                        ),
-                        onTap: () => showPlayerVolumeDialog(
-                          context,
-                          () => (context as Element).markNeedsBuild(),
-                          onChanged: player.setVolume,
-                        ),
-                      ),
-                    ),
                 if (!isFileSource)
                   ListTile(
                     dense: true,
@@ -617,19 +588,6 @@ class HeaderControlState extends State<HeaderControl>
                   ),
                 ),
                 if (!isFileSource) ...[
-                  ListTile(
-                    dense: true,
-                    onTap: () {
-                      Get.back();
-                      showSetVideoQa();
-                    },
-                    leading: const Icon(Icons.play_circle_outline, size: 20),
-                    title: const Text('選擇畫質', style: titleStyle),
-                    subtitle: Text(
-                      '當前畫質 ${videoDetailCtr.currentVideoQa.value?.desc}',
-                      style: subTitleStyle,
-                    ),
-                  ),
                   if (videoDetailCtr.currentAudioQa != null)
                     ListTile(
                       dense: true,
@@ -679,19 +637,15 @@ class HeaderControlState extends State<HeaderControl>
                   dense: true,
                   onTap: () {
                     Get.back();
-                    showDanmakuPool();
+                    plPlayerController.showCdnStatus.toggle();
                   },
-                  leading: const Icon(CustomIcons.dm_on, size: 20),
-                  title: const Text('彈幕列表', style: titleStyle),
-                ),
-                ListTile(
-                  dense: true,
-                  onTap: () {
-                    Get.back();
-                    showSetDanmaku();
-                  },
-                  leading: const Icon(CustomIcons.dm_settings, size: 20),
-                  title: const Text('彈幕設定', style: titleStyle),
+                  leading: const Icon(Icons.network_check, size: 20),
+                  title: Text(
+                    plPlayerController.showCdnStatus.value
+                        ? 'CDN 狀態（開）'
+                        : 'CDN 狀態',
+                    style: titleStyle,
+                  ),
                 ),
                 ListTile(
                   dense: true,
@@ -898,108 +852,6 @@ class HeaderControlState extends State<HeaderControl>
               ),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  /// 选择画质
-  void showSetVideoQa() {
-    if (videoInfo.dash == null) {
-      SmartDialog.showToast('當前影片不支援選擇畫質');
-      return;
-    }
-    final VideoQuality? currentVideoQa = videoDetailCtr.currentVideoQa.value;
-    if (currentVideoQa == null) return;
-
-    final List<FormatItem> videoFormat = videoInfo.supportFormats!;
-    final availableQa = videoInfo.dash!.video!.availableVideoQualities;
-
-    showBottomSheet(
-      (context, setState) {
-        final theme = Theme.of(context);
-        return Padding(
-          padding: const EdgeInsets.all(12),
-          child: Material(
-            clipBehavior: Clip.hardEdge,
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 45,
-                    child: GestureDetector(
-                      onTap: () => SmartDialog.showToast(
-                        '標灰畫質需要bilibili會員（已是會員？請關閉無痕模式）；4k和杜比視界播放效果可能不佳',
-                      ),
-                      child: Row(
-                        spacing: 8,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('選擇畫質', style: titleStyle),
-                          Icon(
-                            Icons.info_outline,
-                            size: 16,
-                            color: theme.colorScheme.outline,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SliverList.builder(
-                  itemCount: videoFormat.length,
-                  itemBuilder: (context, index) {
-                    final item = videoFormat[index];
-                    final isCurr = currentVideoQa.code == item.quality;
-                    return ListTile(
-                      dense: true,
-                      onTap: () async {
-                        if (isCurr) {
-                          return;
-                        }
-                        Get.back();
-                        final int quality = item.quality!;
-                        final newQa = VideoQuality.fromCode(quality);
-                        videoDetailCtr
-                          ..plPlayerController.cacheVideoQa = newQa.code
-                          ..currentVideoQa.value = newQa
-                          ..updatePlayer();
-
-                        SmartDialog.showToast("畫質已變為：${newQa.desc}");
-
-                        // update
-                        if (!plPlayerController.tempPlayerConf) {
-                          setting.put(
-                            await ConnectivityUtils.isWiFi
-                                ? SettingBoxKey.defaultVideoQa
-                                : SettingBoxKey.defaultVideoQaCellular,
-                            quality,
-                          );
-                        }
-                      },
-                      // 可能包含会员解锁画质
-                      enabled: availableQa.contains(item.quality),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                      ),
-                      title: Text(item.newDesc!),
-                      trailing: isCurr
-                          ? Icon(
-                              Icons.done,
-                              color: theme.colorScheme.primary,
-                            )
-                          : Text(
-                              item.format!,
-                              style: subTitleStyle,
-                            ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
@@ -1514,6 +1366,7 @@ class HeaderControlState extends State<HeaderControl>
     )?.whenComplete(plPlayerController.putSubtitleSettings);
   }
 
+  @override
   void showDanmakuPool() {
     final ctr = plPlayerController.danmakuController;
     if (ctr == null) return;

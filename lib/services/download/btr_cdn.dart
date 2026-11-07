@@ -21,6 +21,9 @@ class BtrNode {
   bool banned = false;
   int inflight = 0;
 
+  /// Total bytes received from this node.
+  int bytes = 0;
+
   /// Measured speed in bytes per millisecond (moving average). 0 = unknown.
   double speed = 0;
 
@@ -119,6 +122,7 @@ class BtrNodePool {
     bool cancelled = false,
   }) {
     if (node.inflight > 0) node.inflight--;
+    if (bytes > 0) node.bytes += bytes;
     if (bytes >= 64 * 1024 && elapsed != null) {
       final sample = bytes / (elapsed.inMilliseconds + 1);
       node.speed = node.speed == 0 ? sample : node.speed * 0.7 + sample * 0.3;

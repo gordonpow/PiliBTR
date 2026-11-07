@@ -1,16 +1,28 @@
+import 'package:PiliPlus/common/skeleton/video_card_v.dart';
+import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_style.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/video/related/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
-import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 class RelatedVideoPanel extends StatefulWidget {
-  const RelatedVideoPanel({super.key, required this.heroTag, this.beforeOpen});
+  const RelatedVideoPanel({
+    super.key,
+    required this.heroTag,
+    this.beforeOpen,
+    this.sidePane = false,
+  });
   final String heroTag;
+
+  /// True when the list is in the side pane of the landscape video page,
+  /// which has its own column setting.
+  final bool sidePane;
 
   /// Called before a tapped video opens (for example to close the panel
   /// that shows this list).
@@ -19,7 +31,8 @@ class RelatedVideoPanel extends StatefulWidget {
   State<RelatedVideoPanel> createState() => _RelatedVideoPanelState();
 }
 
-class _RelatedVideoPanelState extends State<RelatedVideoPanel> with GridMixin {
+// Vertical cards like the home page (same width and column setting).
+class _RelatedVideoPanelState extends State<RelatedVideoPanel> {
   late final RelatedController _relatedController;
 
   @override
@@ -31,17 +44,41 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel> with GridMixin {
     );
   }
 
+  // The same State moves between the portrait and landscape layouts, so the
+  // delegate is built per build() from [RelatedVideoPanel.sidePane].
+  SliverGridDelegate _gridDelegate(BuildContext context) =>
+      VideoCardStyle.gridDelegate(
+        context,
+        fixedColumns: widget.sidePane
+            ? () => Pref.videoPageRelatedColumns
+            : null,
+      );
+
   @override
   Widget build(BuildContext context) {
+    final gridDelegate = _gridDelegate(context);
     return SliverPadding(
-      padding: const EdgeInsets.only(top: 7, bottom: 100),
-      sliver: Obx(() => _buildBody(_relatedController.loadingState.value)),
+      padding: VideoCardStyle.sidePadding.add(
+        const EdgeInsets.only(top: 7, bottom: 100),
+      ),
+      sliver: Obx(
+        () => _buildBody(_relatedController.loadingState.value, gridDelegate),
+      ),
     );
   }
 
-  Widget _buildBody(LoadingState<List<HotVideoItemModel>?> loadingState) {
+  Widget _buildBody(
+    LoadingState<List<HotVideoItemModel>?> loadingState,
+    SliverGridDelegate gridDelegate,
+  ) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => SliverGrid(
+        gridDelegate: gridDelegate,
+        delegate: const SliverSingleChildDelegate(
+          count: 10,
+          child: VideoCardVSkeleton(),
+        ),
+      ),
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
@@ -50,6 +87,7 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel> with GridMixin {
                   final beforeOpen = widget.beforeOpen;
                   return VideoCardH(
                     videoItem: response[index],
+                    vertical: true,
                     onTap: beforeOpen == null
                         ? null
                         : () {

@@ -531,12 +531,16 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),
+            onLongPress: () =>
+                Get.toNamed('/download', arguments: {'tab': 0}),
             text: '快取',
             semanticsLabel: '快取',
           ),
           ActionItem(
             icon: const Icon(Icons.save_alt),
             onTap: () => VideoExport.start(videoDetailCtr),
+            onLongPress: () =>
+                Get.toNamed('/download', arguments: {'tab': 1}),
             text: '下載',
             semanticsLabel: '下載到手機',
           ),

@@ -45,8 +45,10 @@ import 'package:PiliPlus/plugin/pl_player/models/gesture_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/pages/video/widgets/fullscreen_recommend_panel.dart';
+import 'package:PiliPlus/pages/video/widgets/up_next_overlay.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/app_bar_ani.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/backward_seek.dart';
+import 'package:PiliPlus/plugin/pl_player/widgets/cdn_status_panel.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/bottom_control.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/common_btn.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/forward_seek.dart';
@@ -83,6 +85,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
+import 'package:media_kit/media_kit.dart' show NativePlayer;
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
@@ -1486,6 +1489,28 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         if (widget.danmuWidget case final danmaku?)
           Positioned.fill(top: 4, child: danmaku),
 
+        Obx(
+          () => plPlayerController.showCdnStatus.value
+              ? Positioned(
+                  left: 8,
+                  top: 48,
+                  child: IgnorePointer(
+                    child: CdnStatusPanel(
+                      videoUrl: widget.videoDetailController?.videoUrl,
+                      audioUrl: widget.videoDetailController?.audioUrl,
+                      cacheSpeed: () => switch (plPlayerController
+                          .videoPlayerController) {
+                        final NativePlayer player => player.getProperty(
+                          'cache-speed',
+                        ),
+                        _ => null,
+                      },
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+
         if (!isLive)
           Positioned.fill(
             child: IgnorePointer(
@@ -1823,6 +1848,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 )
               : const SizedBox.shrink(),
         ),
+
+        if (widget.videoDetailController case final videoDetailController?)
+          UpNextOverlay(controller: videoDetailController),
 
         /// 进度条 live模式下禁用
         if (!isLive)
@@ -2592,14 +2620,36 @@ class _SpeedSliderEntryState extends State<_SpeedSliderEntry> {
     ((v / 0.05).round() * 0.05).toStringAsFixed(2),
   ).clamp(0.25, 4.0);
 
+  /// - / + buttons: one step (0.05) at a time, applied at once.
+  void _step(int dir) {
+    final v = _snap(_value + dir * 0.05);
+    if (v == _value) return;
+    setState(() => _value = v);
+    widget.onChanged(v);
+  }
+
+  Widget _stepButton(IconData icon, int dir) => SizedBox.square(
+    dimension: 28,
+    child: IconButton(
+      padding: EdgeInsets.zero,
+      iconSize: 18,
+      color: Colors.white,
+      disabledColor: Colors.white38,
+      tooltip: dir < 0 ? '減慢' : '加快',
+      onPressed: widget.enabled ? () => _step(dir) : null,
+      icon: Icon(icon),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    // One compact row: a thin slider and the value.
+    // One compact row: - button, a thin slider, + button and the value.
     return SizedBox(
       height: 40,
-      width: 168,
+      width: 216,
       child: Row(
         children: [
+          _stepButton(Icons.remove, -1),
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
@@ -2629,6 +2679,7 @@ class _SpeedSliderEntryState extends State<_SpeedSliderEntry> {
               ),
             ),
           ),
+          _stepButton(Icons.add, 1),
           SizedBox(
             width: 40,
             child: Text(

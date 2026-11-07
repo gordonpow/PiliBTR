@@ -183,6 +183,12 @@ List<SettingsModel> get styleSettings => [
         '自動時依上方的影片卡片寬度計算',
     onTap: _showCardColumnsDialog,
   ),
+  NormalModel(
+    leading: const Icon(Icons.view_week_outlined),
+    title: '影片頁推薦排數（橫向）',
+    getSubtitle: () => _columnsLabel(Pref.videoPageRelatedColumns),
+    onTap: _showRelatedColumnsDialog,
+  ),
   const SwitchModel(
     title: '播放頁移除安全邊距',
     leading: Icon(Icons.fit_screen_outlined),
@@ -927,6 +933,29 @@ Future<void> _showLanguageDialog(
     await GStorage.setting.put(SettingBoxKey.appLanguage, res);
     setState();
     AppRestart.ask();
+  }
+}
+
+/// Fixed columns of the related video list in the side pane of the video
+/// page (landscape).
+Future<void> _showRelatedColumnsDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '影片頁推薦排數（橫向）',
+      value: Pref.videoPageRelatedColumns,
+      values: [
+        (0, '自動（依影片卡片寬度）'),
+        for (var i = 1; i <= 4; i++) (i, '$i 排'),
+      ],
+    ),
+  );
+  if (res != null && res != Pref.videoPageRelatedColumns) {
+    await GStorage.setting.put(SettingBoxKey.videoPageRelatedColumns, res);
+    setState();
   }
 }
 

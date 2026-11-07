@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/thin_progress_bar.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
+import 'package:PiliPlus/common/widgets/video_popup_player.dart';
 import 'package:PiliPlus/models/common/badge_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/segment_type.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
@@ -20,6 +22,7 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/speed_format.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -73,6 +76,55 @@ class DetailItem extends StatelessWidget {
     ),
   );
 
+  /// 在彈出播放器播放已快取的影片
+  void openPopup(BuildContext context) {
+    final typeTag = entry.typeTag;
+    if (typeTag == null) {
+      openVideoPage(context);
+      return;
+    }
+    final dir = entry.entryDirPath;
+    showVideoPopup(
+      context,
+      videoPath: path.join(
+        dir,
+        typeTag,
+        entry.mediaType == 1
+            ? PathUtils.videoNameType1
+            : PathUtils.videoNameType2,
+      ),
+      audioPath: entry.mediaType != 1 && entry.hasDashAudio
+          ? path.join(dir, typeTag, PathUtils.audioNameType2)
+          : null,
+      title: entry.title,
+    );
+  }
+
+  /// 在影片頁開啟已快取的影片
+  Future<void> openVideoPage(BuildContext context) async {
+    final cid = entry.source?.cid ?? entry.pageData?.cid;
+    await PageUtils.toVideoPage(
+      aid: entry.avid,
+      cid: cid!,
+      cover: entry.cover,
+      title: entry.showTitle,
+      isVertical: entry.pageData?.isVertical ?? false,
+      extraArguments: {
+        'sourceType': SourceType.file,
+        'entry': entry,
+        'dirPath': entry.entryDirPath,
+      },
+    );
+    if (context.mounted) {
+      Timer(const Duration(milliseconds: 400), () {
+        if (context.mounted) {
+          // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+          progress?.notifyListeners();
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -87,6 +139,17 @@ class DetailItem extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
               children: [
+                if (entry.isCompleted)
+                  DialogOption(
+                    onPressed: () {
+                      Get.back();
+                      openVideoPage(context);
+                    },
+                    child: const Text(
+                      '在影片頁開啟',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
                 DialogOption(
                   onPressed: () {
                     Get.back();
@@ -142,7 +205,7 @@ class DetailItem extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () async {
+        onTap: () {
           if (!canDel) {
             Get.to(const DownloadingPage());
             return;
@@ -152,26 +215,7 @@ class DetailItem extends StatelessWidget {
             return;
           }
           if (entry.isCompleted) {
-            await PageUtils.toVideoPage(
-              aid: entry.avid,
-              cid: cid!,
-              cover: entry.cover,
-              title: entry.showTitle,
-              isVertical: entry.pageData?.isVertical ?? false,
-              extraArguments: {
-                'sourceType': SourceType.file,
-                'entry': entry,
-                'dirPath': entry.entryDirPath,
-              },
-            );
-            if (context.mounted) {
-              Timer(const Duration(milliseconds: 400), () {
-                if (context.mounted) {
-                  // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-                  progress?.notifyListeners();
-                }
-              });
-            }
+            openPopup(context);
           } else {
             final curDownload = downloadService.curDownload.value;
             if (curDownload != null &&
@@ -392,7 +436,9 @@ class DetailItem extends StatelessWidget {
                                           status != DownloadStatus.pause
                                           ? theme.colorScheme.primary
                                           : theme.colorScheme.outline;
-                                      return progressWidget(
+                                      final isDownloading =
+                                          status.isDownloading;
+                                      final bar = progressWidget(
                                         statusMsg: status.message,
                                         progressStr:
                                             status ==
@@ -407,6 +453,86 @@ class DetailItem extends StatelessWidget {
                                                   curDownload.totalBytes,
                                         color: color,
                                         highlightColor: theme.highlightColor,
+                                      );
+                                      return Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          bar,
+                                          Row(
+                                            children: [
+                                              if (isDownloading)
+                                                Obx(
+                                                  () => Text(
+                                                    formatSpeed(
+                                                      downloadService
+                                                          .speed
+                                                          .value,
+                                                    ),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: color,
+                                                    ),
+                                                  ),
+                                                ),
+                                              const Spacer(),
+                                              IconButton(
+                                                tooltip: isDownloading
+                                                    ? '暫停'
+                                                    : '繼續',
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                iconSize: 20,
+                                                onPressed: () {
+                                                  if (isDownloading) {
+                                                    downloadService
+                                                        .cancelDownload(
+                                                          isDelete: false,
+                                                          downloadNext: false,
+                                                        );
+                                                  } else {
+                                                    downloadService
+                                                        .startDownload(entry);
+                                                  }
+                                                },
+                                                icon: Icon(
+                                                  isDownloading
+                                                      ? Icons.pause
+                                                      : Icons.play_arrow,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                tooltip: '停止並刪除',
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                iconSize: 20,
+                                                onPressed: () =>
+                                                    showConfirmDialog(
+                                                      context: context,
+                                                      title: const Text(
+                                                        '停止並刪除這個快取？',
+                                                      ),
+                                                      onConfirm: () {
+                                                        downloadService
+                                                            .deleteDownload(
+                                                              entry: entry,
+                                                              removeQueue: true,
+                                                              downloadNext:
+                                                                  isDownloading,
+                                                            );
+                                                        GStorage.watchProgress
+                                                            .delete(
+                                                              entry.cid
+                                                                  .toString(),
+                                                            );
+                                                      },
+                                                    ),
+                                                icon: const Icon(Icons.stop),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       );
                                     }
                                     return entryProgress(theme);
@@ -470,15 +596,7 @@ class DetailItem extends StatelessWidget {
             ),
           ],
         ),
-        LinearProgressIndicator(
-          // ignore: deprecated_member_use
-          year2023: true,
-          minHeight: 2.5,
-          borderRadius: Style.mdRadius,
-          color: color,
-          backgroundColor: highlightColor,
-          value: progress,
-        ),
+        ThinProgressBar(value: progress, color: color),
       ],
     );
   }

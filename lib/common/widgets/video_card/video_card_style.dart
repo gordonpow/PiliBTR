@@ -16,14 +16,17 @@ abstract final class VideoCardStyle {
     horizontal: Style.safeSpace,
   );
 
-  static SliverGridDelegate gridDelegate(BuildContext context) =>
+  static SliverGridDelegate gridDelegate(
+    BuildContext context, {
+    ValueGetter<int>? fixedColumns,
+  }) =>
       SliverGridDelegateWithExtentAndRatio(
         mainAxisSpacing: Style.cardSpace,
         crossAxisSpacing: Style.cardSpace,
         maxCrossAxisExtent: Pref.recommendCardWidth,
         childAspectRatio: Style.aspectRatio,
         mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
-        fixedCrossAxisCount: fixedColumns,
+        fixedCrossAxisCount: fixedColumns ?? VideoCardStyle.fixedColumns,
       );
 
   /// Columns set by the user for the current window shape (portrait or

@@ -64,6 +64,9 @@ abstract class CommonIntroController extends GetxController
   bool prevPlay();
   bool nextPlay();
 
+  /// 預覽 [nextPlay] 會播放的項目，不產生副作用；沒有下一部時回傳 null。
+  ({String title, String? cover})? peekNext() => null;
+
   void actionShareVideo(BuildContext context);
 
   void onChangeEpisode(BaseEpisodeItem episode);

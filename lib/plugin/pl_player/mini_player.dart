@@ -9,6 +9,7 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
+import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -195,6 +196,10 @@ abstract final class MiniPlayer {
 
   static bool get active => _entry != null;
 
+  /// Hides the window for a while (for example under the video popup of
+  /// the cache and download page), without closing it.
+  static final hidden = false.obs;
+
   /// Shows the mini player for [ctr]. [args] are the arguments of the
   /// video page route. Returns false if it cannot show.
   static bool show({
@@ -338,6 +343,9 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
   double get _bottomGap {
     if (!Get.isRegistered<MainController>()) return _barSpace;
     final main = Get.find<MainController>();
+    // No bottom bar in landscape (navigation rail) or with the side bar:
+    // the window goes down to the screen edge. Same rule as the main page.
+    if (main.useSideBar || !MediaQuery.sizeOf(context).isPortrait) return 0;
     if (!main.hideBottomBar) return _barSpace;
     if (main.showBottomBar case final show?) return show.value ? _barSpace : 0;
     if (main.barOffset case final offset?) {
@@ -624,6 +632,13 @@ class _MiniPlayerViewState extends State<_MiniPlayerView>
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      if (MiniPlayer.hidden.value) return const SizedBox.shrink();
+      return _build(context);
+    });
+  }
+
+  Widget _build(BuildContext context) {
     final videoController = widget.ctr.videoController;
     if (videoController != null && widget.ctr.isPipMode) {
       // System picture-in-picture: the app window is the PiP window. Show

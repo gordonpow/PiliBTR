@@ -89,14 +89,20 @@ class ActionItem extends StatelessWidget {
 
   Widget _buildText(ThemeData theme) {
     final hasText = text != null;
-    final child = Text(
-      hasText ? text! : '-',
+    // One line, scaled down when the row is narrow (a phone in landscape):
+    // a wrapped label overflowed the action row.
+    final child = FittedBox(
       key: hasText ? ValueKey(text!) : null,
-      style: TextStyle(
-        color: selectStatus
-            ? theme.colorScheme.primary
-            : theme.colorScheme.outline,
-        fontSize: theme.textTheme.labelSmall!.fontSize,
+      fit: BoxFit.scaleDown,
+      child: Text(
+        hasText ? text! : '-',
+        maxLines: 1,
+        style: TextStyle(
+          color: selectStatus
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outline,
+          fontSize: theme.textTheme.labelSmall!.fontSize,
+        ),
       ),
     );
     if (hasText) {

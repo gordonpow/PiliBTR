@@ -514,6 +514,7 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     bool isStein = false,
   }) async {
     try {
+      videoDetailCtr.cancelUpNext();
       final String bvid = episode.bvid ?? this.bvid;
       final int aid = episode.aid ?? IdUtils.bv2av(bvid);
       int? cid = episode.cid;
@@ -746,6 +747,85 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     } catch (_) {
       return false;
     }
+  }
+
+  /// 與 [nextPlay] 相同的選擇邏輯，但不產生副作用。
+  @override
+  ({String title, String? cover})? peekNext({bool skipPart = false}) {
+    try {
+      final List<BaseEpisodeItem> episodes = <BaseEpisodeItem>[];
+      bool isPart = false;
+      final videoDetail = this.videoDetail.value;
+
+      if (!skipPart && videoDetail.hasParts) {
+        isPart = true;
+        episodes.addAll(videoDetail.pages!);
+      } else if (videoDetailCtr.isPlayAll) {
+        episodes.addAll(videoDetailCtr.mediaList);
+      } else if (videoDetail.ugcSeason != null) {
+        for (final section in videoDetail.ugcSeason!.sections!) {
+          episodes.addAll(section.episodes!);
+        }
+      }
+
+      final PlayRepeat playRepeat =
+          videoDetailCtr.plPlayerController.playRepeat;
+      final canRelated =
+          playRepeat == PlayRepeat.autoPlayRelated &&
+          videoDetailCtr.plPlayerController.showRelatedVideo;
+
+      if (episodes.isEmpty) {
+        return canRelated ? _peekRelated() : null;
+      }
+
+      final targetCid = skipPart ? seasonCid : this.cid.rawValue;
+      final currIndex = episodes.indexWhere((e) => e.cid == targetCid);
+      int nextIndex = currIndex + 1;
+
+      if (nextIndex >= episodes.length) {
+        if (isPart &&
+            (videoDetailCtr.isPlayAll || videoDetail.ugcSeason != null)) {
+          return peekNext(skipPart: true);
+        }
+        if (playRepeat == PlayRepeat.listCycle) {
+          nextIndex = 0;
+        } else if (canRelated) {
+          return _peekRelated();
+        } else {
+          return null;
+        }
+      }
+
+      int? cid = episodes[nextIndex].cid;
+      while (cid == null) {
+        nextIndex++;
+        if (nextIndex >= episodes.length) return null;
+        cid = episodes[nextIndex].cid;
+      }
+      if (cid == this.cid.value) return null;
+
+      final item = episodes[nextIndex];
+      final title = item is Part
+          ? (item.part ?? item.title)
+          : item.title;
+      return (
+        title: title ?? videoDetail.title ?? '',
+        cover: item.cover ?? videoDetail.pic,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  ({String title, String? cover})? _peekRelated() {
+    if (!Get.isRegistered<RelatedController>(tag: heroTag)) return null;
+    final relatedCtr = Get.find<RelatedController>(tag: heroTag);
+    if (relatedCtr.loadingState.value case Success(:final response)) {
+      final firstItem = response?.firstOrNull;
+      if (firstItem == null) return null;
+      return (title: firstItem.title, cover: firstItem.cover);
+    }
+    return null;
   }
 
   bool playRelated() {

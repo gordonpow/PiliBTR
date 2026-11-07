@@ -95,6 +95,57 @@ class VideoDetailController extends GetxController
   @override
   late final isUgc = videoType == VideoType.ugc;
   VideoType? _actualVideoType;
+  // 自動連播倒數（YouTube 式「接下來播放」）；null 表示沒有倒數
+  final RxnInt upNextSeconds = RxnInt();
+  Timer? _upNextTimer;
+  VoidCallback? _upNextPlay;
+  VoidCallback? _upNextOnCancel;
+  ({String title, String? cover})? upNextInfo;
+
+  /// 開始 5 秒倒數，歸零時呼叫 [playNext]。
+  void startUpNext(
+    VoidCallback playNext, {
+    ({String title, String? cover})? info,
+    VoidCallback? onCancel,
+  }) {
+    cancelUpNext();
+    upNextInfo = info;
+    _upNextOnCancel = onCancel;
+    _upNextPlay = playNext;
+    upNextSeconds.value = 5;
+    _upNextTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final left = (upNextSeconds.value ?? 1) - 1;
+      if (left <= 0) {
+        playUpNextNow();
+      } else {
+        upNextSeconds.value = left;
+      }
+    });
+  }
+
+  /// 取消倒數（不播放）。
+  void cancelUpNext() {
+    _upNextTimer?.cancel();
+    _upNextTimer = null;
+    _upNextPlay = null;
+    _upNextOnCancel = null;
+    if (upNextSeconds.value != null) upNextSeconds.value = null;
+  }
+
+  /// 使用者按下「取消」：取消倒數，並執行 [startUpNext] 的 onCancel。
+  void dismissUpNext() {
+    final onCancel = _upNextOnCancel;
+    cancelUpNext();
+    onCancel?.call();
+  }
+
+  /// 立即播放下一部。
+  void playUpNextNow() {
+    final play = _upNextPlay;
+    cancelUpNext();
+    play?.call();
+  }
+
   late final ugcIntroCtr = Get.find<UgcIntroController>(tag: heroTag);
   late final pgcIntroCtr = Get.find<PgcIntroController>(tag: heroTag);
 
@@ -535,9 +586,9 @@ class VideoDetailController extends GetxController
 
   bool isPortrait = true;
 
-  /// Tablet layout of this page. Android phones use the phone layout also
-  /// when the main pages rotate (see [PlPlayerController.videoPageHorizontal]).
-  bool get horizontalScreen => plPlayerController.videoPageHorizontal;
+  /// Landscape layout of this page (video and intro side by side). On
+  /// Android phones it shows after the user leaves fullscreen in landscape.
+  bool get horizontalScreen => plPlayerController.horizontalScreen;
 
   bool get showVideoSheet =>
       (!horizontalScreen && !isPortrait) || plPlayerController.isDesktopPip;
@@ -1263,6 +1314,7 @@ class VideoDetailController extends GetxController
 
   @override
   void onClose() {
+    cancelUpNext();
     cid.close();
     if (isFileSource) {
       cacheLocalProgress();

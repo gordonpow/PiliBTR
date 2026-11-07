@@ -131,7 +131,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '相對減少手動播放載入時間',
     leading: Icon(Icons.play_circle_outlined),
     setKey: SettingBoxKey.preInitPlayer,
-    defaultVal: false,
+    defaultVal: true,
   ),
   const SwitchModel(
     title: '滑動跳轉預覽影片縮圖',

@@ -10,6 +10,7 @@ import 'package:PiliPlus/plugin/pl_player/models/audio_output_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
 import 'package:PiliPlus/utils/cdn_choice.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
+import 'package:PiliPlus/utils/speed_format.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -72,6 +73,12 @@ List<SettingsModel> get videoSettings => [
     subtitle: '測速通過模擬載入影片實現，注意流量消耗，結果僅供參考',
     setKey: SettingBoxKey.cdnSpeedTest,
     defaultVal: true,
+  ),
+  NormalModel(
+    title: '網速單位',
+    leading: const Icon(Icons.speed),
+    getSubtitle: () => '當前：${speedUnitLabels[Pref.speedUnit]}',
+    onTap: _showSpeedUnitDialog,
   ),
   SwitchModel(
     title: '音訊不跟隨 CDN 設定',
@@ -239,6 +246,27 @@ Future<void> _showLiveCDNDialog(
       await GStorage.setting.put(SettingBoxKey.liveCdnUrl, res);
     }
     VideoUtils.liveCdnUrl = res;
+    setState();
+  }
+}
+
+Future<void> _showSpeedUnitDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '網速單位',
+      value: Pref.speedUnit,
+      values: [
+        for (var i = 0; i < speedUnitLabels.length; i++)
+          (i, speedUnitLabels[i]),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.speedUnit, res);
     setState();
   }
 }

@@ -154,6 +154,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     _setPlayCallBack();
 
+    videoDetailController.plPlayerController.onPlayRepeatChanged =
+        videoDetailController.cancelUpNext;
+
     if (videoDetailController.removeSafeArea) {
       hideSystemBar();
     }
@@ -172,7 +175,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     // Phone already in landscape: open in fullscreen.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        videoDetailController.plPlayerController.syncOrientation(context);
+        videoDetailController.plPlayerController.syncOrientation(
+          context,
+          newPage: true,
+        );
       }
     });
   }
@@ -190,6 +196,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   void positionListener(Duration position) {
     videoDetailController.playedTime = position;
+    // 倒數期間使用者重播或拖動進度條：取消倒數
+    if (videoDetailController.upNextSeconds.value != null &&
+        plPlayerController != null &&
+        plPlayerController!.durationInMilliseconds - position.inMilliseconds >
+            1000) {
+      videoDetailController.cancelUpNext();
+    }
   }
 
   @override
@@ -226,6 +239,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 播放器状态监听
   Future<void> playerListener(PlayerStatus status) async {
     final isPlaying = status.isPlaying;
+    if (isPlaying) videoDetailController.cancelUpNext();
     try {
       if (videoDetailController.scrollCtr.hasClients) {
         if (isPlaying) {
@@ -275,9 +289,22 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           case PlayRepeat.singleCycle:
             exitFlag = false;
             plPlayerController!.play(repeat: true);
+          case PlayRepeat.autoPlayRelated:
+            if (plPlayerController!.isPipMode) {
+              // 子母畫面看不到倒數卡片，直接播下一部
+              exitFlag = !introController.nextPlay();
+            } else if (introController.peekNext() case final next?) {
+              exitFlag = false;
+              videoDetailController.startUpNext(
+                () => introController.nextPlay(),
+                info: next,
+                onCancel: _exitFullscreenAfterCancel,
+              );
+            } else {
+              exitFlag = !introController.nextPlay();
+            }
           case PlayRepeat.listOrder:
           case PlayRepeat.listCycle:
-          case PlayRepeat.autoPlayRelated:
             exitFlag = !introController.nextPlay();
           case PlayRepeat.pause:
         }
@@ -298,6 +325,27 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       }
     }
   }
+
+  /// 倒數卡片按「取消」：若開啟自動退出全螢幕，就退出全螢幕。
+  void _exitFullscreenAfterCancel() {
+    final ctr = plPlayerController;
+    if (ctr == null || !autoExitFullscreen) return;
+    ctr.triggerFullScreen(status: false);
+    if (ctr.controlsLock.value) ctr.onLockControl(false);
+  }
+
+  /// 使用者拖動捲動清單時取消自動連播倒數。
+  Widget _upNextScrollCancel(Widget child) =>
+      NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollUpdateNotification &&
+              notification.dragDetails != null) {
+            videoDetailController.cancelUpNext();
+          }
+          return false;
+        },
+        child: child,
+      );
 
   // 继续播放或重新播放
   void continuePlay() {
@@ -365,6 +413,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   @override
   void dispose() {
+    videoDetailController.cancelUpNext();
+    if (videoDetailController.plPlayerController.onPlayRepeatChanged ==
+        videoDetailController.cancelUpNext) {
+      videoDetailController.plPlayerController.onPlayRepeatChanged = null;
+    }
     plPlayerController
       ?..removeStatusLister(playerListener)
       ..removePositionListener(positionListener);
@@ -423,6 +476,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void didPushNext() {
     super.didPushNext();
     isShowing = false;
+    videoDetailController.cancelUpNext();
 
     removeObserverMobile(this);
 
@@ -863,6 +917,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                         videoIntro(
                           width: introWidth,
                           height: maxHeight,
+                          sidePane: true,
                         ),
                         if (videoDetailController.showReply) videoReplyPanel(),
                         if (_shouldShowSeasonPanel) seasonPanel,
@@ -898,6 +953,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   child: videoIntro(
                     width: introWidth,
                     height: introHeight,
+                    sidePane: true,
                   ),
                 ),
               ),
@@ -1015,7 +1071,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                           localIntroPanel()
                         else if (showIntro)
                           KeepAliveWrapper(
-                            child: CustomScrollView(
+                            child: _upNextScrollCancel(CustomScrollView(
                               key: const PageStorageKey(CommonIntroController),
                               controller:
                                   videoDetailController.effectiveIntroScrollCtr,
@@ -1023,9 +1079,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                                 RelatedVideoPanel(
                                   key: videoRelatedKey,
                                   heroTag: heroTag,
+                                  sidePane: true,
                                 ),
                               ],
-                            ),
+                            )),
                           ),
                         if (videoDetailController.showReply) videoReplyPanel(),
                         if (_shouldShowSeasonPanel) seasonPanel,
@@ -1723,12 +1780,13 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     bool? isHorizontal,
     bool needRelated = true,
     bool needCtr = true,
+    bool sidePane = false,
   }) {
     if (videoDetailController.isFileSource) {
       return localIntroPanel(needCtr: needCtr);
     }
 
-    Widget child = CustomScrollView(
+    Widget child = _upNextScrollCancel(CustomScrollView(
       key: const PageStorageKey(CommonIntroController),
       controller: needCtr
           ? videoDetailController.effectiveIntroScrollCtr
@@ -1759,7 +1817,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 ),
               ),
             ),
-            RelatedVideoPanel(key: videoRelatedKey, heroTag: heroTag),
+            RelatedVideoPanel(
+              key: videoRelatedKey,
+              heroTag: heroTag,
+              sidePane: sidePane,
+            ),
           ],
         ] else
           PgcIntroPage(
@@ -1780,7 +1842,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           ),
         ),
       ],
-    );
+    ));
 
     if (videoDetailController.isPlayAll) {
       child = IntroLayout(

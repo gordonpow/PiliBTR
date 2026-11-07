@@ -127,6 +127,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   final RxBool showControls = false.obs;
 
+  /// 是否顯示 CDN 狀態面板
+  final RxBool showCdnStatus = false.obs;
+
   final RxBool showBrightnessStatus = false.obs;
 
   final RxBool longPressStatus = false.obs;
@@ -615,14 +618,25 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   DeviceOrientation? _orientation;
   bool? _isAutoRotate;
 
+  /// The user left fullscreen while the phone is in landscape: keep the
+  /// landscape layout, do not enter fullscreen again until the phone was in
+  /// portrait.
+  bool _userExitedFS = false;
+
+  bool get _isLandscape =>
+      _orientation == .landscapeLeft || _orientation == .landscapeRight;
+
   /// Applies the current orientation when a video page opens. The sensor
   /// only reports changes, and the first report can come before the page
   /// is the current route; so a page opened with the phone already in
   /// landscape stayed in portrait.
-  void syncOrientation(BuildContext context) {
+  /// [newPage]: a video page opened (not one shown again after a page above
+  /// it closed), so an earlier exit from fullscreen no longer counts.
+  void syncOrientation(BuildContext context, {bool newPage = false}) {
+    if (newPage) _userExitedFS = false;
     if (!PlatformUtils.isMobile || DeviceUtils.isChromeOS) return;
     if (videoPageHorizontal || isFullScreen.value || isDesktopPip) return;
-    if (controlsLock.value) return;
+    if (controlsLock.value || _userExitedFS) return;
     DeviceOrientation? orientation;
     // The main pages use fullMode, so the app window is already landscape
     // when the phone is, and only when the system auto-rotate allows it.
@@ -669,6 +683,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
     switch (orientation) {
       case .portraitUp:
+        _userExitedFS = false;
         if (!videoPageHorizontal && !_isVertical && isFullScreen) {
           if (!isManualFS) {
             triggerFullScreen(status: false, orientation: orientation);
@@ -681,12 +696,14 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         portraitDownMode();
       case .landscapeLeft:
         if (!videoPageHorizontal && !isFullScreen) {
+          if (_userExitedFS) return;
           triggerFullScreen(orientation: orientation, isManualFS: false);
         } else {
           landscapeLeftMode();
         }
       case .landscapeRight:
         if (!videoPageHorizontal && !isFullScreen) {
+          if (_userExitedFS) return;
           triggerFullScreen(orientation: orientation, isManualFS: false);
         } else {
           landscapeRightMode();
@@ -1646,6 +1663,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       if (status) {
         if (PlatformUtils.isMobile) {
           hideSystemBar();
+          _userExitedFS = false;
+          // Fullscreen button in the landscape layout of a phone: keep the
+          // current landscape (with FullScreenMode.none nothing would lock
+          // it, and turning the phone would make it a portrait fullscreen).
+          if (orientation == null && !videoPageHorizontal && _isLandscape) {
+            orientation = _orientation;
+          }
           _fsChangedOrientation =
               orientation != null || (mode != .none && mode != .gravity);
           await changeOrientation(
@@ -1659,6 +1683,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         if (PlatformUtils.isMobile) {
           if (!removeSafeArea) {
             showSystemBar();
+          }
+          // Left by the user (not by turning the phone) in landscape.
+          if (orientation == null && !videoPageHorizontal && _isLandscape) {
+            _userExitedFS = true;
           }
           if (orientation == null &&
               mode == .none &&
@@ -1747,8 +1775,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     return null;
   }
 
+  /// 播放順序改變時通知影片頁（用來取消自動連播倒數）
+  VoidCallback? onPlayRepeatChanged;
+
   void setPlayRepeat(PlayRepeat type) {
     playRepeat = type;
+    onPlayRepeatChanged?.call();
     if (!tempPlayerConf) video.put(VideoBoxKey.playRepeat, type.index);
   }
 
@@ -1768,8 +1800,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool get isCloseAll => _isCloseAll;
 
   /// Orientation after leaving fullscreen while the video page stays.
+  /// With [horizontalScreen] the page may rotate: a phone held in landscape
+  /// keeps landscape and shows the side by side layout.
   Future<void>? exitFullScreenRotation() {
-    if (videoPageHorizontal) {
+    if (horizontalScreen) {
       return fullMode();
     } else {
       return portraitUpMode();

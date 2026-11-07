@@ -2,6 +2,8 @@
 // Behaviour is modelled on Bilibili-thread-ripper-desktop (MIT,
 // https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop).
 
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 
@@ -61,6 +63,29 @@ abstract final class BtrConfig {
       defaultValue: BtrCdnMode.mainland.index,
     );
     return BtrCdnMode.values[index.clamp(0, BtrCdnMode.values.length - 1)];
+  }
+
+  /// First start only: pick the CDN mode by the system language. Simplified
+  /// Chinese (mainland users) gets the mainland nodes; Traditional Chinese
+  /// (Taiwan, Hong Kong, Macau) gets the overseas nodes, as mainland nodes
+  /// often time out from there. A mode the user chose is kept.
+  static void applyLocaleDefault() {
+    final setting = GStorage.setting;
+    if (setting.get(SettingBoxKey.btrCdnLocaleDefaultV1) == true) return;
+    if (setting.get(SettingBoxKey.btrCdnMode) == null) {
+      final locale = PlatformDispatcher.instance.locale;
+      final BtrCdnMode? mode;
+      if (locale.scriptCode == 'Hant' ||
+          const {'TW', 'HK', 'MO'}.contains(locale.countryCode)) {
+        mode = BtrCdnMode.overseas;
+      } else if (locale.languageCode == 'zh') {
+        mode = BtrCdnMode.mainland;
+      } else {
+        mode = null;
+      }
+      if (mode != null) setting.put(SettingBoxKey.btrCdnMode, mode.index);
+    }
+    setting.put(SettingBoxKey.btrCdnLocaleDefaultV1, true);
   }
 
   static List<String> get customCdn {

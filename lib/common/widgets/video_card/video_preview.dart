@@ -391,6 +391,13 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
       await player.open(item);
       if (_disposed) return;
       _opened = true;
+      // Events that came before `_opened` were ignored (`_isMine` was
+      // false), and `playing` is not sent again: take the current state, or
+      // the loading circle stays although the video plays.
+      setState(() {
+        _playing = player.state.playing;
+        _duration = player.state.duration;
+      });
     } catch (e) {
       if (kDebugMode) debugPrint('VideoPreview: $e');
       _fail();

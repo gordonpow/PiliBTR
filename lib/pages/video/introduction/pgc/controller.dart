@@ -275,6 +275,7 @@ class PgcIntroController extends CommonIntroController {
     PgcEpisodeType? episodeType,
   }) async {
     try {
+      videoDetailCtr.cancelUpNext();
       if (episodeType != null) {
         this.episodeType = episodeType;
       }
@@ -408,6 +409,30 @@ class PgcIntroController extends CommonIntroController {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// 與 [nextPlay] 相同的選擇邏輯，但不產生副作用。
+  @override
+  ({String title, String? cover})? peekNext() {
+    try {
+      final episodes = this.episodes;
+      final playRepeat = videoDetailCtr.plPlayerController.playRepeat;
+      final currentIndex = episodes.indexWhere(
+        (e) => e.cid == videoDetailCtr.cid.value,
+      );
+      int nextIndex = currentIndex + 1;
+      if (nextIndex >= episodes.length) {
+        if (playRepeat == PlayRepeat.listCycle) {
+          nextIndex = 0;
+        } else {
+          return null;
+        }
+      }
+      final item = episodes[nextIndex];
+      return (title: item.title ?? '', cover: item.cover);
+    } catch (_) {
+      return null;
     }
   }
 
