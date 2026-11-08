@@ -134,6 +134,11 @@
 
 發布：v2.2.8（2026-11-09，pubspec 2.2.8+9）。結果對話框未在模擬器驗證（記憶體不足，使用者選擇跳過），待使用者實機測試。
 
+| `cc601757b` | 掃描網頁版登入 QR code 直接確認（web/qrcode/check、scene、confirm，access_key 簽名）；電視確認改用 access_key 簽名 |
+| `890923534` | 掃描頁可重複掃同一個 QR code |
+
+發布：v2.2.9（2026-11-09，pubspec 2.2.9+10）。使用者以手機測試版確認電視與網頁登入可用。
+
 ### 已實作、尚未 commit
 
 （無）
@@ -303,3 +308,6 @@
 |---|---|---|
 | 00:10 | 掃描電視 QR code 按確認登入後電視沒反應，手機只是對話框消失 | 模擬器重現：confirm 回應的 Set-Cookie 把 SESSDATA、DedeUserID 清空並存進主帳號，下次冷啟動 int.parse 失敗卡在啟動畫面；掃描頁 toast 看不到。修正 cookie 防護、啟動移除失效帳號、結果改用對話框；使用者協助模擬器重新登入後 confirm 回 code 0、電視端 poll 0、重開仍登入 |
 | 02:20 | 跳過驗證直接發布 | `3c85ca8ad`、`64be68251`；版本 v2.2.8 |
+| 02:50 | 掃網頁版登入 QR code 後確認按鈕無法按、叫我下載 APK | h5 確認頁只能在官方 App 內使用；參考上游 PiliPlus #2933 與 BiliPai，改呼叫 web/qrcode/check → scene → confirm（access_key + 簽名）；Sonnet 實作，analyze 通過；測試版 APK 放下載資料夾 |
+| 03:15 | 測試版顯示「登入失敗（-101）：账号未登录」，相機掃過就無法再掃 | 電視確認改用 access_key 簽名；掃描器 noDuplicates 改 normal 並略過 2 秒內同一個 QR code；第二版測試 APK |
+| 03:30 | 可以了，推送 | `cc601757b`、`890923534`；版本 v2.2.9 |
