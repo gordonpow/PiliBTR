@@ -15,9 +15,14 @@ class ScanPage extends StatefulWidget {
 class _ScanPageState extends State<ScanPage> {
   final _controller = MobileScannerController(
     formats: const [BarcodeFormat.qrCode],
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    // noDuplicates never reports the same code again, so a code could not be
+    // scanned a second time (e.g. after a failed login). Repeats are dropped
+    // below instead.
+    detectionSpeed: DetectionSpeed.normal,
   );
   bool _handling = false;
+  String? _lastValue;
+  DateTime _lastDone = DateTime.fromMillisecondsSinceEpoch(0);
   BuildContext? _pageContext;
 
   @override
@@ -37,6 +42,12 @@ class _ScanPageState extends State<ScanPage> {
       }
     }
     if (value == null) return;
+    // The same code right after its dialog closed: still in front of the
+    // camera, not a new scan.
+    if (value == _lastValue &&
+        DateTime.now().difference(_lastDone) < const Duration(seconds: 2)) {
+      return;
+    }
     // 不在 onDetect 回呼中 await stop()：部分裝置上 stop() 不會返回，畫面會停在
     // 黑屏且不再處理。相機保持運作，由 _handling 擋掉重複的掃描結果。
     _handling = true;
@@ -46,6 +57,8 @@ class _ScanPageState extends State<ScanPage> {
     } catch (e) {
       SmartDialog.showToast('處理 QR code 失敗：$e');
     } finally {
+      _lastValue = value;
+      _lastDone = DateTime.now();
       if (!left && mounted) _handling = false;
     }
   }
