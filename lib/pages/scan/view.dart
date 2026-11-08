@@ -35,12 +35,17 @@ class _ScanPageState extends State<ScanPage> {
       }
     }
     if (value == null) return;
+    // 不在 onDetect 回呼中 await stop()：部分裝置上 stop() 不會返回，畫面會停在
+    // 黑屏且不再處理。相機保持運作，由 _handling 擋掉重複的掃描結果。
     _handling = true;
-    await _controller.stop();
-    final left = await QrScanHandler.handle(value);
-    if (left || !mounted) return;
-    _handling = false;
-    await _controller.start();
+    var left = false;
+    try {
+      left = await QrScanHandler.handle(value);
+    } catch (e) {
+      SmartDialog.showToast('處理 QR code 失敗：$e');
+    } finally {
+      if (!left && mounted) _handling = false;
+    }
   }
 
   Future<void> _pickImage() async {
