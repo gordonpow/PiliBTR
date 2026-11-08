@@ -121,6 +121,14 @@
 
 發布：v2.2.6（2026-11-08，pubspec 2.2.6+7，tag 在 `5fd1cce46`）。待使用者實機確認電視登入與字幕複製。
 
+| `9c05811ba` | 彈幕分段請求失敗不跳提示、10 秒內不重送、離開頁面取消；被蓋住的影片頁不再請求彈幕 |
+| `acbdcedc8` | 開啟長按複製時 CC 按鈕移除 tooltip，長按選單可正常跳出 |
+| `5dbd51228` | 子母畫面設定即時生效；Android 12 自動進入 PiP 的旗標不再被覆蓋 |
+| `c3c3ce3a5` | issue #79：極驗驗證碼載入中提示、載入失敗／逾時顯示錯誤與重試、JS 改 ES5、關閉只關一次 |
+| `9df8d3b15` | 縮小視窗殘留並與影片頁同畫面（OverlayEntry 已插入未 build 時未 remove） |
+
+發布：v2.2.7（2026-11-08，pubspec 2.2.7+8）。模擬器已驗證極驗與縮小視窗；子母畫面、單點 CC 待使用者實機測試。
+
 ### 已實作、尚未 commit
 
 （無）
@@ -279,3 +287,7 @@
 | 16:30 | 流程全數改用 Claude | dev-workflow、全域 CLAUDE.md、記憶移除 agy：探索用 Explore、查資料與草稿用 Haiku、審查用全新 Sonnet／Haiku 子代理、實作與裝置操作用 Sonnet |
 | 16:40 | 使用者回報：長按 CC 字幕按鈕直接複製字幕檔 | 使用者選：跳出選單選格式、複製所有字幕軌、已翻譯的複製譯文；追加「預設關閉，可在設定開啟」；Sonnet 實作，analyze 0 error、0 warning；`d75d58857` 已推送 |
 | 17:00 | 推送、發布 | 重新建置含字幕複製的 APK，發布 v2.2.6；issue #77、#78 |
+| 21:50 | 快速連點影片時一直跳 DmSegMobile 響應超時；長按 CC 沒反應；開了子母畫面回桌面沒有 PiP | 原因：彈幕失敗後立即重送且每次跳提示、被蓋住的頁面仍依共用播放器請求彈幕；PopupMenuButton 的 Tooltip 搶走長按；autoPiP 只在播放器建立時讀一次設定、Android 12 updatePipActions 覆蓋 autoEnter。修正後 analyze 無 issue、release 建置成功；兩次 Sonnet diff 審查無確認錯誤，採用 3 條建議；功能待使用者實機測試，APK 放在下載資料夾 |
+| 22:20 | 修復 issue #79（手機登入時驗證碼頁全黑無法操作），連同之前問題做模擬器驗證 | Sonnet 模擬器重現：深色模式載入中全黑只剩 X；加載入提示、錯誤／逾時、ES5、關閉只關一次。測試版（極驗網址不可達）確認錯誤與重試；之前修正中長按 CC 通過，子母畫面、彈幕顯示未驗到 |
+| 23:00 | 為何影片與縮小視窗同畫面 | 子代理重現並取得 log：`_removeEntry` 依 mounted 判斷，entry 已插入未 build 時只 dispose 不 remove；改記錄是否已插入；模擬器 3 輪通過 |
+| 23:30 | 修完 commit、推送並發布新版 | 5 個 Fix commit；Sonnet diff 審查採用 1 條（Object.assign 非 ES5）；版本 v2.2.7 |
