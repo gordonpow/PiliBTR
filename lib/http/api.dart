@@ -625,6 +625,18 @@ abstract final class Api {
   static const qrcodeConfirm =
       '${HttpString.passBaseUrl}/x/passport-tv-login/h5/qrcode/confirm';
 
+  /// 網頁版登入 QR code：檢查
+  static const webQrcodeCheck =
+      '${HttpString.passBaseUrl}/x/passport-login/web/qrcode/check';
+
+  /// 網頁版登入 QR code：取得登入場景
+  static const webQrcodeScene =
+      '${HttpString.passBaseUrl}/x/passport-login/web/qrcode/scene';
+
+  /// 網頁版登入 QR code：確認
+  static const webQrcodeConfirm =
+      '${HttpString.passBaseUrl}/x/passport-login/web/qrcode/confirm';
+
   /// 申请二维码(TV端)
   static const getTVCode =
       '${HttpString.passBaseUrl}/x/passport-tv-login/qrcode/auth_code';

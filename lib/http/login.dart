@@ -74,16 +74,31 @@ abstract final class LoginHttp {
     String authCode,
   ) async {
     try {
+      // With an app credential, authenticate with access_key + app sign like
+      // the official app: the SESSDATA cookie can be rejected (-101) even
+      // when the app still works (PiliPlus issue #2933).
+      final accessKey = Accounts.main.accessKey;
       final res = await Request().post(
         Api.qrcodeConfirm,
-        data: {
-          'auth_code': authCode,
-          'build': 7082000,
-          'csrf': Accounts.main.csrf,
-        },
-        options: Options(contentType: Headers.formUrlEncodedContentType),
+        data: accessKey != null && accessKey.isNotEmpty
+            ? _webQrcodeParams(
+                authCode,
+                codeField: 'auth_code',
+                extra: {'scanning_type': '1'},
+              )
+            : {
+                'auth_code': authCode,
+                'build': 7082000,
+                'csrf': Accounts.main.csrf,
+              },
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          headers: {'origin': 'https://passport.bilibili.com'},
+        ),
       );
-      if (kDebugMode) debugPrint('confirmTvQrcode: ${res.statusCode} ${res.data}');
+      if (kDebugMode) {
+        debugPrint('confirmTvQrcode: ${res.statusCode} ${res.data}');
+      }
       final data = res.data;
       final code = data is Map ? data['code'] : null;
       final ok = code == 0;
@@ -91,7 +106,135 @@ abstract final class LoginHttp {
       final message = data is Map ? data['message']?.toString() ?? '' : '';
       return (
         success: false,
-        msg: '登入失敗（$code）${message.isEmpty ? '' : '：$message'}',
+        msg: '${_webQrcodeErrMsg(code, message)}（$code）',
+      );
+    } catch (e) {
+      return (success: false, msg: e.toString());
+    }
+  }
+
+  static Map<String, dynamic> _webQrcodeParams(
+    String qrcodeKey, {
+    String codeField = 'qrcode_key',
+    Map<String, dynamic>? extra,
+  }) {
+    final params = <String, dynamic>{
+      'access_key': Accounts.main.accessKey ?? '',
+      codeField: qrcodeKey,
+      'build': '2001100',
+      'csrf': Accounts.main.csrf,
+      'disable_rcmd': '0',
+      'mobi_app': 'android_hd',
+      'platform': 'android',
+      'statistics': Constants.statistics,
+      ...?extra,
+    };
+    AppSign.appSign(params);
+    return params;
+  }
+
+  static String _webQrcodeErrMsg(dynamic code, dynamic message) {
+    final m = message?.toString() ?? '';
+    return switch (code) {
+      -101 => '目前登入狀態無法授權，請重新登入',
+      86038 => '二維碼已過期，請重新整理後再掃',
+      -111 => '登入憑證驗證失敗，請重新登入',
+      -400 => 'B 站拒絕了這次授權（-400），請重新整理二維碼後再試',
+      _ => m.isEmpty ? '授權失敗（$code）' : m,
+    };
+  }
+
+  /// 網頁版登入 QR code：檢查
+  static Future<({bool success, String msg})> webQrcodeCheck(
+    String qrcodeKey,
+  ) async {
+    try {
+      final res = await Request().get(
+        Api.webQrcodeCheck,
+        queryParameters: _webQrcodeParams(qrcodeKey),
+      );
+      if (kDebugMode) {
+        debugPrint('webQrcodeCheck: ${res.statusCode} ${res.data}');
+      }
+      final data = res.data;
+      final code = data is Map ? data['code'] : null;
+      if (code == 0) return (success: true, msg: '');
+      return (
+        success: false,
+        msg: _webQrcodeErrMsg(code, data is Map ? data['message'] : null),
+      );
+    } catch (e) {
+      return (success: false, msg: e.toString());
+    }
+  }
+
+  /// 網頁版登入 QR code：取得登入場景
+  static Future<({bool success, String msg, String location, bool transient})>
+  webQrcodeScene(String qrcodeKey) async {
+    try {
+      final res = await Request().get(
+        Api.webQrcodeScene,
+        queryParameters: _webQrcodeParams(qrcodeKey),
+      );
+      if (kDebugMode) {
+        debugPrint('webQrcodeScene: ${res.statusCode} ${res.data}');
+      }
+      final data = res.data;
+      final code = data is Map ? data['code'] : null;
+      if (code == 0) {
+        final d = data['data'];
+        return (
+          success: true,
+          msg: '',
+          location: d is Map ? d['location']?.toString() ?? '' : '',
+          transient: d is Map && d['transient'] == true,
+        );
+      }
+      return (
+        success: false,
+        msg: _webQrcodeErrMsg(code, data is Map ? data['message'] : null),
+        location: '',
+        transient: false,
+      );
+    } catch (e) {
+      return (
+        success: false,
+        msg: e.toString(),
+        location: '',
+        transient: false,
+      );
+    }
+  }
+
+  /// 網頁版登入 QR code：確認
+  static Future<({bool success, String msg})> webQrcodeConfirm(
+    String qrcodeKey, {
+    bool transient = false,
+  }) async {
+    try {
+      final res = await Request().post(
+        Api.webQrcodeConfirm,
+        data: _webQrcodeParams(
+          qrcodeKey,
+          extra: {
+            'transient': transient.toString(),
+            'env_key': '',
+            'verify_type': 'verify_tel',
+            'verify_code': '',
+            'verify_key': '',
+          },
+        ),
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+      if (kDebugMode) {
+        debugPrint('webQrcodeConfirm: ${res.statusCode} ${res.data}');
+      }
+      final data = res.data;
+      final code = data is Map ? data['code'] : null;
+      if (code == 0) return (success: true, msg: '登入成功');
+      return (
+        success: false,
+        msg: _webQrcodeErrMsg(code, data is Map ? data['message'] : null),
       );
     } catch (e) {
       return (success: false, msg: e.toString());

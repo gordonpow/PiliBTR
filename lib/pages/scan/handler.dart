@@ -3,7 +3,6 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
-import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -25,14 +24,8 @@ abstract final class QrScanHandler {
       }
       if (uri.queryParameters.containsKey('qrcode_key') &&
           (host == 'bilibili.com' || host.endsWith('.bilibili.com'))) {
-        if (!Accounts.main.isLogin) {
-          SmartDialog.showToast('請先登入');
-          return false;
-        }
-        await LoginUtils.setWebCookie(Accounts.main);
-        Get.back();
-        Get.to(() => WebviewPage(url: value));
-        return true;
+        await _webLogin(context, uri.queryParameters['qrcode_key']!);
+        return false;
       }
       Get.back();
       final handled = await PiliScheme.routePushFromUrl(value);
@@ -117,6 +110,125 @@ abstract final class QrScanHandler {
           ],
         ),
       ),
+    );
+  }
+
+  static Future<void> _showResult(
+    BuildContext context,
+    String title,
+    String message,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('確定'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _showLoading(BuildContext context, String text) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          content: Row(
+            children: [
+              const SizedBox.square(
+                dimension: 24,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+              const SizedBox(width: 16),
+              Text(text),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _webLogin(BuildContext context, String qrcodeKey) async {
+    if (!Accounts.main.isLogin) {
+      SmartDialog.showToast('請先登入');
+      return;
+    }
+    if (Accounts.main.accessKey?.isNotEmpty != true) {
+      await _showResult(
+        context,
+        '登入失敗',
+        '目前的登入方式沒有 App 憑證（access_key），請用掃碼方式重新登入 PiliBTR 後再試',
+      );
+      return;
+    }
+    String? name;
+    if (Get.isRegistered<MineController>()) {
+      name = Get.find<MineController>().userInfo.value.uname;
+    }
+    name ??= Accounts.main.mid.toString();
+
+    _showLoading(context, '讀取登入請求…');
+    final check = await LoginHttp.webQrcodeCheck(qrcodeKey);
+    if (!context.mounted) return;
+    if (!check.success) {
+      Navigator.of(context).pop();
+      await _showResult(context, '登入失敗', check.msg);
+      return;
+    }
+    final scene = await LoginHttp.webQrcodeScene(qrcodeKey);
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    if (!scene.success) {
+      await _showResult(context, '登入失敗', scene.msg);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: const Text('登入網頁版'),
+          content: Text(
+            '要用目前帳號（$name）登入網頁版嗎？'
+            '${scene.location.isEmpty ? '' : '\n登入位置：${scene.location}'}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('確認登入'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    _showLoading(context, '登入中…');
+    final res = await LoginHttp.webQrcodeConfirm(
+      qrcodeKey,
+      transient: scene.transient,
+    );
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    await _showResult(
+      context,
+      res.success ? '登入成功' : '登入失敗',
+      res.success ? '已用目前帳號登入網頁版。' : res.msg,
     );
   }
 
