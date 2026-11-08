@@ -3,5 +3,5 @@
 /// can set an older one with `--dart-define=btr.version=v2.2.0-btr.1`.
 const String btrVersion = String.fromEnvironment(
   'btr.version',
-  defaultValue: 'v2.2.7',
+  defaultValue: 'v2.2.8',
 );
