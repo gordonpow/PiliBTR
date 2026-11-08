@@ -267,6 +267,12 @@ class InlineVideoPreview extends StatefulWidget {
   State<InlineVideoPreview> createState() => _InlineVideoPreviewState();
 }
 
+/// 預覽的聲音開關，所有影片與直播預覽共用：一個開聲音，之後的預覽也開；
+/// 一個靜音，之後的預覽也靜音。只存在記憶體，重開 App 後回到靜音。
+abstract final class PreviewAudio {
+  static bool muted = true;
+}
+
 class _InlineVideoPreviewState extends State<InlineVideoPreview>
     with WidgetsBindingObserver {
   Player? _player;
@@ -379,7 +385,8 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     _cid = source.cid;
     _loadSubtitle(source.cid);
     try {
-      player.setVolume(0);
+      if (mounted) setState(() => _muted = PreviewAudio.muted);
+      player.setVolume(_muted ? 0 : 100);
       // BTR: fetch from several CDN nodes in parallel.
       final video = await BtrProxy.wrap(source.video);
       final audio = source.audio == null
@@ -511,6 +518,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     final player = _player;
     if (player == null) return;
     setState(() => _muted = !_muted);
+    PreviewAudio.muted = _muted;
     player.setVolume(_muted ? 0 : 100);
   }
 

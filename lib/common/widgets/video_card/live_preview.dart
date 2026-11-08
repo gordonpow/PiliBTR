@@ -185,7 +185,8 @@ class _LiveInlinePreviewState extends State<LiveInlinePreview>
     if (_disposed) return;
     _player = player;
     try {
-      player.setVolume(0);
+      if (mounted) setState(() => _muted = PreviewAudio.muted);
+      player.setVolume(_muted ? 0 : 100);
       _subs.add(
         player.stream.position.listen((position) {
           if (!mounted || !_isMine) return;
@@ -220,6 +221,7 @@ class _LiveInlinePreviewState extends State<LiveInlinePreview>
     final player = _player;
     if (player == null) return;
     setState(() => _muted = !_muted);
+    PreviewAudio.muted = _muted;
     player.setVolume(_muted ? 0 : 100);
   }
 
