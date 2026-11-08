@@ -2,169 +2,133 @@
 
 <img src="assets/images/logo/logo.png" width="96" alt="PiliBTR icon">
 
-[English](README.en.md)
+English | [繁體中文](README.zh-TW.md)
 
-> **PiliBTR** is a third-party Bilibili client for Android, based on [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus). It downloads video from several Bilibili CDN nodes at the same time, so playback stutters less (especially outside mainland China) and offline downloads are faster. Traditional Chinese UI. Download the APK from [Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
+> **PiliBTR** is an open-source third-party Bilibili client for Android based on [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus). It integrates BTR (Bilibili Thread Ripper) multi-CDN parallel acceleration—inspired by [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop) (MIT)—to fetch video streams across multiple CDN nodes simultaneously. This drastically reduces buffering stalls (especially outside mainland China) and accelerates offline downloads. Pre-built APKs are available on [Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
 
-基於 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 修改，加入「線程撕裂者」（Bilibili Thread Ripper，BTR）的多 CDN 並行加速。設計參考 [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)（MIT），並移植到 Android 手機。
+---
 
-## 為什麼要做
+## Why
 
-- **問題**：Bilibili 的播放與下載，一次只從一個 CDN 節點、用一條連線抓資料。那個節點如果慢或不穩，影片就會一直緩衝、卡頓，在海外更明顯。
-- **BTR Desktop 的做法**：攔截官方 Windows 客戶端的請求，把每段資料拆成小塊，同時交給多個 CDN 節點下載。它只能用在 Windows，手機沒辦法用同樣的補丁方式。
-- **本版本的目標**：在 Android 上做出同樣的效果。
-  - 看影片時，播放緩衝由多個 CDN 同時下載，減少卡頓。
-  - 離線快取也改成多線程並行下載。
+- **The Problem**: Bilibili streams and downloads media using a single connection to a single CDN node. If that assigned node suffers from network congestion, high latency, or packet loss, video playback constantly buffers and stutters. This issue is particularly noticeable when accessing Bilibili from outside mainland China.
+- **The BTR Desktop Approach**: [Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop) solved this on Windows by intercepting requests from the official desktop client, slicing data ranges into smaller chunks, and fetching them concurrently across multiple CDN nodes. However, its injection technique is restricted to Windows desktop environments and cannot run on mobile operating systems.
+- **Goal of PiliBTR**: Port true multi-CDN parallel streaming and downloading to Android:
+  - **Smooth Video Playback**: Streaming buffers are fetched in parallel from multiple CDN nodes, preventing slow individual nodes from interrupting playback.
+  - **Accelerated Offline Downloads**: Caching uses multi-threaded segmented chunk downloading with pause and resume support.
 
-## 新增功能
+---
 
-| 功能 | 說明 |
-|---|---|
-| 播放加速 | 播放器的每個 Range 請求切成小塊，由多個 CDN 節點並行下載，依序交回播放器 |
-| 下載加速 | 離線快取分塊並行下載，可暫停、可續傳 |
-| CDN 模式 | 大陸（9 個節點）、海外（4 個節點）、自訂（最多 32 個） |
-| 線程數 | 自動（推薦），或手動選 4、8、16、32、64、128 |
-| 容錯 | 自動停用壞節點，依速度挑節點，卡住時補抓，最後可退回原網址 |
-| 繁體中文介面 | 全部介面文字改為繁體中文（台灣用語），系統元件使用 zh_TW 語系 |
-| App 名稱與圖示 | App 名稱改為 PiliBTR，新圖示：撕成 4 條線程的播放鍵 |
-| 迷你播放器 | 離開影片頁時，影片縮成小視窗繼續播放；可拖曳並吸附四個角落，旋轉螢幕後留在同一角落，底部導覽列收起時貼齊螢幕邊緣 |
-| 斜滑縮小 | 在播放器上往左下或右下斜滑，視窗跟著手指縮小；放開後變成迷你播放器，距離不夠則彈回。從推薦影片連續點進多個影片頁時，斜滑後小窗播放目前的影片，主畫面回到點進第一個影片頁之前的頁面（例如首頁、搜尋、觀看紀錄）；按返回則回到上一個影片頁 |
-| 長按預覽 | 首頁長按影片卡片，直接在卡片上播放預覽（預設靜音），有進度條與 CC 字幕開關；點卡片會從預覽位置接著播放 |
-| 推薦帳號切換 | 登入、登出或切換推薦帳號後，首頁推薦立即重新載入，不再顯示遊客推薦 |
+## Features
 
-設定位置：**設定 → 播放設定**（迷你播放器、斜滑縮小、視窗大小）、**設定 → 推薦設定**（長按影片預覽）
-
-設定位置：**設定 → 影片設定 → 線程撕裂者（多 CDN 加速）**
-
-## 網速比較：無 BTR 與有 BTR
-
-| 項目 | 無 BTR | 有 BTR |
+| Area | Feature | Description |
 |---|---|---|
-| 連線方式 | 1 條連線，只連原始 CDN 節點 | 8 條連線，每塊 512 KB，分散到 4 個海外節點 |
-| 節點變慢或斷線時 | 播放器只能等，畫面緩衝、卡頓 | 自動改用較快的節點，慢的那塊在別的節點補抓 |
-| 實測下載速度（中位數） | 11.38 MB/s | 12.58 MB/s（約 +10%） |
-| 實測範圍（7 輪最低～最高） | 8.56～13.27 MB/s | 8.63～17.15 MB/s |
-| 播放順暢度 | — | 作者在實體手機上使用，體感順暢（尚無量測數據） |
+| **Playback acceleration (BTR)** | Local HTTP Proxy (`127.0.0.1`) | Runs an internal loopback proxy that intercepts mpv player `Range` requests, splits requests into small chunks (128 KB initial chunk for fast first-frame display, 512 KB subsequent chunks), and downloads them concurrently across multiple CDN nodes before streaming bytes back to the player in order. |
+| | Intelligent Node Pool | Dynamically tests node speeds and health; disables failing nodes (e.g. 2 consecutive 0-byte responses), distributes chunks based on `speed / active_requests`, and filters out nodes that are 12x slower than the fastest node. |
+| | Request Hedging & Fallback | Hedges delayed chunks by dispatching duplicate requests to alternate nodes if a chunk takes longer than 1.5x the average response time (0.7s–2.5s); seamlessly falls back to the original URL if all CDN nodes fail so playback never breaks. |
+| | CDN Modes & Concurrency | Offers Mainland (9 nodes), Overseas (4 nodes), and Custom (up to 32 nodes) modes. Concurrency can be set to Auto (8 playback threads, 4–16 download threads) or manually configured (4 to 128 threads). |
+| | Real-Time CDN Status | In-player status panel showing current download throughput delivered to the player and historical average speeds per CDN node. |
+| | Fast Playback Start | Shorter time to first frame through parallel node probing, head streaming, request hedging, and app-wide node statistics; the first request uses the target quality (1080P by default on phones) to avoid extra API round trips. Failed BTR opens retry automatically on the original URL instead of hanging on "Loading". |
+| | Visible-Card Preload | Automatically prefetches playback URLs and preheats video streams for all video cards currently visible on the screen. Keeps preloading smoothly while scrolling without interruption. |
+| | Tap-Down Preheating | Triggers initial chunk preheating on the touch-down event before finger release, significantly reducing perceived startup delay. |
+| | Configurable Preload Settings | Customizable preloading behavior (Always, Wi-Fi only, or Off) and configurable concurrent video preload limits (default: unlimited, scoped dynamically to visible cards). |
+| | Seamless Error Recovery | Retries playback from the exact current timestamp if an error occurs, avoiding restarting from 0 seconds. |
+| **Player** | In-App Mini Player | Minimizes the playing video into a floating window when exiting the video details page. Snaps to the four screen corners, preserves corner placement across screen rotations, and sits flush against the bottom edge when the navigation bar collapses. Supports small, medium, large, or custom sizes. |
+| | Diagonal Swipe Gesture | Swiping diagonally down-left or down-right on the player dynamically shrinks the video with your finger into the mini player. If entered from a chain of recommended videos, shrinking returns directly to the root page (Home, Search, History), while pressing Back returns to the preceding video. |
+| | Fullscreen 3-Zone Gestures | Fullscreen view is split horizontally into three zones with customizable center zone width: swipe up on the center zone to reveal related videos or bangumi episodes; swipe down on the center zone (or diagonally anywhere) to minimize into the mini player or exit fullscreen; left and right zones control brightness and volume. |
+| | Picture-in-Picture (PiP) | System-level Android Picture-in-Picture support when navigating back to the home screen or switching between apps. |
+| | Vertical / Reels Mode | Full-screen vertical swipe feed for short videos with grid feed view, automatic playback of the next video upon completion, and background preloading of up to 3 upcoming videos using dual/quad player instances with Wi-Fi/cellular quality adaptation and AVC fallback. |
+| | Card Long-Press Preview | Long-press any video card on the home page or in lists to play an inline preview with a progress bar and CC subtitle toggle; tapping the card seamlessly resumes playback from the preview timestamp. Audio mute toggle state is synchronized across all previews. |
+| | Controls & Playback Tweaks | Playback speed slider with +/- micro-adjustment buttons (1.0x, 1.25x, 1.5x, 2.0x presets), background playback when screen is off, customizable auto-play countdown with cancel/play-now, and automatic landscape orientation detection. |
+| **Downloads & cache** | Multi-Threaded Chunked Caching | Splits offline cache files into 512 KB to 8 MB blocks downloaded in parallel across CDN nodes. Tracks progress via `.btr` checkpoint files for resilient pause/resume without re-downloading; supports resuming legacy single-connection downloads. |
+| | Direct MP4 Download | Dedicated "Download" button to save videos directly as standalone MP4 files to a custom directory (defaults to system Download directory), with pause and resume support. |
+| | Cache & Download Manager | Dedicated management tab under the "My" page with batch pause, resume, stop, and real-time download speed monitoring with selectable speed units (MB/s, KB/s). |
+| **Recommendations** | Recommendation Click Attribution | Carries recommendation card `track_id` upon navigation to report click attribution, improving recommendation relevance matching the official app. |
+| | Mobile Heartbeat Reporting | Sends official mobile heartbeat telemetry (`/x/report/heartbeat/mobile` START and END events) reporting actual watch time. |
+| | Unified Device Identity | Standardizes HD client headers, device fingerprints, and session tokens across recommendation API requests. |
+| | Instant Account Switching Refresh | Immediately reloads home recommendations upon logging in, logging out, or switching accounts, preventing lingering guest feeds. |
+| **Login** | QR Code Scanner | Built-in camera and gallery image QR scanner in the "My" page to authenticate logins for Bilibili TV / TV box clients and web browser sessions (via authenticated WebView confirmation). |
+| | International SMS Region Codes | Phone SMS login includes international country/region dial codes (e.g. Taiwan, Hong Kong, and other international regions). |
+| **Languages** | Traditional & Simplified Chinese | Complete Traditional Chinese interface (Taiwan terminology `zh_TW` converted via OpenCC) and Simplified Chinese mode, with an option to follow system language. |
+| | English UI *(New in v2.2.4)* | Downloadable English language pack (`i18n/en.json`) fetched on demand and cached locally for offline use. Checks for updates every 7 days in the background (or manually via settings); Material UI components adapt to `en-US`. |
+| | Subtitle Translation *(New in v2.2.4)* | Automatically defaults to official Bilibili English subtitles (`en-*`, `ai-en`) when available; otherwise translates Chinese subtitles into English using an on-device Google ML Kit offline model (~30 MB) or online API keys (DeepL / Google Cloud Translation). Translated subtitle tracks are marked with "(Translated)". |
+| | Danmaku Translation *(New in v2.2.4)* | Translates on-screen danmaku (bullet comments) and live chat into English using the on-device ML Kit model after applying block/filter and deduplication rules, backed by a translation cache. |
+| **Appearance** | Cold Start Splash Animation | Custom dark splash screen with animated launch sequence (can be disabled or tapped to skip; pure black `#000000` background). |
+| | Official App Layout | Bottom navigation bar modeled after the official Bilibili mobile app (Home, Following, Messages, My). |
+| | Video Card Grid Customization | Unified vertical video cards with separate portrait and landscape row/column counts (e.g. 1 to 4 columns), synchronized across anime, movies, and live streams. |
+| | Hierarchical Settings | Tree-structured categorized settings menu with persistent settings search history. |
+| **Updates** | In-App Updater | Checks GitHub Releases for new updates automatically or manually with notification badge indicators, customizable check frequency (default: every 24 hours, plus on app launch), and direct in-app download and installation. |
 
-下載速度的測試條件：
+---
 
-- 時間與地點：2026-11-06，台灣家用網路，Windows 電腦（不是手機）。
-- 影片：熱門影片 `BV1mpxR6KESh`，480P（未登入），原始節點 `upos-sz-mirrorcosov.bilivideo.com`。
-- 方法：用 Python 腳本模擬 App 的做法（海外模式 4 個節點、8 線程、512 KB 分塊、依「實測速度 ÷ 進行中請求數」選節點、連線重用）。每輪各下載一段 17.7 MB、彼此不重複的資料，兩種方式交替先後，共 7 輪。
+## Download & Install
 
-結果解讀：
+Download the latest pre-compiled APK from [GitHub Releases](https://github.com/gordonpow/PiliBTR/releases/latest).
 
-- 這次測試中，原始節點本身就很快，所以平均速度只差約 10%，而且單一連線的速度波動比較大。7 輪中也有單一連線比較快的時候（第 2 輪 12.12 對 8.63 MB/s），所以這個差距不算穩定。
-- 480P 影片只需要約 0.62 Mbps（約 0.08 MB/s），兩種方式都遠高於這個數字。BTR 的設計目的是原始節點變慢或卡住時，改由其他節點補上，讓播放不跟著停下來。
-- 網路環境不同，結果可能不同（例如手機行動網路、原始節點分配到較慢的主機時）。
-- 播放順暢度目前只有作者在實體手機上的使用體感，還沒有量測數據。Android 模擬器的 debug 版不適合拿來比較：播放資料要經過 Dart 寫的本機代理，debug 版沒有最佳化，可能讓開啟 BTR 時明顯變慢，關閉時則不受影響。
+### Which APK to Choose?
 
-## 架構
-
-```
-                    ┌──────────────── App ────────────────┐
- 播放器 (mpv) ──Range──▶ BtrProxy（127.0.0.1 本機代理）     │
-                    │      │ 切成 128 KB / 512 KB 小塊      │
-                    │      ▼                                │
- 離線快取 ─────────▶ DownloadManager（分塊、.btr 進度檔）  │
-                    │      │                                │
-                    │      ▼                                │
-                    │  BtrNodePool（節點池：測速、停用、輪換）│
-                    └──────┼────────────────────────────────┘
-                           ▼
-            CDN 節點 A   CDN 節點 B   CDN 節點 C ...（同時下載）
-```
-
-### 播放加速（`lib/services/download/btr_proxy.dart`）
-
-- **需求**：播放時減少卡頓，而且不能改到播放器本身。
-- **設計**：
-  - PiliPlus 使用 mpv 播放器，沒辦法像 BTR Desktop 那樣攔截瀏覽器的 `fetch`。所以 App 內開一個只監聽 `127.0.0.1` 的 HTTP 代理，播放網址改成指向這個代理。
-  - 代理收到播放器的 `Range` 請求後，把範圍切成小塊，最多 N 塊同時下載，N 等於線程數。
-  - 下載好的小塊依順序寫回播放器，第一塊只有 128 KB，所以開播很快。
-  - 對每一塊都測量下載時間。目前最前面那塊花的時間超過平均的 1.5 倍（0.7 到 2.5 秒之間）時，會在另一個節點同時下載同一塊（hedge），先完成的就用。
-  - 使用者拖動進度條時，播放器會中斷連線，代理也立即取消進行中的請求。
-  - 所有節點都失敗時，剩下的部分改用原網址單連線補完，播放不會中斷。
-  - 直播和本機檔案不經過代理。
-- **整合點**：`lib/plugin/pl_player/controller.dart`，播放器開啟媒體前呼叫 `BtrProxy.wrap()`。
-
-### 下載加速（`lib/services/download/download_manager.dart`）
-
-- **需求**：離線快取更快，而且中斷後可以接著下載。
-- **設計**：
-  - 先發 `Range: bytes=0-0` 取得檔案大小，同時確認伺服器支援分段下載。不支援就改回原本的單連線下載。
-  - 檔案切成 512 KB 到 8 MB 的區塊，由多個工作者並行下載，寫入同一個檔案的對應位置。寫入會排隊，因為 `RandomAccessFile` 不能同時寫。
-  - 進度存在 `<檔名>.btr`，記錄已完成的區塊。暫停或失敗後可以續傳，完成後自動刪除。
-  - 舊版單連線下載到一半的檔案也能接著下載。
-  - 對外介面跟原本一樣，所以 `download_service.dart` 不用改。
-
-### 節點池（`lib/services/download/btr_cdn.dart`）
-
-播放加速和下載加速共用同一套節點規則，沿用 BTR 的做法：
-
-- **換節點**：只換網址的主機名稱，路徑和簽名參數保留。原網址在 Akamai 時，也可以用它當來源換到其他主機。
-- **不換節點的網址**：mcdn 中繼網址（`mcdn` 主機、`/v1/resource/` 路徑、`os=mcdn`）不換。Akamai 也不會被當成換過去的目標，因為它的簽名格式不同。
-- **停用規則**：連續 2 次收到 0 byte 的節點，在這部影片中停用。全部停用時重新啟用，最多 3 輪，只要有一次成功就重新計算。
-- **選節點**：先每個節點試一次。之後每次選「實測速度 ÷ 進行中的請求數」最高的節點，比最快節點慢 12 倍以上的節點跳過。
-- **逾時**：連線逾時 4 秒，下載停頓 5 秒就換節點。播放時每塊最多試 6 次，下載時每塊最多試 12 次，已收到的部分保留不重抓。
-
-### 設定（`lib/services/download/btr_config.dart`、`lib/pages/setting/widgets/btr_settings_dialog.dart`）
-
-| 設定鍵 | 預設 | 說明 |
-|---|---|---|
-| `btrPlayback` | 開 | 播放加速 |
-| `btrEnable` | 開 | 下載加速 |
-| `btrCdnMode` | 大陸 | CDN 模式：大陸、海外、自訂 |
-| `btrCustomCdn` | 空 | 自訂節點，每行一個 |
-| `btrAutoThreads` | 開 | 自動線程：播放用 8 條，下載依檔案大小用 4 到 16 條 |
-| `btrThreads` | 16 | 手動線程數 |
-
-在海外（例如台灣）建議選「海外」模式，大陸節點常連不上或很慢。
-
-## 變更檔案
-
-| 檔案 | 變更 |
+| Architecture | Target Devices |
 |---|---|
-| `lib/services/download/btr_proxy.dart` | 新增：播放用的本機代理和並行下載 |
-| `lib/services/download/btr_cdn.dart` | 新增：節點池和專用 Dio，連線逾時 4 秒 |
-| `lib/services/download/btr_config.dart` | 新增：設定和節點清單 |
-| `lib/pages/setting/widgets/btr_settings_dialog.dart` | 新增：設定視窗 |
-| `lib/services/download/download_manager.dart` | 改寫：多線程分塊下載和續傳 |
-| `lib/plugin/pl_player/controller.dart` | 播放網址改經過代理 |
-| `lib/pages/setting/models/video_settings.dart` | 加入設定入口 |
-| `lib/utils/storage_key.dart` | 加入 6 個設定鍵 |
-| `lib/scripts/to_traditional.py`、`lib/scripts/dartlex.py` | 新增：把介面字串轉成繁體中文的腳本 |
-| `lib/main.dart` | 語系改為 zh_TW |
-| `lib/common/constants.dart`、`lib/http/api.dart` | App 名稱、原始碼網址、檢查更新改指向 PiliBTR |
-| `assets/images/logo/`、`android/app/src/main/res/` | 新圖示、啟動畫面、App 名稱 |
-| `lib/plugin/pl_player/mini_player.dart` | 新增：迷你播放器、斜滑縮小的跟手預覽 |
-| `lib/plugin/pl_player/view/view.dart` | 斜滑手勢 |
-| `lib/common/widgets/video_card/video_preview.dart` | 新增：卡片長按預覽（BTR、字幕、進度條） |
-| `lib/common/widgets/video_card/video_card_v.dart` | 長按預覽、預取播放網址、從預覽位置開啟影片 |
-| `lib/utils/accounts.dart`、`lib/pages/rcmd/controller.dart` | 推薦帳號變更時重新載入首頁推薦 |
+| `arm64-v8a` | **Recommended**. For almost all modern Android phones and tablets (64-bit ARM). |
+| `armeabi-v7a` | For older 32-bit ARM Android devices. |
+| `x86_64` | For Android emulators on PC or x86_64 Android tablets. |
 
-## 建置（Windows，Android）
+### Installation Notes
 
-1. 安裝 Flutter 3.47.9、Android SDK（API 37）和 NDK 28.2.13676358。
-2. 開啟 Windows 開發人員模式，並執行 `git config --global core.longpaths true`。
-3. PiliPlus 需要先修補 Flutter SDK 和 `material_ui` 套件。設定環境變數 `FLUTTER_ROOT` 和 `GITHUB_WORKSPACE`，再執行 `lib/scripts/patch.ps1 android`。在 Windows 上，要把腳本裡的 `~/.pub-cache` 改成 `$env:LOCALAPPDATA/Pub/Cache`。
-4. 執行 `flutter build apk --release --split-per-abi`。
+- **Debug-Key Signing Note**: Release APKs are signed with a test/debug key. During installation, Android Play Protect or your system's package installer may display an "Unrecognized app" or security warning. This is expected for community builds—select "Install anyway" to proceed.
+- **Cannot Overwrite Official PiliPlus**: PiliBTR uses a distinct package configuration and signature from upstream PiliPlus. It cannot directly overwrite or update an existing official PiliPlus installation. PiliBTR installs as a standalone application.
 
-### 繁體中文轉換
+---
 
-上游 PiliPlus 的介面字串是簡體中文，直接寫在 Dart 程式裡。本版本用 [OpenCC](https://github.com/BYVoid/OpenCC)（`s2twp`，台灣用語）轉換字串常數，註解和程式碼不變。和 Bilibili 伺服器回傳的簡體文字做比對的字串會保留簡體，清單在腳本的 `PROTECT` 裡。
+## Recommended Settings for Users Outside Mainland China
 
-每次合併上游之後，執行：
+If you are using PiliBTR outside mainland China (e.g., in Taiwan, Hong Kong, Macau, Japan, North America, Southeast Asia, or Europe), mainland CDN nodes can be slow, throttled, or unreachable:
 
-```sh
-pip install opencc
-python lib/scripts/to_traditional.py
-```
+1. Go to **Settings** → **Video Settings** → **Thread Ripper (Multi-CDN Acceleration)**.
+2. Set **CDN Mode** to **Overseas** (`海外`). This routes video streaming chunks across 4 high-speed overseas CDN nodes.
+3. Keep **Auto Threads** turned **ON** (recommended: 8 threads for streaming playback, dynamic 4–16 threads for offline downloads).
 
-腳本可以重複執行。影片標題、評論等伺服器內容仍是原文。
+---
 
-## 授權
+## Build from Source
 
-- 本專案沿用 PiliPlus 的 **GPL v3** 授權。
-- 加速規則參考 Bilibili-thread-ripper-desktop（MIT，作者 MrTangLuyao）。
-- 本專案僅供學習和測試，請勿用於商業用途。
+### Prerequisites
+
+- Flutter `3.47.9`
+- Android SDK (API 37)
+- Android NDK `28.2.13676358`
+- Enable Windows Developer Mode and long path support:
+  ```powershell
+  git config --global core.longpaths true
+  ```
+
+### Build Steps
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/gordonpow/PiliBTR.git
+   cd PiliBTR
+   ```
+2. Apply upstream Flutter SDK and package patches:
+   PiliPlus requires patching the Flutter SDK and `material_ui` package. Set the `FLUTTER_ROOT` and `GITHUB_WORKSPACE` environment variables, then run:
+   ```powershell
+   .\lib\scripts\patch.ps1 android
+   ```
+   *(Note on Windows: Ensure `~/.pub-cache` in the script points to `$env:LOCALAPPDATA\Pub\Cache` if using standard Pub cache locations).*
+3. Build the release APKs:
+   ```bash
+   flutter build apk --release --split-per-abi
+   ```
+   The generated APK files will be located in `build/app/outputs/flutter-apk/`.
+
+---
+
+## Credits & License
+
+- **[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)**: This project is based on PiliPlus and is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+- **[Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)**: Acceleration rules and multi-CDN architecture are inspired by and ported from Bilibili-thread-ripper-desktop (MIT, by MrTangLuyao).
+
+---
+
+## Disclaimer
+
+This project is for learning and testing purposes only. Do not use it for commercial purposes.
