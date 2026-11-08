@@ -84,7 +84,7 @@ defaultSelectParams() async {
 }
 
 /// Starts to load the head of the streams the page will play (BTR only).
-/// Does nothing when BTR playback is off.
+/// Does nothing when BTR playback is off. Completes when both downloads end.
 Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
   if (!BtrConfig.playback) return;
   final params = await defaultSelectParams();
@@ -95,8 +95,26 @@ Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
     preferCodecs: params.preferCodecs,
   );
   if (selected == null) return;
-  BtrProxy.warm(selected.videoUrl);
-  if (selected.audioUrl.isNotEmpty) BtrProxy.warm(selected.audioUrl);
+  await Future.wait([
+    BtrProxy.warm(selected.videoUrl),
+    if (selected.audioUrl.isNotEmpty) BtrProxy.warm(selected.audioUrl),
+  ]);
+}
+
+/// True when every stream [warmStreams] would warm already has warm bytes (or
+/// is downloading them). Reads the BtrProxy state, so released warms count as
+/// not warmed.
+Future<bool> allStreamsWarm(PlayUrlModel data, {required int qn}) async {
+  final params = await defaultSelectParams();
+  final selected = selectStreams(
+    data,
+    qn: qn,
+    audioQa: params.audioQa,
+    preferCodecs: params.preferCodecs,
+  );
+  if (selected == null) return true;
+  return BtrProxy.isWarm(selected.videoUrl) &&
+      (selected.audioUrl.isEmpty || BtrProxy.isWarm(selected.audioUrl));
 }
 
 /// Opens a CDN connection for the video stream of a prefetched playurl, so

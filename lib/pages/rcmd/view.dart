@@ -32,7 +32,6 @@ class _RcmdPageState extends State<RcmdPage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final controller = Get.put(RcmdController());
 
-  static const _maxVisiblePrefetch = 6;
 
   Timer? _debounce;
   Worker? _loadWorker;
@@ -137,7 +136,7 @@ class _RcmdPageState extends State<RcmdPage>
     });
   }
 
-  /// 走訪 render tree，取畫面內（含部分可見）前 6 張有 bvid、cid 的影片卡片。
+  /// 走訪 render tree，取畫面內（含部分可見）所有有 bvid、cid 的影片卡片。
   List<(String, int)> _collectVisible() {
     final data = controller.loadingState.value.dataOrNull;
     if (data == null || data.isEmpty || !mounted) return const [];
@@ -153,7 +152,7 @@ class _RcmdPageState extends State<RcmdPage>
     final lastRefreshAt = controller.lastRefreshAt;
     final result = <(String, int)>[];
     var child = grid.firstChild;
-    while (child != null && result.length < _maxVisiblePrefetch) {
+    while (child != null) {
       final pd = child.parentData;
       if (pd is SliverMultiBoxAdaptorParentData && child.hasSize) {
         final start = pd.layoutOffset ?? 0;

@@ -6,6 +6,8 @@ import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/services/download/btr_config.dart';
+import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -139,6 +141,9 @@ abstract final class PlayUrlCache {
   // ---- 可見卡片預取（首頁推薦）----
 
   static const _visibleConcurrency = 2;
+  static const _warmConcurrency = 2;
+  static const _maxPlayUrlOnly = 6;
+  static const _warmTimeout = Duration(seconds: 15);
   static const _backoffDuration = Duration(minutes: 5);
 
   /// 頁面不可見或 App 進背景時為 true：不再排程新的可見卡片預取。
@@ -146,24 +151,45 @@ abstract final class PlayUrlCache {
 
   static DateTime? _backoffUntil;
   static int _active = 0;
-  static final _pending = <String, (String, int)>{};
+  static final _pending = <String, (String, int, bool)>{};
   static final _inFlight = <String>{};
+
+  /// 預熱佇列（影片＋音訊開頭）：併發 2 部影片、去重。
+  static int _warmActive = 0;
+  static final _warmPending = <String, (String, int)>{};
+  static final _warmInFlight = <String>{};
+
+  /// clearPending／clear 時加一；playurl 完成時若世代已變，就不再加入預熱佇列。
+  static int _generation = 0;
 
   static bool get _inBackoff {
     final until = _backoffUntil;
     return until != null && DateTime.now().isBefore(until);
   }
 
-  /// 預取可見卡片的 playurl：併發 2、去重、412 退避；tap-down 的 [prefetch] 不受影響。
+  /// 預取可見卡片：依設定決定是否預熱開頭。
+  /// 預熱開啟（一律，或僅 Wi-Fi 且目前是 Wi-Fi，且 BTR 播放開啟）時處理所有卡片，
+  /// 並在 playurl 完成後預熱影片與音訊開頭；否則只預取前 6 張的 playurl。
+  /// 併發 2、去重、412 退避；tap-down 的 [prefetch] 不受影響。
   static Future<void> prefetchVisible(List<(String bvid, int cid)> items) async {
     if (isPaused || _inBackoff) return;
+    final generation = _generation;
     final PlayUrlParams params;
+    bool warmOn;
     try {
       params = await defaultParams();
+      final mode = Pref.visiblePreloadMode;
+      warmOn =
+          BtrConfig.playback &&
+          (mode == 2 || (mode == 1 && await ConnectivityUtils.isWiFi));
     } catch (_) {
       return;
     }
-    if (isPaused || _inBackoff) return;
+    if (isPaused || _inBackoff || generation != _generation) return;
+    if (warmOn) BtrProxy.setWarmCapacity(items.length);
+    if (!warmOn && items.length > _maxPlayUrlOnly) {
+      items = items.sublist(0, _maxPlayUrlOnly);
+    }
     final now = DateTime.now();
     for (final (bvid, cid) in items) {
       final key = _key(bvid, cid);
@@ -172,16 +198,25 @@ abstract final class PlayUrlCache {
       if (cached != null &&
           now.difference(cached.time) < _ttl &&
           cached.params == params) {
+        // 快取命中仍要預熱開頭。
+        if (warmOn) {
+          _enqueueCachedWarm(key, bvid, cid, params, cached.future).ignore();
+        }
         continue;
       }
       if (_inFlight.contains(key)) continue;
-      _pending[key] = (bvid, cid);
+      _pending[key] = (bvid, cid, warmOn);
     }
     _pumpVisible();
+    _pumpWarm();
   }
 
   /// 開始捲動時清空尚未發出的佇列（已發出的請求不取消）。
-  static void clearPending() => _pending.clear();
+  static void clearPending() {
+    _generation++;
+    _pending.clear();
+    _warmPending.clear();
+  }
 
   static void _pumpVisible() {
     while (_active < _visibleConcurrency &&
@@ -189,14 +224,20 @@ abstract final class PlayUrlCache {
         !isPaused &&
         !_inBackoff) {
       final key = _pending.keys.first;
-      final (bvid, cid) = _pending.remove(key)!;
+      final (bvid, cid, warm) = _pending.remove(key)!;
       _active++;
       _inFlight.add(key);
-      _runVisible(key, bvid, cid);
+      _runVisible(key, bvid, cid, warm);
     }
   }
 
-  static Future<void> _runVisible(String key, String bvid, int cid) async {
+  static Future<void> _runVisible(
+    String key,
+    String bvid,
+    int cid,
+    bool warm,
+  ) async {
+    final generation = _generation;
     try {
       if (kDebugMode) {
         debugPrint('PlayUrlCache visible prefetch bvid=$bvid cid=$cid');
@@ -207,12 +248,75 @@ abstract final class PlayUrlCache {
         params: await defaultParams(),
       );
       if (res is Error && _isRiskControl(res)) _startBackoff();
+      if (warm && res is Success && generation == _generation) {
+        _enqueueWarm(key, bvid, cid);
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('PlayUrlCache visible prefetch: $e');
     } finally {
       _active--;
       _inFlight.remove(key);
       _pumpVisible();
+      _pumpWarm();
+    }
+  }
+
+  /// 快取命中的卡片：兩條串流都已預熱（或下載中）就略過，不佔用名額。
+  /// 以 BtrProxy 目前狀態判斷，釋放後可重新預熱。
+  static Future<void> _enqueueCachedWarm(
+    String key,
+    String bvid,
+    int cid,
+    PlayUrlParams params,
+    Future<LoadingState<PlayUrlModel>> future,
+  ) async {
+    final generation = _generation;
+    try {
+      final data = _completed[future];
+      if (data != null && await allStreamsWarm(data, qn: params.qn)) return;
+    } catch (_) {}
+    if (generation != _generation || isPaused || _inBackoff) return;
+    _enqueueWarm(key, bvid, cid);
+    _pumpWarm();
+  }
+
+  static void _enqueueWarm(String key, String bvid, int cid) {
+    if (_warmInFlight.contains(key)) return;
+    _warmPending[key] = (bvid, cid);
+  }
+
+  static void _pumpWarm() {
+    while (_warmActive < _warmConcurrency &&
+        _warmPending.isNotEmpty &&
+        !isPaused &&
+        !_inBackoff) {
+      final key = _warmPending.keys.first;
+      final (bvid, cid) = _warmPending.remove(key)!;
+      _warmActive++;
+      _warmInFlight.add(key);
+      _runWarm(key, bvid, cid);
+    }
+  }
+
+  /// 取得（多半是快取）playurl 後預熱影片與音訊開頭，等兩者下載結束才釋放名額。
+  static Future<void> _runWarm(String key, String bvid, int cid) async {
+    try {
+      final params = await defaultParams();
+      final res = await get(bvid: bvid, cid: cid, params: params);
+      if (res is Error && _isRiskControl(res)) _startBackoff();
+      if (res is Success<PlayUrlModel>) {
+        if (kDebugMode) debugPrint('PlayUrlCache visible warm bvid=$bvid');
+        await warmStreams(
+          res.response,
+          qn: params.qn,
+        ).timeout(_warmTimeout, onTimeout: () {});
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('PlayUrlCache visible warm: $e');
+    } finally {
+      _warmActive--;
+      _warmInFlight.remove(key);
+      _pumpWarm();
     }
   }
 
@@ -231,12 +335,15 @@ abstract final class PlayUrlCache {
     final until = DateTime.now().add(_backoffDuration);
     _backoffUntil = until;
     _pending.clear();
+    _warmPending.clear();
     if (kDebugMode) debugPrint('PlayUrlCache backoff until $until');
   }
 
   /// 帳號切換或登出時清空。
   static void clear() {
     _entries.clear();
+    _generation++;
     _pending.clear();
+    _warmPending.clear();
   }
 }

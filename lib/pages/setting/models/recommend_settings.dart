@@ -1,13 +1,46 @@
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart' hide StatefulBuilder;
 
+const _visiblePreloadLabels = ['關閉', '僅 Wi-Fi', '一律'];
+
+Future<void> _showVisiblePreloadDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '預載入畫面上的影片',
+      value: Pref.visiblePreloadMode,
+      values: [
+        for (var i = 0; i < _visiblePreloadLabels.length; i++)
+          (i, _visiblePreloadLabels[i]),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.visiblePreloadMode, res);
+    setState();
+  }
+}
+
 List<SettingsModel> get recommendSettings => [
+  NormalModel(
+    title: '預載入畫面上的影片',
+    leading: const Icon(Icons.downloading_outlined),
+    getSubtitle: () =>
+        '當前：${_visiblePreloadLabels[Pref.visiblePreloadMode.clamp(0, 2)]}（停止捲動後預先準備畫面上所有影片，會多用流量）',
+    onTap: _showVisiblePreloadDialog,
+  ),
   const SwitchModel(
     title: '首頁使用app端推薦',
     subtitle: '若web端推薦不太符合預期，可嘗試切換至app端推薦',

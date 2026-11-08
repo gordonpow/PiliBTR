@@ -259,6 +259,10 @@ abstract final class Pref {
         : VideoQuality.super8k.code,
   );
 
+  /// 預載入畫面上的影片：0 關閉、1 僅 Wi-Fi、2 一律（預設）。
+  static int get visiblePreloadMode =>
+      _setting.get(SettingBoxKey.visiblePreloadMode, defaultValue: 2);
+
   static int get defaultVideoQaCellular => _setting.get(
     SettingBoxKey.defaultVideoQaCellular,
     defaultValue: VideoQuality.high1080.code,

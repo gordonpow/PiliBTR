@@ -86,24 +86,50 @@ abstract final class BtrProxy {
 
   /// Sources that hold warm bytes, oldest first.
   static final List<_BtrSource> _warmed = [];
-  static const int _maxWarmed = 4;
+  static int _warmCapacity = 4;
+
+  /// Sets how many URLs may keep warm bytes: 2 per visible card (video and
+  /// audio) plus 2 for a tapped card, at least 4. Trims at once when it shrinks.
+  static void setWarmCapacity(int visibleCards) {
+    _warmCapacity = math.max(4, visibleCards * 2 + 2);
+    _trimWarmed();
+  }
+
+  /// Frees the oldest warm bytes that no serve is reading, until the count
+  /// fits. When all are being read, nothing is freed now.
+  static void _trimWarmed() {
+    while (_warmed.length > _warmCapacity) {
+      final i = _warmed.indexWhere((s) => s.warmIdle);
+      if (i < 0) return;
+      _warmed.removeAt(i).evictWarm();
+    }
+  }
 
   /// Starts to download the first [bytes] of [url] into memory, so the player
   /// gets them at once when it opens the same URL. The bytes are readable
   /// while they download. Only once per URL; the bytes are released after 30 s
   /// without use (the source and its id stay, so the player URL stays valid).
-  static void warm(String url, {int bytes = 512 * 1024}) {
-    if (!BtrConfig.playback || !isEligible(url)) return;
+  ///
+  /// The returned future completes when the warm download ends (success or
+  /// failure), or at once when nothing is started.
+  static Future<void> warm(String url, {int bytes = 512 * 1024}) {
+    if (!BtrConfig.playback || !isEligible(url)) return Future.value();
     final src = url.http2https;
     final id = _idFor(src);
     final source = _sources[id]!;
-    if (source.hasWarm) return;
+    if (source.hasWarm) return Future.value();
     if (kDebugMode) debugPrint('BTR: warm start $id');
-    source.startWarm(bytes, onRelease: () => _warmed.remove(source));
+    final done = source.startWarm(bytes, onRelease: () => _warmed.remove(source));
     _warmed.add(source);
-    while (_warmed.length > _maxWarmed) {
-      _warmed.removeAt(0).evictWarm();
-    }
+    _trimWarmed();
+    return done;
+  }
+
+  /// True when [url] has warm bytes or a warm download is running.
+  static bool isWarm(String url) {
+    if (!BtrConfig.playback || !isEligible(url)) return true;
+    final id = _idByUrl[url.http2https];
+    return id != null && (_sources[id]?.hasWarm ?? false);
   }
 
   static final Map<String, DateTime> _preconnectedAt = {};
@@ -290,16 +316,28 @@ class _BtrSource {
   Map<String, String> get _headers => _headersOrNull ?? _defaultHeaders;
 
   _Warm? _warm;
-  bool get hasWarm => _warm != null;
 
-  void startWarm(int bytes, {required void Function() onRelease}) {
+  /// True when a buffer exists or its download is running. A released warm
+  /// is not counted, so it can be warmed again.
+  bool get hasWarm {
+    final w = _warm;
+    return w != null && (!w.done || (w.buffer != null && w.received > 0));
+  }
+
+  /// Completes when the warm download ends (success or failure).
+  Future<void> startWarm(int bytes, {required void Function() onRelease}) {
     final w = _warm = _Warm(bytes, onRelease)..armRelease();
-    _runWarm(w).catchError((Object _) {}).whenComplete(() {
+    return _runWarm(w).catchError((Object _) {}).whenComplete(() {
       w
         ..done = true
         ..notify();
+      // A failed warm (no byte) frees its buffer at once, so it can be retried.
+      if (w.received == 0) w.release();
     });
   }
+
+  /// True when no serve request is reading the warm bytes.
+  bool get warmIdle => (_warm?.users ?? 0) == 0;
 
   void evictWarm() => _warm?.evict();
 
