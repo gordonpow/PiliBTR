@@ -5,7 +5,9 @@ import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/play_url_cache.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
 
@@ -38,13 +40,44 @@ abstract final class Accounts {
     );
   }
 
-  static Future<void> refresh() {
+  /// Set when invalid accounts were removed at startup; consumed by
+  /// MineController to show a one-time toast.
+  static bool removedInvalid = false;
+
+  /// Set when the removed invalid account was the main account: the
+  /// cached user info must not show the user as logged in.
+  static bool removedMainInvalid = false;
+
+  static Future<void> _removeInvalid() {
+    // Find and flag the invalid accounts synchronously: [refresh] runs in
+    // main() before the UI reads the login state.
+    final invalid = account.toMap().entries
+        .where((e) => !e.value.isValid)
+        .toList();
+    if (invalid.isEmpty) return Future.value();
+    removedInvalid = true;
+    final futures = <Future<void>>[];
+    for (final e in invalid) {
+      debugPrint('Accounts: removed invalid account, key=${e.key}');
+      if (e.value.type.contains(AccountType.main)) {
+        removedMainInvalid = true;
+        futures.add(GStorage.userInfo.delete('userInfoCache'));
+      }
+      futures
+        ..add(account.delete(e.key))
+        ..add(e.value.cookieJar.deleteAll().catchError((_) {}));
+    }
+    return Future.wait(futures);
+  }
+
+  static Future<void> refresh() async {
+    await _removeInvalid();
     for (final a in account.values) {
       for (final t in a.type) {
         accountMode[t.index] = a;
       }
     }
-    return Future.wait(
+    await Future.wait(
       (accountMode.toSet()..removeWhere((i) => i.activated)).map(
         Request.buvidActive,
       ),

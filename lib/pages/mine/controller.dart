@@ -115,11 +115,22 @@ class MineController extends GetxController with AccountMixin {
   void onInit() {
     super.onInit();
     _initTabs();
-    final userInfoCache = Pref.userInfoCache;
+    final userInfoCache = Accounts.removedMainInvalid
+        ? null
+        : Pref.userInfoCache;
     if (userInfoCache != null) {
       userInfo.value = userInfoCache;
       queryUserInfo();
       tabCtr().forEach((ctr) => ctr.queryData());
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    if (Accounts.removedInvalid) {
+      Accounts.removedInvalid = false;
+      SmartDialog.showToast('登入已失效，請重新登入');
     }
   }
 

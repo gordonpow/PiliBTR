@@ -17,6 +17,14 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
+const _protectedCookies = {
+  'SESSDATA',
+  'bili_jct',
+  'DedeUserID',
+  'DedeUserID__ckMd5',
+  'sid',
+};
+
 final _setCookieReg = RegExp('(?<=)(,)(?=[^;]+?=)');
 
 class AccountManager extends Interceptor {
@@ -192,12 +200,32 @@ class AccountManager extends Interceptor {
     if (setCookies == null || setCookies.isEmpty) {
       return;
     }
-    final List<Cookie> cookies = setCookies
+    List<Cookie> cookies = setCookies
         .map((str) => str.split(_setCookieReg))
         .expand((cookie) => cookie)
         .where((cookie) => cookie.isNotEmpty)
         .map(Cookie.fromSetCookieValue)
         .toList();
+    if (account is LoginAccount) {
+      // Never let a response wipe the login cookies (e.g. TV QR confirm).
+      final now = DateTime.now();
+      cookies = cookies.where((c) {
+        if (!_protectedCookies.contains(c.name)) return true;
+        final expires = c.expires;
+        final cleared =
+            c.value.isEmpty ||
+            (c.maxAge != null && c.maxAge! <= 0) ||
+            (expires != null && expires.isBefore(now));
+        if (cleared && kDebugMode) {
+          debugPrint(
+            'AccountManager: ignore clearing cookie ${c.name} '
+            'from ${response.requestOptions.uri}',
+          );
+        }
+        return !cleared;
+      }).toList();
+      if (cookies.isEmpty) return;
+    }
     final statusCode = response.statusCode ?? 0;
     final locations = response.headers[HttpHeaders.locationHeader] ?? const [];
     final isRedirectRequest = statusCode >= 300 && statusCode < 400;

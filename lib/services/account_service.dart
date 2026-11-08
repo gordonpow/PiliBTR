@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:PiliPlus/models/user/info.dart';
+import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 
@@ -11,7 +12,11 @@ class AccountService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    UserInfoData? userInfo = Pref.userInfoCache;
+    // The main account was removed at startup (its login cookies were
+    // invalid): the user info cache may still be on disk.
+    UserInfoData? userInfo = Accounts.removedMainInvalid
+        ? null
+        : Pref.userInfoCache;
     if (userInfo != null) {
       face.value = userInfo.face ?? '';
       isLogin.value = true;

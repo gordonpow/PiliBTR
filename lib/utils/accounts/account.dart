@@ -95,6 +95,18 @@ class LoginAccount extends Account {
   late final String csrf =
       cookieJar.domainCookies['bilibili.com']!['/']!['bili_jct']!.cookie.value;
 
+  /// Whether the stored cookies still hold a usable login (numeric
+  /// DedeUserID and non-empty SESSDATA). Never touches [mid] / [_midStr].
+  bool get isValid {
+    final cookies = cookieJar.domainCookies['bilibili.com']?['/'];
+    final mid = cookies?['DedeUserID']?.cookie.value;
+    final sess = cookies?['SESSDATA']?.cookie.value;
+    return mid != null &&
+        int.tryParse(mid) != null &&
+        sess != null &&
+        sess.isNotEmpty;
+  }
+
   bool _hasDelete = false;
 
   @override
