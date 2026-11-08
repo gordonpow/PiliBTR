@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
@@ -17,6 +18,7 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
+import 'package:flutter/widgets.dart' as flutter show Text;
 
 // 视频卡片 - 水平布局
 class VideoCardH extends StatelessWidget {
@@ -116,35 +118,50 @@ class VideoCardH extends StatelessWidget {
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
     final titleList = videoItem.titleList;
-    final Widget title;
-    if (titleList != null && titleList.isNotEmpty) {
-      title = Text.rich(
-        maxLines: 2,
-        overflow: .ellipsis,
-        TextSpan(
-          children: titleList
-              .map(
-                (e) => TextSpan(
-                  text: e.text,
-                  style: VerticalVideoCardFrame.titleStyle.copyWith(
-                    fontSize: textTheme.bodyMedium!.fontSize,
-                    color: e.isEm ? colorScheme.primary : colorScheme.onSurface,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      );
-    } else {
-      title = Text(
-        videoItem.title,
-        maxLines: 2,
-        overflow: .ellipsis,
-        style: VerticalVideoCardFrame.titleStyle.copyWith(
-          fontSize: textTheme.bodyMedium!.fontSize,
-        ),
-      );
-    }
+    final titleStyle = VerticalVideoCardFrame.titleStyle.copyWith(
+      fontSize: textTheme.bodyMedium!.fontSize,
+    );
+    final Widget title = ContentTextBuilder(
+      text: videoItem.title,
+      builder: (context, shown, translated) {
+        // The search highlight is dropped for a translated title.
+        if (!translated && titleList != null && titleList.isNotEmpty) {
+          return Text.rich(
+            maxLines: 2,
+            overflow: .ellipsis,
+            TextSpan(
+              children: titleList
+                  .map(
+                    (e) => TextSpan(
+                      text: e.text,
+                      style: VerticalVideoCardFrame.titleStyle.copyWith(
+                        fontSize: textTheme.bodyMedium!.fontSize,
+                        color: e.isEm
+                            ? colorScheme.primary
+                            : colorScheme.onSurface,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+        }
+        if (translated) {
+          return flutter.Text(
+            shown!,
+            maxLines: 2,
+            overflow: .ellipsis,
+            style: titleStyle,
+          );
+        }
+        return Text(
+          videoItem.title,
+          maxLines: 2,
+          overflow: .ellipsis,
+          style: titleStyle,
+        );
+      },
+    );
     // Live items have no play count: keep the stats size, hide the content.
     final stats = Row(
       children: [
@@ -278,44 +295,57 @@ class VideoCardH extends StatelessWidget {
       child: Column(
         crossAxisAlignment: .start,
         children: [
-          if (videoItem.titleList?.isNotEmpty == true)
-            Expanded(
-              child: Text.rich(
-                overflow: .ellipsis,
-                maxLines: 2,
-                TextSpan(
-                  children: videoItem.titleList!
-                      .map(
-                        (e) => TextSpan(
-                          text: e.text,
-                          style: TextStyle(
-                            fontSize: theme.textTheme.bodyMedium!.fontSize,
-                            height: 1.42,
-                            letterSpacing: 0.3,
-                            color: e.isEm
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: Text(
-                videoItem.title,
-                textAlign: .start,
-                style: TextStyle(
+          Expanded(
+            child: ContentTextBuilder(
+              text: videoItem.title,
+              builder: (context, shown, translated) {
+                if (!translated && videoItem.titleList?.isNotEmpty == true) {
+                  return Text.rich(
+                    overflow: .ellipsis,
+                    maxLines: 2,
+                    TextSpan(
+                      children: videoItem.titleList!
+                          .map(
+                            (e) => TextSpan(
+                              text: e.text,
+                              style: TextStyle(
+                                fontSize: theme.textTheme.bodyMedium!.fontSize,
+                                height: 1.42,
+                                letterSpacing: 0.3,
+                                color: e.isEm
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  );
+                }
+                final style = TextStyle(
                   fontSize: theme.textTheme.bodyMedium!.fontSize,
                   height: 1.42,
                   letterSpacing: 0.3,
-                ),
-                maxLines: 2,
-                overflow: .ellipsis,
-              ),
+                );
+                if (translated) {
+                  return flutter.Text(
+                    shown!,
+                    textAlign: .start,
+                    style: style,
+                    maxLines: 2,
+                    overflow: .ellipsis,
+                  );
+                }
+                return Text(
+                  videoItem.title,
+                  textAlign: .start,
+                  style: style,
+                  maxLines: 2,
+                  overflow: .ellipsis,
+                );
+              },
             ),
+          ),
           Text(
             "$pubdate${videoItem.owner.name}",
             maxLines: 1,

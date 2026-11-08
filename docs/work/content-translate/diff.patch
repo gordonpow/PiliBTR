@@ -1,0 +1,1654 @@
+diff --git a/lib/common/widgets/video_card/video_card_h.dart b/lib/common/widgets/video_card/video_card_h.dart
+index 9eaec7833..e3dad21a4 100644
+--- a/lib/common/widgets/video_card/video_card_h.dart
++++ b/lib/common/widgets/video_card/video_card_h.dart
+@@ -1,5 +1,6 @@
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+ import 'package:PiliPlus/common/widgets/progress_bar/video_progress_indicator.dart';
+@@ -116,35 +117,42 @@ class VideoCardH extends StatelessWidget {
+     final textTheme = theme.textTheme;
+     final colorScheme = theme.colorScheme;
+     final titleList = videoItem.titleList;
+-    final Widget title;
+-    if (titleList != null && titleList.isNotEmpty) {
+-      title = Text.rich(
+-        maxLines: 2,
+-        overflow: .ellipsis,
+-        TextSpan(
+-          children: titleList
+-              .map(
+-                (e) => TextSpan(
+-                  text: e.text,
+-                  style: VerticalVideoCardFrame.titleStyle.copyWith(
+-                    fontSize: textTheme.bodyMedium!.fontSize,
+-                    color: e.isEm ? colorScheme.primary : colorScheme.onSurface,
+-                  ),
+-                ),
+-              )
+-              .toList(),
+-        ),
+-      );
+-    } else {
+-      title = Text(
+-        videoItem.title,
+-        maxLines: 2,
+-        overflow: .ellipsis,
+-        style: VerticalVideoCardFrame.titleStyle.copyWith(
+-          fontSize: textTheme.bodyMedium!.fontSize,
+-        ),
+-      );
+-    }
++    final titleStyle = VerticalVideoCardFrame.titleStyle.copyWith(
++      fontSize: textTheme.bodyMedium!.fontSize,
++    );
++    final Widget title = ContentTextBuilder(
++      text: videoItem.title,
++      builder: (context, shown, translated) {
++        // The search highlight is dropped for a translated title.
++        if (!translated && titleList != null && titleList.isNotEmpty) {
++          return Text.rich(
++            maxLines: 2,
++            overflow: .ellipsis,
++            TextSpan(
++              children: titleList
++                  .map(
++                    (e) => TextSpan(
++                      text: e.text,
++                      style: VerticalVideoCardFrame.titleStyle.copyWith(
++                        fontSize: textTheme.bodyMedium!.fontSize,
++                        color: e.isEm
++                            ? colorScheme.primary
++                            : colorScheme.onSurface,
++                      ),
++                    ),
++                  )
++                  .toList(),
++            ),
++          );
++        }
++        return ContentText(
++          videoItem.title,
++          maxLines: 2,
++          overflow: .ellipsis,
++          style: titleStyle,
++        );
++      },
++    );
+     // Live items have no play count: keep the stats size, hide the content.
+     final stats = Row(
+       children: [
+@@ -278,44 +286,47 @@ class VideoCardH extends StatelessWidget {
+       child: Column(
+         crossAxisAlignment: .start,
+         children: [
+-          if (videoItem.titleList?.isNotEmpty == true)
+-            Expanded(
+-              child: Text.rich(
+-                overflow: .ellipsis,
+-                maxLines: 2,
+-                TextSpan(
+-                  children: videoItem.titleList!
+-                      .map(
+-                        (e) => TextSpan(
+-                          text: e.text,
+-                          style: TextStyle(
+-                            fontSize: theme.textTheme.bodyMedium!.fontSize,
+-                            height: 1.42,
+-                            letterSpacing: 0.3,
+-                            color: e.isEm
+-                                ? theme.colorScheme.primary
+-                                : theme.colorScheme.onSurface,
+-                          ),
+-                        ),
+-                      )
+-                      .toList(),
+-                ),
+-              ),
+-            )
+-          else
+-            Expanded(
+-              child: Text(
+-                videoItem.title,
+-                textAlign: .start,
+-                style: TextStyle(
+-                  fontSize: theme.textTheme.bodyMedium!.fontSize,
+-                  height: 1.42,
+-                  letterSpacing: 0.3,
+-                ),
+-                maxLines: 2,
+-                overflow: .ellipsis,
+-              ),
++          Expanded(
++            child: ContentTextBuilder(
++              text: videoItem.title,
++              builder: (context, shown, translated) {
++                if (!translated && videoItem.titleList?.isNotEmpty == true) {
++                  return Text.rich(
++                    overflow: .ellipsis,
++                    maxLines: 2,
++                    TextSpan(
++                      children: videoItem.titleList!
++                          .map(
++                            (e) => TextSpan(
++                              text: e.text,
++                              style: TextStyle(
++                                fontSize: theme.textTheme.bodyMedium!.fontSize,
++                                height: 1.42,
++                                letterSpacing: 0.3,
++                                color: e.isEm
++                                    ? theme.colorScheme.primary
++                                    : theme.colorScheme.onSurface,
++                              ),
++                            ),
++                          )
++                          .toList(),
++                    ),
++                  );
++                }
++                return ContentText(
++                  videoItem.title,
++                  textAlign: .start,
++                  style: TextStyle(
++                    fontSize: theme.textTheme.bodyMedium!.fontSize,
++                    height: 1.42,
++                    letterSpacing: 0.3,
++                  ),
++                  maxLines: 2,
++                  overflow: .ellipsis,
++                );
++              },
+             ),
++          ),
+           Text(
+             "$pubdate${videoItem.owner.name}",
+             maxLines: 1,
+diff --git a/lib/common/widgets/video_card/video_card_v.dart b/lib/common/widgets/video_card/video_card_v.dart
+index c0d655a17..f32d96c34 100644
+--- a/lib/common/widgets/video_card/video_card_v.dart
++++ b/lib/common/widgets/video_card/video_card_v.dart
+@@ -1,5 +1,6 @@
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+ import 'package:PiliPlus/common/widgets/stat/stat.dart';
+@@ -196,7 +197,7 @@ class VideoCardV extends StatelessWidget {
+           crossAxisAlignment: .start,
+           children: [
+             Expanded(
+-              child: Text(
++              child: ContentText(
+                 videoItem.title,
+                 maxLines: 2,
+                 overflow: .ellipsis,
+@@ -216,11 +217,14 @@ class VideoCardV extends StatelessWidget {
+                     fontSize: 9,
+                   ),
+                 if (videoItem.rcmdReason != null)
+-                  PBadge(
++                  ContentTextBuilder(
+                     text: videoItem.rcmdReason,
+-                    isStack: false,
+-                    size: .small,
+-                    type: .secondary,
++                    builder: (context, shown, _) => PBadge(
++                      text: shown,
++                      isStack: false,
++                      size: .small,
++                      type: .secondary,
++                    ),
+                   ),
+                 if (videoItem.goto == 'picture')
+                   const PBadge(
+diff --git a/lib/pages/dynamics/widgets/content_panel.dart b/lib/pages/dynamics/widgets/content_panel.dart
+index 071e816c7..81a3ad640 100644
+--- a/lib/pages/dynamics/widgets/content_panel.dart
++++ b/lib/pages/dynamics/widgets/content_panel.dart
+@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/image_grid/image_grid_view.dart';
+ import 'package:PiliPlus/common/widgets/selection_text.dart';
+ import 'package:PiliPlus/common/widgets/text_more/text_more.dart';
+ import 'package:PiliPlus/models/dynamics/result.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/pages/dynamics/widgets/rich_node_panel.dart';
+ import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+ import 'package:PiliPlus/utils/extension/selectable_region_ext.dart';
+@@ -102,6 +103,7 @@ Widget content(
+                   onShowMore: () => PageUtils.pushDynDetail(item, isPush: true),
+                   primary: theme.colorScheme.primary,
+                 ),
++        ContentTranslationLine(text),
+         if (pics != null && pics.isNotEmpty)
+           ImageGridView(
+             fullScreen: true,
+diff --git a/lib/pages/fav_detail/widget/fav_video_card.dart b/lib/pages/fav_detail/widget/fav_video_card.dart
+index d2828a99e..86525b863 100644
+--- a/lib/pages/fav_detail/widget/fav_video_card.dart
++++ b/lib/pages/fav_detail/widget/fav_video_card.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+@@ -111,7 +112,7 @@ class FavVideoCardH extends StatelessWidget {
+       final textTheme = TextTheme.of(context);
+       return VerticalVideoCardFrame(
+         cover: _cover(colorScheme, preview, overlay: false),
+-        title: Text(
++        title: ContentText(
+           item.title!,
+           maxLines: 2,
+           overflow: TextOverflow.ellipsis,
+@@ -307,7 +308,7 @@ class FavVideoCardH extends StatelessWidget {
+             spacing: 3,
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+-              Text(
++              ContentText(
+                 item.title!,
+                 textAlign: TextAlign.start,
+                 style: const TextStyle(
+diff --git a/lib/pages/history/widgets/item.dart b/lib/pages/history/widgets/item.dart
+index e904ddd2e..7a75ceab6 100644
+--- a/lib/pages/history/widgets/item.dart
++++ b/lib/pages/history/widgets/item.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+ import 'package:PiliPlus/common/widgets/select_mask.dart';
+@@ -194,7 +195,7 @@ class HistoryItem extends StatelessWidget {
+         spacing: 2,
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+-          Text(
++          ContentText(
+             item.title!,
+             style: TextStyle(
+               fontSize: theme.textTheme.bodyMedium!.fontSize,
+diff --git a/lib/pages/later/widgets/video_card_h_later.dart b/lib/pages/later/widgets/video_card_h_later.dart
+index 23faea486..2410aa86b 100644
+--- a/lib/pages/later/widgets/video_card_h_later.dart
++++ b/lib/pages/later/widgets/video_card_h_later.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -131,7 +132,7 @@ class VideoCardHLater extends StatelessWidget {
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: isPgc
+                 ? [
+-                    Text(
++                    ContentText(
+                       videoItem.bangumi!.season!.title!,
+                       style: TextStyle(
+                         fontSize: theme.textTheme.bodyMedium!.fontSize,
+@@ -157,7 +158,7 @@ class VideoCardHLater extends StatelessWidget {
+                   ]
+                 : [
+                     Expanded(
+-                      child: Text(
++                      child: ContentText(
+                         videoItem.title!,
+                         style: TextStyle(
+                           fontSize: theme.textTheme.bodyMedium!.fontSize,
+diff --git a/lib/pages/live/widgets/live_item_app.dart b/lib/pages/live/widgets/live_item_app.dart
+index c1068363a..ab8ca40d8 100644
+--- a/lib/pages/live/widgets/live_item_app.dart
++++ b/lib/pages/live/widgets/live_item_app.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -170,7 +171,7 @@ class LiveCardVApp extends StatelessWidget {
+           crossAxisAlignment: CrossAxisAlignment.start,
+           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+           children: [
+-            Text(
++            ContentText(
+               item.title.toString(),
+               textAlign: TextAlign.start,
+               style: const TextStyle(letterSpacing: 0.3),
+diff --git a/lib/pages/live_area/view.dart b/lib/pages/live_area/view.dart
+index ea7659beb..77ceab272 100644
+--- a/lib/pages/live_area/view.dart
++++ b/lib/pages/live_area/view.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+ import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
+@@ -87,7 +88,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
+                     isScrollable: true,
+                     tabAlignment: TabAlignment.start,
+                     controller: _controller.tabController,
+-                    tabs: response.map((e) => Tab(text: e.name)).toList(),
++                    tabs: response
++                        .map((e) => Tab(child: ContentText(e.name ?? '')))
++                        .toList(),
+                   ),
+                   Expanded(
+                     child: tabBarView(
+@@ -256,7 +259,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
+                 type: ImageType.emote,
+               ),
+               const SizedBox(height: 4),
+-              Text(
++              ContentText(
+                 item.name!,
+                 maxLines: 1,
+                 overflow: TextOverflow.ellipsis,
+@@ -320,6 +323,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
+           ),
+           child: SearchText(
+             text: item.name!,
++            translate: true,
+             fontSize: 14,
+             bgColor: Colors.transparent,
+             padding: const .symmetric(horizontal: 12, vertical: 4),
+diff --git a/lib/pages/live_follow/widgets/live_item_follow.dart b/lib/pages/live_follow/widgets/live_item_follow.dart
+index 977358bae..e2f6e99d7 100644
+--- a/lib/pages/live_follow/widgets/live_item_follow.dart
++++ b/lib/pages/live_follow/widgets/live_item_follow.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -80,7 +81,7 @@ class LiveCardVFollow extends StatelessWidget {
+           crossAxisAlignment: CrossAxisAlignment.start,
+           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+           children: [
+-            Text(
++            ContentText(
+               liveItem.title.toString(),
+               textAlign: TextAlign.start,
+               style: const TextStyle(
+diff --git a/lib/pages/live_search/widgets/live_search_room.dart b/lib/pages/live_search/widgets/live_search_room.dart
+index e575f4d2f..b099eab27 100644
+--- a/lib/pages/live_search/widgets/live_search_room.dart
++++ b/lib/pages/live_search/widgets/live_search_room.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -66,7 +67,7 @@ class LiveCardVSearch extends StatelessWidget {
+             ),
+             Padding(
+               padding: const EdgeInsets.fromLTRB(5, 8, 5, 4),
+-              child: Text(
++              child: ContentText(
+                 item.title.toString(),
+                 textAlign: TextAlign.start,
+                 style: const TextStyle(
+diff --git a/lib/pages/member_video/widgets/video_card_h_member_video.dart b/lib/pages/member_video/widgets/video_card_h_member_video.dart
+index 042c70229..53921dcb5 100644
+--- a/lib/pages/member_video/widgets/video_card_h_member_video.dart
++++ b/lib/pages/member_video/widgets/video_card_h_member_video.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+@@ -237,7 +238,7 @@ class VideoCardHMemberVideo extends StatelessWidget {
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+           Expanded(
+-            child: Text(
++            child: ContentText(
+               videoItem.title,
+               textAlign: TextAlign.start,
+               style: TextStyle(
+diff --git a/lib/pages/music/widget/music_video_card_h.dart b/lib/pages/music/widget/music_video_card_h.dart
+index 816a9eb72..68cdc47d2 100644
+--- a/lib/pages/music/widget/music_video_card_h.dart
++++ b/lib/pages/music/widget/music_video_card_h.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+@@ -47,7 +48,7 @@ class MusicVideoCardH extends StatelessWidget {
+       final textTheme = theme.textTheme;
+       return VerticalVideoCardFrame(
+         cover: _cover(preview, overlay: false),
+-        title: Text(
++        title: ContentText(
+           videoItem.title!,
+           maxLines: 2,
+           overflow: TextOverflow.ellipsis,
+@@ -166,7 +167,7 @@ class MusicVideoCardH extends StatelessWidget {
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+           Expanded(
+-            child: Text(
++            child: ContentText(
+               videoItem.title!,
+               textAlign: TextAlign.start,
+               style: const TextStyle(
+diff --git a/lib/pages/pgc/widgets/pgc_card_v.dart b/lib/pages/pgc/widgets/pgc_card_v.dart
+index 8fa3da9b0..934cd55f5 100644
+--- a/lib/pages/pgc/widgets/pgc_card_v.dart
++++ b/lib/pages/pgc/widgets/pgc_card_v.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+@@ -84,7 +85,7 @@ class PgcCardV extends StatelessWidget {
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+-            Text(
++            ContentText(
+               item.title!,
+               textAlign: TextAlign.start,
+               style: const TextStyle(
+diff --git a/lib/pages/pgc/widgets/pgc_card_v_timeline.dart b/lib/pages/pgc/widgets/pgc_card_v_timeline.dart
+index 7762b570e..233dced25 100644
+--- a/lib/pages/pgc/widgets/pgc_card_v_timeline.dart
++++ b/lib/pages/pgc/widgets/pgc_card_v_timeline.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+@@ -78,7 +79,7 @@ class PgcCardVTimeline extends StatelessWidget {
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+-            Text(
++            ContentText(
+               item.title ?? '',
+               textAlign: TextAlign.start,
+               style: const TextStyle(
+diff --git a/lib/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart b/lib/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart
+index 801e9b92b..10938cec8 100644
+--- a/lib/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart
++++ b/lib/pages/pgc_index/widgets/pgc_card_v_pgc_index.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+@@ -80,7 +81,7 @@ class PgcCardVPgcIndex extends StatelessWidget {
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+-            Text(
++            ContentText(
+               item.title!,
+               textAlign: TextAlign.start,
+               style: const TextStyle(
+diff --git a/lib/pages/rank/zone/widget/pgc_rank_item.dart b/lib/pages/rank/zone/widget/pgc_rank_item.dart
+index be76cc89f..7bfc2c265 100644
+--- a/lib/pages/rank/zone/widget/pgc_rank_item.dart
++++ b/lib/pages/rank/zone/widget/pgc_rank_item.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -56,7 +57,7 @@ class PgcRankItem extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Expanded(
+-                      child: Text(item.title!),
++                      child: ContentText(item.title!),
+                     ),
+                     if (item.newEp?.indexShow?.isNotEmpty == true) ...[
+                       Text(
+diff --git a/lib/pages/search/widgets/search_text.dart b/lib/pages/search/widgets/search_text.dart
+index ce5232909..ccc4162ad 100644
+--- a/lib/pages/search/widgets/search_text.dart
++++ b/lib/pages/search/widgets/search_text.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/utils/platform_utils.dart';
+ import 'package:PiliPlus/common/widgets/zh_material.dart';
+ 
+@@ -15,6 +16,9 @@ class SearchText extends StatelessWidget {
+   final int? maxLines;
+   final TextOverflow? overflow;
+ 
++  /// Translate [text] in English mode (server content only).
++  final bool translate;
++
+   const SearchText({
+     super.key,
+     required this.text,
+@@ -29,12 +33,33 @@ class SearchText extends StatelessWidget {
+     this.borderRadius = const .all(.circular(6)),
+     this.maxLines,
+     this.overflow,
++    this.translate = false,
+   });
+ 
+   @override
+   Widget build(BuildContext context) {
+     late final colorScheme = ColorScheme.of(context);
+     final hasLongPress = onLongPress != null;
++    final style = TextStyle(
++      fontSize: fontSize,
++      height: height,
++      color: textColor ?? colorScheme.onSurfaceVariant,
++    );
++    final Widget label = translate
++        ? ContentText(
++            text,
++            maxLines: maxLines,
++            overflow: overflow,
++            textAlign: textAlign,
++            style: style,
++          )
++        : Text(
++            text,
++            maxLines: maxLines,
++            overflow: overflow,
++            textAlign: textAlign,
++            style: style,
++          );
+     return Material(
+       color: bgColor ?? colorScheme.onInverseSurface,
+       borderRadius: borderRadius,
+@@ -47,17 +72,7 @@ class SearchText extends StatelessWidget {
+         borderRadius: borderRadius,
+         child: Padding(
+           padding: padding,
+-          child: Text(
+-            text,
+-            maxLines: maxLines,
+-            overflow: overflow,
+-            textAlign: textAlign,
+-            style: TextStyle(
+-              fontSize: fontSize,
+-              height: height,
+-              color: textColor ?? colorScheme.onSurfaceVariant,
+-            ),
+-          ),
++          child: label,
+         ),
+       ),
+     );
+diff --git a/lib/pages/search_panel/live/widgets/item.dart b/lib/pages/search_panel/live/widgets/item.dart
+index f98fd6f69..129a1da89 100644
+--- a/lib/pages/search_panel/live/widgets/item.dart
++++ b/lib/pages/search_panel/live/widgets/item.dart
+@@ -1,3 +1,4 @@
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+@@ -21,55 +22,57 @@ class LiveItem extends StatelessWidget {
+       cover: liveItem.cover,
+     );
+     final preview = LiveCardPreview(item: liveItem, roomId: liveItem.roomid);
+-    return preview.wrapTarget(Card(
+-      child: InkWell(
+-        onTap: () {
+-          preview.stop();
+-          PageUtils.toLiveRoom(liveItem.roomid);
+-        },
+-        onLongPress: () => preview.longPress(onLongPress),
+-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+-        borderRadius: const .all(.circular(12)),
+-        child: Column(
+-          crossAxisAlignment: .start,
+-          children: [
+-            AspectRatio(
+-              aspectRatio: Style.aspectRatio,
+-              child: LayoutBuilder(
+-                builder: (context, boxConstraints) {
+-                  double maxWidth = boxConstraints.maxWidth;
+-                  double maxHeight = boxConstraints.maxHeight;
+-                  return Stack(
+-                    clipBehavior: Clip.none,
+-                    children: [
+-                      NetworkImgLayer(
+-                        src: liveItem.cover,
+-                        width: maxWidth,
+-                        height: maxHeight,
+-                        borderRadius: const .vertical(top: .circular(12)),
+-                      ),
+-                      Positioned(
+-                        left: 0,
+-                        right: 0,
+-                        bottom: 0,
+-                        child: liveStat(
+-                          liveItem.online,
+-                          liveItem.cateName,
++    return preview.wrapTarget(
++      Card(
++        child: InkWell(
++          onTap: () {
++            preview.stop();
++            PageUtils.toLiveRoom(liveItem.roomid);
++          },
++          onLongPress: () => preview.longPress(onLongPress),
++          onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
++          borderRadius: const .all(.circular(12)),
++          child: Column(
++            crossAxisAlignment: .start,
++            children: [
++              AspectRatio(
++                aspectRatio: Style.aspectRatio,
++                child: LayoutBuilder(
++                  builder: (context, boxConstraints) {
++                    double maxWidth = boxConstraints.maxWidth;
++                    double maxHeight = boxConstraints.maxHeight;
++                    return Stack(
++                      clipBehavior: Clip.none,
++                      children: [
++                        NetworkImgLayer(
++                          src: liveItem.cover,
++                          width: maxWidth,
++                          height: maxHeight,
++                          borderRadius: const .vertical(top: .circular(12)),
+                         ),
+-                      ),
+-                      preview.overlay(
+-                        radius: const .vertical(top: .circular(12)),
+-                      ),
+-                    ],
+-                  );
+-                },
++                        Positioned(
++                          left: 0,
++                          right: 0,
++                          bottom: 0,
++                          child: liveStat(
++                            liveItem.online,
++                            liveItem.cateName,
++                          ),
++                        ),
++                        preview.overlay(
++                          radius: const .vertical(top: .circular(12)),
++                        ),
++                      ],
++                    );
++                  },
++                ),
+               ),
+-            ),
+-            liveContent(theme),
+-          ],
++              liveContent(theme),
++            ],
++          ),
+         ),
+       ),
+-    ));
++    );
+   }
+ 
+   Widget liveContent(ThemeData theme) => Expanded(
+@@ -79,21 +82,28 @@ class LiveItem extends StatelessWidget {
+         crossAxisAlignment: CrossAxisAlignment.start,
+         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+         children: [
+-          Text.rich(
+-            TextSpan(
+-              children: liveItem.title
+-                  .map(
+-                    (e) => TextSpan(
+-                      text: e.text,
+-                      style: TextStyle(
+-                        color: e.isEm
+-                            ? theme.colorScheme.primary
+-                            : theme.colorScheme.onSurface,
+-                      ),
+-                    ),
+-                  )
+-                  .toList(),
+-            ),
++          ContentTextBuilder(
++            text: liveItem.title.map((e) => e.text).join(),
++            builder: (context, shown, translated) {
++              // The search highlight is dropped for a translated title.
++              if (translated) return Text(shown!);
++              return Text.rich(
++                TextSpan(
++                  children: liveItem.title
++                      .map(
++                        (e) => TextSpan(
++                          text: e.text,
++                          style: TextStyle(
++                            color: e.isEm
++                                ? theme.colorScheme.primary
++                                : theme.colorScheme.onSurface,
++                          ),
++                        ),
++                      )
++                      .toList(),
++                ),
++              );
++            },
+           ),
+           Text(
+             liveItem.uname!,
+@@ -126,7 +136,7 @@ class LiveItem extends StatelessWidget {
+       child: Row(
+         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+         children: [
+-          Text(
++          ContentText(
+             cateName!,
+             style: const TextStyle(fontSize: 11, color: Colors.white),
+           ),
+diff --git a/lib/pages/search_panel/pgc/widgets/item.dart b/lib/pages/search_panel/pgc/widgets/item.dart
+index 489b28a93..2ddc0a556 100644
+--- a/lib/pages/search_panel/pgc/widgets/item.dart
++++ b/lib/pages/search_panel/pgc/widgets/item.dart
+@@ -1,5 +1,6 @@
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/widgets/image/image_save.dart';
+ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+ import 'package:PiliPlus/models/search/result.dart';
+@@ -61,21 +62,28 @@ class SearchPgcItem extends StatelessWidget {
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+-                    Text.rich(
+-                      TextSpan(
+-                        children: item.title
+-                            .map(
+-                              (e) => TextSpan(
+-                                text: e.text,
+-                                style: TextStyle(
+-                                  color: e.isEm
+-                                      ? theme.colorScheme.primary
+-                                      : theme.colorScheme.onSurface,
+-                                ),
+-                              ),
+-                            )
+-                            .toList(),
+-                      ),
++                    ContentTextBuilder(
++                      text: item.title.map((e) => e.text).join(),
++                      builder: (context, shown, translated) {
++                        // The search highlight is dropped for a translation.
++                        if (translated) return Text(shown!);
++                        return Text.rich(
++                          TextSpan(
++                            children: item.title
++                                .map(
++                                  (e) => TextSpan(
++                                    text: e.text,
++                                    style: TextStyle(
++                                      color: e.isEm
++                                          ? theme.colorScheme.primary
++                                          : theme.colorScheme.onSurface,
++                                    ),
++                                  ),
++                                )
++                                .toList(),
++                          ),
++                        );
++                      },
+                     ),
+                     const SizedBox(height: 12),
+                     Text('評分:${item.mediaScore?['score']}', style: style),
+diff --git a/lib/pages/setting/models/setting_tree.dart b/lib/pages/setting/models/setting_tree.dart
+index 07a93d30f..751a5b080 100644
+--- a/lib/pages/setting/models/setting_tree.dart
++++ b/lib/pages/setting/models/setting_tree.dart
+@@ -332,9 +332,9 @@ class SettingTree {
+         SettingNode(
+           id: 'font',
+           title: '字型與縮放',
+-          subtitle: '語言、開場動畫、字型、介面縮放',
++          subtitle: '語言、翻譯影片內容、開場動畫、字型、介面縮放',
+           icon: Icons.text_fields,
+-          titles: {'語言', '開場動畫', 'App字型設定', '介面縮放'},
++          titles: {'語言', '翻譯影片內容', '開場動畫', 'App字型設定', '介面縮放'},
+         ),
+         SettingNode(
+           id: 'image',
+diff --git a/lib/pages/setting/models/style_settings.dart b/lib/pages/setting/models/style_settings.dart
+index 4d05f3c4f..4a8e844e1 100644
+--- a/lib/pages/setting/models/style_settings.dart
++++ b/lib/pages/setting/models/style_settings.dart
+@@ -38,6 +38,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
+ import 'package:PiliPlus/utils/extension/num_ext.dart';
+ import 'package:PiliPlus/utils/extension/theme_ext.dart';
+ import 'package:PiliPlus/utils/global_data.dart';
++import 'package:PiliPlus/services/translate/content_translator.dart';
+ import 'package:PiliPlus/services/translate/translator.dart';
+ import 'package:PiliPlus/utils/i18n_pack.dart';
+ import 'package:PiliPlus/utils/path_utils.dart';
+@@ -85,6 +86,15 @@ List<SettingsModel> get styleSettings => [
+     getSubtitle: () => _languageLabel(Pref.appLanguage),
+     onTap: _showLanguageDialog,
+   ),
++  if (Translator.isEnglishMode && Translator.offlineSupported)
++    SwitchModel(
++      title: '翻譯影片內容',
++      subtitle: '使用離線模型把影片標題、簡介、評論、動態翻成英文（僅英文模式）',
++      leading: const Icon(Icons.g_translate),
++      setKey: SettingBoxKey.translateContent,
++      defaultVal: true,
++      onChanged: (_) => ContentTranslator.refreshEnabled(),
++    ),
+   if (PlatformUtils.isMobile)
+     const SwitchModel(
+       title: '開場動畫',
+diff --git a/lib/pages/video/introduction/pgc/view.dart b/lib/pages/video/introduction/pgc/view.dart
+index d9969136b..000b30235 100644
+--- a/lib/pages/video/introduction/pgc/view.dart
++++ b/lib/pages/video/introduction/pgc/view.dart
+@@ -1,5 +1,6 @@
+ import 'dart:math';
+ 
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/services/download/video_export.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
+@@ -266,7 +267,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
+         spacing: 20,
+         children: [
+           Expanded(
+-            child: Text(
++            child: ContentText(
+               item.title!,
+               style: const TextStyle(fontSize: 16),
+               maxLines: 1,
+@@ -320,9 +321,21 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
+               if (isPortrait) ...desc(),
+               const SizedBox(height: 5),
+               Expanded(
+-                child: Text(
+-                  '簡介：${item.evaluate}',
+-                  style: TextStyle(fontSize: 13, color: colorScheme.outline),
++                child: SingleChildScrollView(
++                  physics: const NeverScrollableScrollPhysics(),
++                  child: Column(
++                    crossAxisAlignment: CrossAxisAlignment.start,
++                    children: [
++                      Text(
++                        '簡介：${item.evaluate}',
++                        style: TextStyle(
++                          fontSize: 13,
++                          color: colorScheme.outline,
++                        ),
++                      ),
++                      ContentTranslationLine(item.evaluate),
++                    ],
++                  ),
+                 ),
+               ),
+             ],
+@@ -451,16 +464,14 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
+           ActionItem(
+             icon: const Icon(CustomIcons.download),
+             onTap: () => videoDetailCtr.onDownload(context),
+-            onLongPress: () =>
+-                Get.toNamed('/download', arguments: {'tab': 0}),
++            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 0}),
+             text: '快取',
+             semanticsLabel: '快取',
+           ),
+           ActionItem(
+             icon: const Icon(Icons.save_alt),
+             onTap: () => VideoExport.start(videoDetailCtr),
+-            onLongPress: () =>
+-                Get.toNamed('/download', arguments: {'tab': 1}),
++            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 1}),
+             text: '下載',
+             semanticsLabel: '下載到手機',
+           ),
+diff --git a/lib/pages/video/introduction/ugc/view.dart b/lib/pages/video/introduction/ugc/view.dart
+index 1ee5146c1..4d4148b45 100644
+--- a/lib/pages/video/introduction/ugc/view.dart
++++ b/lib/pages/video/introduction/ugc/view.dart
+@@ -1,3 +1,5 @@
++import 'package:PiliPlus/services/translate/content_translator.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/services/download/video_export.dart';
+ import 'package:PiliPlus/common/assets.dart';
+ import 'package:PiliPlus/common/constants.dart';
+@@ -296,6 +298,11 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
+         buildDesc(descV2),
+         style: const TextStyle(height: 1.4),
+       ),
++      ContentTranslationLine(
++        videoDetail.desc?.isNotEmpty == true
++            ? videoDetail.desc
++            : descV2.map((e) => e.rawText ?? '').join(),
++      ),
+     ],
+     NoTranslucentArea(
+       child: Obx(() {
+@@ -412,7 +419,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
+             ),
+             const TextSpan(text: ' '),
+           ],
+-          TextSpan(text: videoDetail.title),
++          TextSpan(text: ContentTranslator.textOf(videoDetail.title ?? '')),
+         ],
+       );
+       if (isSelectable) {
+@@ -429,10 +436,14 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
+       );
+     }
+ 
+-    if (videoDetailCtr.plPlayerController.enableSponsorBlock) {
+-      return Obx(child);
+-    }
+-    return child();
++    // Rebuilds when the title translation arrives.
++    return ContentTextBuilder(
++      text: videoDetail.title,
++      builder: (context, _, _) =>
++          videoDetailCtr.plPlayerController.enableSponsorBlock
++          ? Obx(child)
++          : child(),
++    );
+   }
+ 
+   Widget followButton(BuildContext context) {
+@@ -531,16 +542,14 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
+           ActionItem(
+             icon: const Icon(CustomIcons.download),
+             onTap: () => videoDetailCtr.onDownload(context),
+-            onLongPress: () =>
+-                Get.toNamed('/download', arguments: {'tab': 0}),
++            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 0}),
+             text: '快取',
+             semanticsLabel: '快取',
+           ),
+           ActionItem(
+             icon: const Icon(Icons.save_alt),
+             onTap: () => VideoExport.start(videoDetailCtr),
+-            onLongPress: () =>
+-                Get.toNamed('/download', arguments: {'tab': 1}),
++            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 1}),
+             text: '下載',
+             semanticsLabel: '下載到手機',
+           ),
+@@ -1036,6 +1045,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
+             .map(
+               (item) => SearchText(
+                 fontSize: 13,
++                translate: true,
+                 text: switch (item.tagType) {
+                   'bgm' => item.tagName!.replaceFirst('发现', '♫ BGM：'),
+                   'topic' => '#${item.tagName}',
+diff --git a/lib/pages/video/reply/widgets/reply_item_grpc.dart b/lib/pages/video/reply/widgets/reply_item_grpc.dart
+index 44b91d5d5..98ce991e0 100644
+--- a/lib/pages/video/reply/widgets/reply_item_grpc.dart
++++ b/lib/pages/video/reply/widgets/reply_item_grpc.dart
+@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/assets.dart';
+ import 'package:PiliPlus/common/constants.dart';
+ import 'package:PiliPlus/common/style.dart';
+ import 'package:PiliPlus/common/widgets/badge.dart';
++import 'package:PiliPlus/common/widgets/content_text.dart';
+ import 'package:PiliPlus/common/widgets/custom_icon.dart';
+ import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
+ import 'package:PiliPlus/common/widgets/dialog/report.dart';
+@@ -368,6 +369,15 @@ class ReplyItemGrpc extends StatelessWidget {
+             ),
+           ),
+         ),
++        // Auto translation; the server translation (manual button) replaces
++        // the original text, so it is not translated twice.
++        Padding(
++          padding: padding,
++          child: ContentTranslationLine(
++            replyControl.showTranslation ? null : replyItem.content.message,
++            padding: const EdgeInsets.only(bottom: 4),
++          ),
++        ),
+         if (replyItem.content.pictures.isNotEmpty) ...[
+           Padding(
+             padding: padding,
+@@ -614,53 +624,67 @@ class ReplyItemGrpc extends StatelessWidget {
+                   onSecondaryTap: PlatformUtils.isMobile ? null : showMore,
+                   child: Padding(
+                     padding: padding,
+-                    child: TextEllipsis.rich(
+-                      style: TextStyle(
+-                        height: 1.6,
+-                        fontSize: 14,
+-                        color: colorScheme.onSurface.withValues(alpha: 0.85),
+-                      ),
+-                      overflow: TextOverflow.ellipsis,
+-                      maxLines: 2,
+-                      TextSpan(
+-                        children: [
+-                          TextSpan(
+-                            text: childReply.member.name,
+-                            style: TextStyle(color: colorScheme.primary),
+-                            recognizer: NoDeadlineTapGestureRecognizer()
+-                              ..onTap = () {
+-                                feedBack();
+-                                Get.toNamed(
+-                                  '/member?mid=${childReply.member.mid}',
+-                                );
+-                              },
++                    child: Column(
++                      crossAxisAlignment: CrossAxisAlignment.start,
++                      children: [
++                        TextEllipsis.rich(
++                          style: TextStyle(
++                            height: 1.6,
++                            fontSize: 14,
++                            color: colorScheme.onSurface.withValues(
++                              alpha: 0.85,
++                            ),
+                           ),
+-                          if (childReply.mid == upMid) ...[
+-                            const TextSpan(text: ' '),
+-                            const WidgetSpan(
+-                              alignment: .middle,
+-                              child: PBadge(
+-                                text: 'UP',
+-                                size: .small,
+-                                isStack: false,
+-                                fontSize: 9,
+-                                textScaleFactor: 1,
++                          overflow: TextOverflow.ellipsis,
++                          maxLines: 2,
++                          TextSpan(
++                            children: [
++                              TextSpan(
++                                text: childReply.member.name,
++                                style: TextStyle(color: colorScheme.primary),
++                                recognizer: NoDeadlineTapGestureRecognizer()
++                                  ..onTap = () {
++                                    feedBack();
++                                    Get.toNamed(
++                                      '/member?mid=${childReply.member.mid}',
++                                    );
++                                  },
+                               ),
+-                            ),
+-                            const TextSpan(text: ' '),
+-                          ],
+-                          if (childReply.root == childReply.parent)
+-                            const TextSpan(text: ': ')
+-                          else if (childReply.mid != upMid)
+-                            const TextSpan(text: ' '),
+-                          _buildMessage(
+-                            context,
+-                            colorScheme,
+-                            childReply.content,
+-                            childReply.replyControl,
++                              if (childReply.mid == upMid) ...[
++                                const TextSpan(text: ' '),
++                                const WidgetSpan(
++                                  alignment: .middle,
++                                  child: PBadge(
++                                    text: 'UP',
++                                    size: .small,
++                                    isStack: false,
++                                    fontSize: 9,
++                                    textScaleFactor: 1,
++                                  ),
++                                ),
++                                const TextSpan(text: ' '),
++                              ],
++                              if (childReply.root == childReply.parent)
++                                const TextSpan(text: ': ')
++                              else if (childReply.mid != upMid)
++                                const TextSpan(text: ' '),
++                              _buildMessage(
++                                context,
++                                colorScheme,
++                                childReply.content,
++                                childReply.replyControl,
++                              ),
++                            ],
+                           ),
+-                        ],
+-                      ),
++                        ),
++                        ContentTranslationLine(
++                          childReply.replyControl.showTranslation
++                              ? null
++                              : childReply.content.message,
++                          maxLines: 2,
++                          padding: const EdgeInsets.only(top: 2),
++                        ),
++                      ],
+                     ),
+                   ),
+                 );
+diff --git a/lib/utils/num_utils.dart b/lib/utils/num_utils.dart
+index c48639be6..824a6a99e 100644
+--- a/lib/utils/num_utils.dart
++++ b/lib/utils/num_utils.dart
+@@ -1,17 +1,26 @@
++import 'package:PiliPlus/services/translate/translator.dart';
+ import 'package:PiliPlus/utils/extension/num_ext.dart';
+ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+ 
+ abstract final class NumUtils {
+-  static final _numRegExp = RegExp(r'([\d\.]+)([千万亿])?');
++  static final _numRegExp = RegExp(r'([\d\.]+)([千万亿萬億]|[KkMmBb](?![A-Za-z]))?');
++
++  static final _chineseUnit = RegExp(r'[千万萬亿億]');
+ 
+   static int _getUnit(String? unit) {
+     switch (unit) {
+       case '千':
+         return 1000;
+-      case '万':
++      case '万' || '萬':
+         return 10000;
+-      case '亿':
++      case '亿' || '億':
+         return 100000000;
++      case 'K' || 'k':
++        return 1000;
++      case 'M' || 'm':
++        return 1000000;
++      case 'B' || 'b':
++        return 1000000000;
+       default:
+         return 1;
+     }
+@@ -37,7 +46,12 @@ abstract final class NumUtils {
+     if (number is String) {
+       number = int.tryParse(number) ?? number;
+       if (number is String) {
+-        return number;
++        // A display string such as "15万": parse it, then format it again.
++        if (Translator.isEnglishMode && _chineseUnit.hasMatch(number)) {
++          number = parseNum(number);
++        } else {
++          return number;
++        }
+       }
+     }
+ 
+@@ -51,6 +65,17 @@ abstract final class NumUtils {
+       }
+     }
+ 
++    if (Translator.isEnglishMode) {
++      if (number >= 1000000000) {
++        return format(1000000000, 'B');
++      } else if (number >= 1000000) {
++        return format(1000000, 'M');
++      } else if (number >= 1000) {
++        return format(1000, 'K');
++      }
++      return number.toString();
++    }
++
+     if (number >= 100000000) {
+       return format(100000000, '億');
+     } else if (number >= 10000) {
+diff --git a/lib/utils/storage_key.dart b/lib/utils/storage_key.dart
+index 031c1d578..95989962d 100644
+--- a/lib/utils/storage_key.dart
++++ b/lib/utils/storage_key.dart
+@@ -263,6 +263,7 @@ abstract final class SettingBoxKey {
+       appLanguage = 'appLanguage',
+       translateService = 'translateService',
+       translateDanmaku = 'translateDanmaku',
++      translateContent = 'translateContent',
+       enableSplashAnimation = 'enableSplashAnimation',
+       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
+       upPanelPosition = 'upPanelPosition',
+diff --git a/lib/utils/storage_pref.dart b/lib/utils/storage_pref.dart
+index 0a6586137..86916d425 100644
+--- a/lib/utils/storage_pref.dart
++++ b/lib/utils/storage_pref.dart
+@@ -218,6 +218,10 @@ abstract final class Pref {
+   static bool get translateDanmaku =>
+       _setting.get(SettingBoxKey.translateDanmaku, defaultValue: true);
+ 
++  /// Translate video content (titles, comments, ...) in English mode.
++  static bool get translateContent =>
++      _setting.get(SettingBoxKey.translateContent, defaultValue: true);
++
+   /// Play the PiliBTR splash animation on cold start (mobile only).
+   static bool get enableSplashAnimation =>
+       _setting.get(SettingBoxKey.enableSplashAnimation, defaultValue: true);
+diff --git a/lib/services/translate/content_translator.dart b/lib/services/translate/content_translator.dart
+new file mode 100644
+index 000000000..04d53ae4c
+--- /dev/null
++++ b/lib/services/translate/content_translator.dart
+@@ -0,0 +1,195 @@
++import 'dart:async';
++
++import 'package:PiliPlus/services/translate/translator.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
++import 'package:flutter/foundation.dart';
++
++/// Queue priority of a content translation request.
++enum ContentPriority {
++  /// Titles, badges, tags: what the user sees first.
++  high,
++
++  /// Comments, dynamics, descriptions.
++  low,
++}
++
++/// A per-sentence notifier. It leaves [ContentTranslator] when its last
++/// listener goes away, so notifiers of recycled list items do not pile up.
++class _SentenceNotifier extends ValueNotifier<String?> {
++  _SentenceNotifier(this.text, super.value);
++
++  final String text;
++
++  @override
++  void removeListener(VoidCallback listener) {
++    super.removeListener(listener);
++    if (!hasListeners) {
++      ContentTranslator._release(this);
++    }
++  }
++}
++
++/// Translates server content (titles, comments, ...) to English with the
++/// offline model, through one global queue:
++///
++/// - requests made within 100 ms form one batch (at most 16 sentences);
++/// - only one batch is sent to ML Kit at a time;
++/// - the newest request is translated first (LIFO), high priority first;
++/// - each priority keeps a bounded queue (300 / 150), the oldest is dropped;
++/// - results are cached in [Translator]'s LRU cache and announced to the
++///   listeners of that sentence only.
++abstract final class ContentTranslator {
++  static const _batchDelay = Duration(milliseconds: 100);
++  static const _batchSize = 16;
++  static const _highLimit = 300;
++  static const _lowLimit = 150;
++  static const _failedRetry = Duration(seconds: 60);
++
++  // ---- Enabled switch ----
++
++  static bool _compute() =>
++      Translator.isEnglishMode &&
++      Pref.translateContent &&
++      Translator.offlineSupported;
++
++  static ValueNotifier<bool>? _enabled;
++
++  /// English mode, the setting is on and the offline model is supported.
++  static ValueListenable<bool> get enabled =>
++      _enabled ??= ValueNotifier(_compute());
++
++  static bool get isEnabled => enabled.value;
++
++  /// Call after the setting or the language changed.
++  static void refreshEnabled() {
++    _failed.clear();
++    _failedUntil = null;
++    _enabled?.value = _compute();
++  }
++
++  // ---- Queue ----
++
++  static final _high = <String>{};
++  static final _low = <String>{};
++  static final _inFlight = <String>{};
++  // Texts that could not be translated (model missing, ...); retried later.
++  static final _failed = <String>{};
++  static DateTime? _failedUntil;
++  static final _notifiers = <String, _SentenceNotifier>{};
++  static Timer? _timer;
++  static bool _running = false;
++
++  static bool needsTranslation(String? text) =>
++      text != null && text.isNotEmpty && Translator.needsTranslation(text);
++
++  /// The cached translation, or null.
++  static String? cached(String text) => Translator.cached(text);
++
++  /// A listenable of the translation of [text] (null until translated).
++  /// It only fires for this sentence.
++  static ValueListenable<String?> listen(String text) =>
++      _notifiers[text] ??= _SentenceNotifier(text, cached(text));
++
++  static void _release(_SentenceNotifier n) {
++    if (identical(_notifiers[n.text], n)) _notifiers.remove(n.text);
++  }
++
++  /// The translation when cached, otherwise [text] (and a request is queued).
++  /// Wrap the user of the result in a `ContentTextBuilder` to get updates.
++  static String textOf(
++    String text, {
++    ContentPriority priority = ContentPriority.high,
++  }) {
++    if (!isEnabled || !needsTranslation(text)) return text;
++    final c = cached(text);
++    if (c != null) return c;
++    request(text, priority: priority);
++    return text;
++  }
++
++  /// Queues [text] for translation.
++  static void request(
++    String text, {
++    ContentPriority priority = ContentPriority.high,
++  }) {
++    if (!isEnabled || !needsTranslation(text)) return;
++    if (cached(text) != null || _inFlight.contains(text)) return;
++    if (_failed.isNotEmpty) {
++      final until = _failedUntil;
++      if (until != null && DateTime.now().isAfter(until)) {
++        _failed.clear();
++        _failedUntil = null;
++      } else if (_failed.contains(text)) {
++        return;
++      }
++    }
++    final high = priority == ContentPriority.high;
++    final q = high ? _high : _low;
++    (high ? _low : _high).remove(text);
++    // The newest request goes to the end (translated first).
++    q
++      ..remove(text)
++      ..add(text);
++    final limit = high ? _highLimit : _lowLimit;
++    while (q.length > limit) {
++      q.remove(q.first);
++    }
++    _schedule();
++  }
++
++  static void _schedule() {
++    if (_running || (_timer?.isActive ?? false)) return;
++    _timer = Timer(_batchDelay, _run);
++  }
++
++  static List<String> _takeBatch() {
++    final q = _high.isNotEmpty ? _high : _low;
++    final batch = <String>[];
++    while (batch.length < _batchSize && q.isNotEmpty) {
++      final t = q.last;
++      q.remove(t);
++      batch.add(t);
++    }
++    return batch;
++  }
++
++  static Future<void> _run() async {
++    if (_running) return;
++    _running = true;
++    try {
++      while (_high.isNotEmpty || _low.isNotEmpty) {
++        if (!isEnabled) {
++          _high.clear();
++          _low.clear();
++          break;
++        }
++        final batch = _takeBatch();
++        _inFlight.addAll(batch);
++        List<String> res;
++        try {
++          res = await Translator.translateBatch(batch);
++        } catch (e) {
++          if (kDebugMode) debugPrint('content translate failed: $e');
++          res = batch;
++        }
++        for (var i = 0; i < batch.length; i++) {
++          final t = batch[i];
++          _inFlight.remove(t);
++          final r = i < res.length ? res[i] : t;
++          if (r == t) {
++            _failed.add(t);
++            _failedUntil ??= DateTime.now().add(_failedRetry);
++          } else {
++            _notifiers[t]?.value = r;
++          }
++        }
++        // Let requests made meanwhile merge into the next batch.
++        if (_high.isNotEmpty || _low.isNotEmpty) {
++          await Future<void>.delayed(_batchDelay);
++        }
++      }
++    } finally {
++      _running = false;
++    }
++  }
++}
+diff --git a/lib/common/widgets/content_text.dart b/lib/common/widgets/content_text.dart
+new file mode 100644
+index 000000000..be37e9608
+--- /dev/null
++++ b/lib/common/widgets/content_text.dart
+@@ -0,0 +1,230 @@
++import 'package:PiliPlus/common/widgets/zh_text.dart' show Text;
++import 'package:PiliPlus/services/translate/content_translator.dart';
++import 'package:flutter/foundation.dart';
++import 'package:flutter/material.dart' hide Text;
++import 'package:flutter/widgets.dart' as flutter show Text;
++
++/// Keeps a widget state subscribed to [ContentTranslator.enabled] and to the
++/// translation of one sentence. It never calls back after [dispose].
++class _ContentBinding {
++  _ContentBinding(this._onChange);
++
++  final VoidCallback _onChange;
++  ValueListenable<String?>? _sentence;
++  String? _text;
++  ContentPriority _priority = ContentPriority.high;
++  bool _disposed = false;
++
++  void init(String? text, ContentPriority priority) {
++    ContentTranslator.enabled.addListener(_onEnabled);
++    bind(text, priority);
++  }
++
++  /// (Re)subscribes for [text]. Call when the text or priority changed.
++  void bind(String? text, ContentPriority priority) {
++    _unbindSentence();
++    _text = text;
++    _priority = priority;
++    if (text == null || !ContentTranslator.isEnabled) return;
++    if (!ContentTranslator.needsTranslation(text)) return;
++    final s = ContentTranslator.listen(text);
++    _sentence = s..addListener(_onSentence);
++    if (s.value == null) ContentTranslator.request(text, priority: priority);
++  }
++
++  /// The translation to show, or null for the original.
++  String? get translated =>
++      ContentTranslator.isEnabled ? _sentence?.value : null;
++
++  void _onEnabled() {
++    if (_disposed) return;
++    bind(_text, _priority);
++    _onChange();
++  }
++
++  void _onSentence() {
++    if (_disposed) return;
++    _onChange();
++  }
++
++  void _unbindSentence() {
++    _sentence?.removeListener(_onSentence);
++    _sentence = null;
++  }
++
++  void dispose() {
++    _disposed = true;
++    ContentTranslator.enabled.removeListener(_onEnabled);
++    _unbindSentence();
++  }
++}
++
++/// Builds with the translation of [text] when there is one. [builder] gets
++/// the text to show and whether it is a translation.
++class ContentTextBuilder extends StatefulWidget {
++  const ContentTextBuilder({
++    super.key,
++    required this.text,
++    required this.builder,
++    this.priority = ContentPriority.high,
++  });
++
++  final String? text;
++  final ContentPriority priority;
++  final Widget Function(BuildContext context, String? shown, bool translated)
++  builder;
++
++  @override
++  State<ContentTextBuilder> createState() => _ContentTextBuilderState();
++}
++
++class _ContentTextBuilderState extends State<ContentTextBuilder> {
++  late final _ContentBinding _binding;
++
++  @override
++  void initState() {
++    super.initState();
++    _binding = _ContentBinding(_update)..init(widget.text, widget.priority);
++  }
++
++  void _update() {
++    if (mounted) setState(() {});
++  }
++
++  @override
++  void didUpdateWidget(ContentTextBuilder oldWidget) {
++    super.didUpdateWidget(oldWidget);
++    if (oldWidget.text != widget.text ||
++        oldWidget.priority != widget.priority) {
++      _binding.bind(widget.text, widget.priority);
++    }
++  }
++
++  @override
++  void dispose() {
++    _binding.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final t = _binding.translated;
++    return widget.builder(context, t ?? widget.text, t != null);
++  }
++}
++
++/// Drop-in replacement of [Text] for server content: in English mode it
++/// shows the translation of [text] (the original until it is translated).
++class ContentText extends StatelessWidget {
++  const ContentText(
++    this.text, {
++    super.key,
++    this.style,
++    this.strutStyle,
++    this.textAlign,
++    this.softWrap,
++    this.overflow,
++    this.textScaler,
++    this.maxLines,
++    this.textWidthBasis,
++    this.textHeightBehavior,
++    this.priority = ContentPriority.high,
++  });
++
++  final String text;
++  final TextStyle? style;
++  final StrutStyle? strutStyle;
++  final TextAlign? textAlign;
++  final bool? softWrap;
++  final TextOverflow? overflow;
++  final TextScaler? textScaler;
++  final int? maxLines;
++  final TextWidthBasis? textWidthBasis;
++  final TextHeightBehavior? textHeightBehavior;
++  final ContentPriority priority;
++
++  @override
++  Widget build(BuildContext context) {
++    return ContentTextBuilder(
++      text: text,
++      priority: priority,
++      builder: (context, shown, translated) {
++        // A translation is plain English: use Flutter's Text, which skips
++        // the Chinese script conversion.
++        if (translated) {
++          return flutter.Text(
++            shown!,
++            style: style,
++            strutStyle: strutStyle,
++            textAlign: textAlign,
++            softWrap: softWrap,
++            overflow: overflow,
++            textScaler: textScaler,
++            maxLines: maxLines,
++            textWidthBasis: textWidthBasis,
++            textHeightBehavior: textHeightBehavior,
++          );
++        }
++        return Text(
++          text,
++          style: style,
++          strutStyle: strutStyle,
++          textAlign: textAlign,
++          softWrap: softWrap,
++          overflow: overflow,
++          textScaler: textScaler,
++          maxLines: maxLines,
++          textWidthBasis: textWidthBasis,
++          textHeightBehavior: textHeightBehavior,
++        );
++      },
++    );
++  }
++}
++
++/// A smaller gray line with the translation of [text], to put under rich
++/// content (which keeps its original text). Hidden when [text] has no
++/// Chinese or is not translated yet.
++class ContentTranslationLine extends StatelessWidget {
++  const ContentTranslationLine(
++    this.text, {
++    super.key,
++    this.style,
++    this.priority = ContentPriority.low,
++    this.padding = const EdgeInsets.only(top: 4),
++    this.maxLines,
++  });
++
++  final String? text;
++  final TextStyle? style;
++  final ContentPriority priority;
++  final EdgeInsetsGeometry padding;
++  final int? maxLines;
++
++  @override
++  Widget build(BuildContext context) {
++    if (!ContentTranslator.needsTranslation(text)) {
++      return const SizedBox.shrink();
++    }
++    return ContentTextBuilder(
++      text: text,
++      priority: priority,
++      builder: (context, shown, translated) {
++        if (!translated) return const SizedBox.shrink();
++        final base = TextStyle(
++          fontSize: 12,
++          color: Theme.of(context).colorScheme.outline,
++        );
++        return Padding(
++          padding: padding,
++          child: flutter.Text(
++            shown!,
++            style: style == null ? base : base.merge(style),
++            maxLines: maxLines,
++            overflow: maxLines == null ? null : TextOverflow.ellipsis,
++          ),
++        );
++      },
++    );
++  }
++}

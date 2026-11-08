@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
@@ -87,7 +88,9 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
                     controller: _controller.tabController,
-                    tabs: response.map((e) => Tab(text: e.name)).toList(),
+                    tabs: response
+                        .map((e) => Tab(child: ContentText(e.name ?? '')))
+                        .toList(),
                   ),
                   Expanded(
                     child: tabBarView(
@@ -256,7 +259,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
                 type: ImageType.emote,
               ),
               const SizedBox(height: 4),
-              Text(
+              ContentText(
                 item.name!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -320,6 +323,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
           ),
           child: SearchText(
             text: item.name!,
+            translate: true,
             fontSize: 14,
             bgColor: Colors.transparent,
             padding: const .symmetric(horizontal: 12, vertical: 4),

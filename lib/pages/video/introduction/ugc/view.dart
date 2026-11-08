@@ -1,3 +1,5 @@
+import 'package:PiliPlus/services/translate/content_translator.dart';
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/services/download/video_export.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
@@ -296,6 +298,11 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
         buildDesc(descV2),
         style: const TextStyle(height: 1.4),
       ),
+      ContentTranslationLine(
+        videoDetail.desc?.isNotEmpty == true
+            ? videoDetail.desc
+            : descV2.map((e) => e.rawText ?? '').join(),
+      ),
     ],
     NoTranslucentArea(
       child: Obx(() {
@@ -412,7 +419,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
             ),
             const TextSpan(text: ' '),
           ],
-          TextSpan(text: videoDetail.title),
+          TextSpan(text: ContentTranslator.textOf(videoDetail.title ?? '')),
         ],
       );
       if (isSelectable) {
@@ -429,10 +436,14 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
       );
     }
 
-    if (videoDetailCtr.plPlayerController.enableSponsorBlock) {
-      return Obx(child);
-    }
-    return child();
+    // Rebuilds when the title translation arrives.
+    return ContentTextBuilder(
+      text: videoDetail.title,
+      builder: (context, _, _) =>
+          videoDetailCtr.plPlayerController.enableSponsorBlock
+          ? Obx(child)
+          : child(),
+    );
   }
 
   Widget followButton(BuildContext context) {
@@ -531,16 +542,14 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),
-            onLongPress: () =>
-                Get.toNamed('/download', arguments: {'tab': 0}),
+            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 0}),
             text: '快取',
             semanticsLabel: '快取',
           ),
           ActionItem(
             icon: const Icon(Icons.save_alt),
             onTap: () => VideoExport.start(videoDetailCtr),
-            onLongPress: () =>
-                Get.toNamed('/download', arguments: {'tab': 1}),
+            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 1}),
             text: '下載',
             semanticsLabel: '下載到手機',
           ),
@@ -1036,6 +1045,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
             .map(
               (item) => SearchText(
                 fontSize: 13,
+                translate: true,
                 text: switch (item.tagType) {
                   'bgm' => item.tagName!.replaceFirst('发现', '♫ BGM：'),
                   'topic' => '#${item.tagName}',

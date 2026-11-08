@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
@@ -47,7 +48,7 @@ class MusicVideoCardH extends StatelessWidget {
       final textTheme = theme.textTheme;
       return VerticalVideoCardFrame(
         cover: _cover(preview, overlay: false),
-        title: Text(
+        title: ContentText(
           videoItem.title!,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -166,7 +167,7 @@ class MusicVideoCardH extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
+            child: ContentText(
               videoItem.title!,
               textAlign: TextAlign.start,
               style: const TextStyle(

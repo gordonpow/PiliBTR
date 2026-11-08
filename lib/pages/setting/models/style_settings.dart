@@ -38,6 +38,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/services/translate/content_translator.dart';
 import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/i18n_pack.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
@@ -85,6 +86,15 @@ List<SettingsModel> get styleSettings => [
     getSubtitle: () => _languageLabel(Pref.appLanguage),
     onTap: _showLanguageDialog,
   ),
+  if (Translator.isEnglishMode && Translator.offlineSupported)
+    SwitchModel(
+      title: '翻譯影片內容',
+      subtitle: '使用離線模型把影片標題、簡介、評論、動態翻成英文（僅英文模式）',
+      leading: const Icon(Icons.g_translate),
+      setKey: SettingBoxKey.translateContent,
+      defaultVal: true,
+      onChanged: (_) => ContentTranslator.refreshEnabled(),
+    ),
   if (PlatformUtils.isMobile)
     const SwitchModel(
       title: '開場動畫',

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
@@ -111,7 +112,7 @@ class FavVideoCardH extends StatelessWidget {
       final textTheme = TextTheme.of(context);
       return VerticalVideoCardFrame(
         cover: _cover(colorScheme, preview, overlay: false),
-        title: Text(
+        title: ContentText(
           item.title!,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -307,7 +308,7 @@ class FavVideoCardH extends StatelessWidget {
             spacing: 3,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              ContentText(
                 item.title!,
                 textAlign: TextAlign.start,
                 style: const TextStyle(

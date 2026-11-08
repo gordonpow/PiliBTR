@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/report.dart';
@@ -368,6 +369,15 @@ class ReplyItemGrpc extends StatelessWidget {
             ),
           ),
         ),
+        // Auto translation; the server translation (manual button) replaces
+        // the original text, so it is not translated twice.
+        Padding(
+          padding: padding,
+          child: ContentTranslationLine(
+            replyControl.showTranslation ? null : replyItem.content.message,
+            padding: const EdgeInsets.only(bottom: 4),
+          ),
+        ),
         if (replyItem.content.pictures.isNotEmpty) ...[
           Padding(
             padding: padding,
@@ -614,53 +624,67 @@ class ReplyItemGrpc extends StatelessWidget {
                   onSecondaryTap: PlatformUtils.isMobile ? null : showMore,
                   child: Padding(
                     padding: padding,
-                    child: TextEllipsis.rich(
-                      style: TextStyle(
-                        height: 1.6,
-                        fontSize: 14,
-                        color: colorScheme.onSurface.withValues(alpha: 0.85),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: childReply.member.name,
-                            style: TextStyle(color: colorScheme.primary),
-                            recognizer: NoDeadlineTapGestureRecognizer()
-                              ..onTap = () {
-                                feedBack();
-                                Get.toNamed(
-                                  '/member?mid=${childReply.member.mid}',
-                                );
-                              },
-                          ),
-                          if (childReply.mid == upMid) ...[
-                            const TextSpan(text: ' '),
-                            const WidgetSpan(
-                              alignment: .middle,
-                              child: PBadge(
-                                text: 'UP',
-                                size: .small,
-                                isStack: false,
-                                fontSize: 9,
-                                textScaleFactor: 1,
-                              ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextEllipsis.rich(
+                          style: TextStyle(
+                            height: 1.6,
+                            fontSize: 14,
+                            color: colorScheme.onSurface.withValues(
+                              alpha: 0.85,
                             ),
-                            const TextSpan(text: ' '),
-                          ],
-                          if (childReply.root == childReply.parent)
-                            const TextSpan(text: ': ')
-                          else if (childReply.mid != upMid)
-                            const TextSpan(text: ' '),
-                          _buildMessage(
-                            context,
-                            colorScheme,
-                            childReply.content,
-                            childReply.replyControl,
                           ),
-                        ],
-                      ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: childReply.member.name,
+                                style: TextStyle(color: colorScheme.primary),
+                                recognizer: NoDeadlineTapGestureRecognizer()
+                                  ..onTap = () {
+                                    feedBack();
+                                    Get.toNamed(
+                                      '/member?mid=${childReply.member.mid}',
+                                    );
+                                  },
+                              ),
+                              if (childReply.mid == upMid) ...[
+                                const TextSpan(text: ' '),
+                                const WidgetSpan(
+                                  alignment: .middle,
+                                  child: PBadge(
+                                    text: 'UP',
+                                    size: .small,
+                                    isStack: false,
+                                    fontSize: 9,
+                                    textScaleFactor: 1,
+                                  ),
+                                ),
+                                const TextSpan(text: ' '),
+                              ],
+                              if (childReply.root == childReply.parent)
+                                const TextSpan(text: ': ')
+                              else if (childReply.mid != upMid)
+                                const TextSpan(text: ' '),
+                              _buildMessage(
+                                context,
+                                colorScheme,
+                                childReply.content,
+                                childReply.replyControl,
+                              ),
+                            ],
+                          ),
+                        ),
+                        ContentTranslationLine(
+                          childReply.replyControl.showTranslation
+                              ? null
+                              : childReply.content.message,
+                          maxLines: 2,
+                          padding: const EdgeInsets.only(top: 2),
+                        ),
+                      ],
                     ),
                   ),
                 );

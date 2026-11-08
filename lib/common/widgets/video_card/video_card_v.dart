@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/stat/stat.dart';
@@ -196,7 +197,7 @@ class VideoCardV extends StatelessWidget {
           crossAxisAlignment: .start,
           children: [
             Expanded(
-              child: Text(
+              child: ContentText(
                 videoItem.title,
                 maxLines: 2,
                 overflow: .ellipsis,
@@ -216,11 +217,14 @@ class VideoCardV extends StatelessWidget {
                     fontSize: 9,
                   ),
                 if (videoItem.rcmdReason != null)
-                  PBadge(
+                  ContentTextBuilder(
                     text: videoItem.rcmdReason,
-                    isStack: false,
-                    size: .small,
-                    type: .secondary,
+                    builder: (context, shown, _) => PBadge(
+                      text: shown,
+                      isStack: false,
+                      size: .small,
+                      type: .secondary,
+                    ),
                   ),
                 if (videoItem.goto == 'picture')
                   const PBadge(

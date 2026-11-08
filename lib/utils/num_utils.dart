@@ -1,17 +1,26 @@
+import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 
 abstract final class NumUtils {
-  static final _numRegExp = RegExp(r'([\d\.]+)([千万亿])?');
+  static final _numRegExp = RegExp(r'([\d\.]+)([千万亿萬億]|[KkMmBb](?![A-Za-z]))?');
+
+  static final _chineseUnit = RegExp(r'[千万萬亿億]');
 
   static int _getUnit(String? unit) {
     switch (unit) {
       case '千':
         return 1000;
-      case '万':
+      case '万' || '萬':
         return 10000;
-      case '亿':
+      case '亿' || '億':
         return 100000000;
+      case 'K' || 'k':
+        return 1000;
+      case 'M' || 'm':
+        return 1000000;
+      case 'B' || 'b':
+        return 1000000000;
       default:
         return 1;
     }
@@ -37,7 +46,12 @@ abstract final class NumUtils {
     if (number is String) {
       number = int.tryParse(number) ?? number;
       if (number is String) {
-        return number;
+        // A display string such as "15万": parse it, then format it again.
+        if (Translator.isEnglishMode && _chineseUnit.hasMatch(number)) {
+          number = parseNum(number);
+        } else {
+          return number;
+        }
       }
     }
 
@@ -49,6 +63,17 @@ abstract final class NumUtils {
       } else {
         return '$result$second';
       }
+    }
+
+    if (Translator.isEnglishMode) {
+      if (number >= 1000000000) {
+        return format(1000000000, 'B');
+      } else if (number >= 1000000) {
+        return format(1000000, 'M');
+      } else if (number >= 1000) {
+        return format(1000, 'K');
+      }
+      return number.toString();
     }
 
     if (number >= 100000000) {

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
@@ -84,7 +85,7 @@ class PgcCardV extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            ContentText(
               item.title!,
               textAlign: TextAlign.start,
               style: const TextStyle(

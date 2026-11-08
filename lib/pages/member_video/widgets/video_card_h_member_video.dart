@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
@@ -237,7 +238,7 @@ class VideoCardHMemberVideo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(
+            child: ContentText(
               videoItem.title,
               textAlign: TextAlign.start,
               style: TextStyle(

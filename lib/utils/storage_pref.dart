@@ -218,6 +218,10 @@ abstract final class Pref {
   static bool get translateDanmaku =>
       _setting.get(SettingBoxKey.translateDanmaku, defaultValue: true);
 
+  /// Translate video content (titles, comments, ...) in English mode.
+  static bool get translateContent =>
+      _setting.get(SettingBoxKey.translateContent, defaultValue: true);
+
   /// Play the PiliBTR splash animation on cold start (mobile only).
   static bool get enableSplashAnimation =>
       _setting.get(SettingBoxKey.enableSplashAnimation, defaultValue: true);

@@ -332,9 +332,9 @@ class SettingTree {
         SettingNode(
           id: 'font',
           title: '字型與縮放',
-          subtitle: '語言、開場動畫、字型、介面縮放',
+          subtitle: '語言、翻譯影片內容、開場動畫、字型、介面縮放',
           icon: Icons.text_fields,
-          titles: {'語言', '開場動畫', 'App字型設定', '介面縮放'},
+          titles: {'語言', '翻譯影片內容', '開場動畫', 'App字型設定', '介面縮放'},
         ),
         SettingNode(
           id: 'image',

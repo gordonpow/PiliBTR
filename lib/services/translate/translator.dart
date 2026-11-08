@@ -257,7 +257,21 @@ abstract final class Translator {
     return _modelReady;
   }
 
+  // Tail of the offline queue: ML Kit runs one batch at a time, even when
+  // the content queue and the danmaku queue both call in.
+  static Future<void> _offlineChain = Future<void>.value();
+
   static Future<void> _translateOffline(
+    List<String> texts,
+    Map<String, String> out,
+  ) {
+    final run = _offlineChain.then((_) => _translateOfflineLocked(texts, out));
+    // An error must not break the chain for later callers.
+    _offlineChain = run.catchError((Object _) {});
+    return run;
+  }
+
+  static Future<void> _translateOfflineLocked(
     List<String> texts,
     Map<String, String> out,
   ) async {

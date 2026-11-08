@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -56,7 +57,7 @@ class PgcRankItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(item.title!),
+                      child: ContentText(item.title!),
                     ),
                     if (item.newEp?.indexShow?.isNotEmpty == true) ...[
                       Text(

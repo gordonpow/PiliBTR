@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/select_mask.dart';
@@ -194,7 +195,7 @@ class HistoryItem extends StatelessWidget {
         spacing: 2,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          ContentText(
             item.title!,
             style: TextStyle(
               fontSize: theme.textTheme.bodyMedium!.fontSize,

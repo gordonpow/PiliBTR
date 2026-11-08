@@ -263,6 +263,7 @@ abstract final class SettingBoxKey {
       appLanguage = 'appLanguage',
       translateService = 'translateService',
       translateDanmaku = 'translateDanmaku',
+      translateContent = 'translateContent',
       enableSplashAnimation = 'enableSplashAnimation',
       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
       upPanelPosition = 'upPanelPosition',

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/services/download/video_export.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
@@ -266,7 +267,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
         spacing: 20,
         children: [
           Expanded(
-            child: Text(
+            child: ContentText(
               item.title!,
               style: const TextStyle(fontSize: 16),
               maxLines: 1,
@@ -320,9 +321,21 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               if (isPortrait) ...desc(),
               const SizedBox(height: 5),
               Expanded(
-                child: Text(
-                  '簡介：${item.evaluate}',
-                  style: TextStyle(fontSize: 13, color: colorScheme.outline),
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '簡介：${item.evaluate}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                      ContentTranslationLine(item.evaluate),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -451,16 +464,14 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),
-            onLongPress: () =>
-                Get.toNamed('/download', arguments: {'tab': 0}),
+            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 0}),
             text: '快取',
             semanticsLabel: '快取',
           ),
           ActionItem(
             icon: const Icon(Icons.save_alt),
             onTap: () => VideoExport.start(videoDetailCtr),
-            onLongPress: () =>
-                Get.toNamed('/download', arguments: {'tab': 1}),
+            onLongPress: () => Get.toNamed('/download', arguments: {'tab': 1}),
             text: '下載',
             semanticsLabel: '下載到手機',
           ),

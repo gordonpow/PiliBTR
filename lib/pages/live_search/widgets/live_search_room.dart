@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -66,7 +67,7 @@ class LiveCardVSearch extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(5, 8, 5, 4),
-              child: Text(
+              child: ContentText(
                 item.title.toString(),
                 textAlign: TextAlign.start,
                 style: const TextStyle(

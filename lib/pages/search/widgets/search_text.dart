@@ -1,3 +1,4 @@
+import 'package:PiliPlus/common/widgets/content_text.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
@@ -15,6 +16,9 @@ class SearchText extends StatelessWidget {
   final int? maxLines;
   final TextOverflow? overflow;
 
+  /// Translate [text] in English mode (server content only).
+  final bool translate;
+
   const SearchText({
     super.key,
     required this.text,
@@ -29,12 +33,33 @@ class SearchText extends StatelessWidget {
     this.borderRadius = const .all(.circular(6)),
     this.maxLines,
     this.overflow,
+    this.translate = false,
   });
 
   @override
   Widget build(BuildContext context) {
     late final colorScheme = ColorScheme.of(context);
     final hasLongPress = onLongPress != null;
+    final style = TextStyle(
+      fontSize: fontSize,
+      height: height,
+      color: textColor ?? colorScheme.onSurfaceVariant,
+    );
+    final Widget label = translate
+        ? ContentText(
+            text,
+            maxLines: maxLines,
+            overflow: overflow,
+            textAlign: textAlign,
+            style: style,
+          )
+        : Text(
+            text,
+            maxLines: maxLines,
+            overflow: overflow,
+            textAlign: textAlign,
+            style: style,
+          );
     return Material(
       color: bgColor ?? colorScheme.onInverseSurface,
       borderRadius: borderRadius,
@@ -47,17 +72,7 @@ class SearchText extends StatelessWidget {
         borderRadius: borderRadius,
         child: Padding(
           padding: padding,
-          child: Text(
-            text,
-            maxLines: maxLines,
-            overflow: overflow,
-            textAlign: textAlign,
-            style: TextStyle(
-              fontSize: fontSize,
-              height: height,
-              color: textColor ?? colorScheme.onSurfaceVariant,
-            ),
-          ),
+          child: label,
         ),
       ),
     );
