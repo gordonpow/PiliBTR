@@ -1,5 +1,6 @@
 import 'package:PiliPlus/pages/scan/handler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -17,6 +18,7 @@ class _ScanPageState extends State<ScanPage> {
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
   bool _handling = false;
+  BuildContext? _pageContext;
 
   @override
   void dispose() {
@@ -40,7 +42,7 @@ class _ScanPageState extends State<ScanPage> {
     _handling = true;
     var left = false;
     try {
-      left = await QrScanHandler.handle(value);
+      left = await QrScanHandler.handle(_pageContext ?? context, value);
     } catch (e) {
       SmartDialog.showToast('處理 QR code 失敗：$e');
     } finally {
@@ -67,6 +69,20 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 掃描頁的 route 取不到 MaterialLocalizations，補上以免 AppBar／對話框失敗。
+    return Localizations.override(
+      context: context,
+      delegates: GlobalMaterialLocalizations.delegates,
+      child: Builder(
+        builder: (ctx) {
+          _pageContext = ctx;
+          return _buildScaffold();
+        },
+      ),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,

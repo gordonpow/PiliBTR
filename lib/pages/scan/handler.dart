@@ -6,12 +6,13 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 abstract final class QrScanHandler {
   /// 回傳 true 表示已離開掃描頁
-  static Future<bool> handle(String value) async {
+  static Future<bool> handle(BuildContext context, String value) async {
     final uri = Uri.tryParse(value);
     if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
       final host = uri.host;
@@ -19,7 +20,7 @@ abstract final class QrScanHandler {
       if (host == 'passport.bilibili.com' &&
           authCode != null &&
           authCode.isNotEmpty) {
-        await _tvLogin(authCode);
+        await _tvLogin(context, authCode);
         return false;
       }
       if (uri.queryParameters.containsKey('qrcode_key') &&
@@ -39,11 +40,11 @@ abstract final class QrScanHandler {
       return true;
     }
 
-    await _showText(value);
+    await _showText(context, value);
     return false;
   }
 
-  static Future<void> _tvLogin(String authCode) async {
+  static Future<void> _tvLogin(BuildContext context, String authCode) async {
     if (!Accounts.main.isLogin) {
       SmartDialog.showToast('請先登入');
       return;
@@ -54,20 +55,23 @@ abstract final class QrScanHandler {
     }
     name ??= Accounts.main.mid.toString();
     final confirmed = await showDialog<bool>(
-      context: Get.context!,
-      builder: (_) => AlertDialog(
-        title: const Text('登入確認'),
-        content: Text('要用目前帳號（$name）登入其他裝置嗎？'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('確認登入'),
-          ),
-        ],
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: const Text('登入確認'),
+          content: Text('要用目前帳號（$name）登入其他裝置嗎？'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('確認登入'),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true) return;
@@ -75,22 +79,35 @@ abstract final class QrScanHandler {
     SmartDialog.showToast(res.msg);
   }
 
-  static Future<void> _showText(String text) {
+  static Future<void> _showText(BuildContext context, String text) {
     return showDialog(
-      context: Get.context!,
-      builder: (_) => AlertDialog(
-        content: SelectableText(text),
-        actions: [
-          TextButton(
-            onPressed: () => Utils.copyText(text),
-            child: const Text('複製'),
-          ),
-          TextButton(
-            onPressed: Get.back,
-            child: const Text('關閉'),
-          ),
-        ],
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          content: SelectableText(text),
+          actions: [
+            TextButton(
+              onPressed: () => Utils.copyText(text),
+              child: const Text('複製'),
+            ),
+            TextButton(
+              onPressed: Get.back,
+              child: const Text('關閉'),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// 掃描頁的 route 內取不到 MaterialLocalizations（AppBar／AlertDialog 會失敗，
+  /// release 版表現為 Null check operator），這裡在對話框內補上。
+  static Widget _withL10n(BuildContext context, Widget child) {
+    return Localizations.override(
+      context: context,
+      delegates: GlobalMaterialLocalizations.delegates,
+      child: child,
     );
   }
 }
