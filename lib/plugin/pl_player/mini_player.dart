@@ -231,18 +231,29 @@ abstract final class MiniPlayer {
     // Called from a page dispose, when the widget tree is locked: insert
     // after the current frame.
     scheduleMicrotask(() {
-      if (_entry == entry) overlay.insert(entry);
+      if (_entry == entry) {
+        overlay.insert(entry);
+        _entryInserted = true;
+      }
     });
     if (wasPlaying) ctr.play(hideControls: false);
     if (kDebugMode) debugPrint('MiniPlayer: show $heroTag');
     return true;
   }
 
+  /// True after the microtask of [show] inserted [_entry] in the overlay.
+  static bool _entryInserted = false;
+
   static void _removeEntry() {
     final entry = _entry;
+    final inserted = _entryInserted;
     _entry = null;
+    _entryInserted = false;
     if (entry == null) return;
-    if (entry.mounted) entry.remove();
+    // [OverlayEntry.mounted] is false until the entry builds (and while an
+    // opaque page covers it), but the entry is in the overlay already: an
+    // entry that is not removed stays on the screen after dispose.
+    if (inserted) entry.remove();
     entry.dispose();
   }
 
