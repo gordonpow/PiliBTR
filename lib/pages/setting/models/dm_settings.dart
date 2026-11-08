@@ -2,6 +2,7 @@ import 'dart:math' show max;
 
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -52,6 +53,14 @@ List<SettingsModel> get dmSettings => [
     setKey: SettingBoxKey.mergeDanmaku,
     defaultVal: false,
   ),
+  if (Translator.isEnglishMode && Translator.offlineSupported)
+    const SwitchModel(
+      title: '翻譯彈幕',
+      subtitle: '使用離線模型把中文彈幕翻成英文（僅英文模式）',
+      leading: Icon(Icons.translate),
+      setKey: SettingBoxKey.translateDanmaku,
+      defaultVal: true,
+    ),
 ];
 
 void _showDmHeightDialog(BuildContext context, VoidCallback setState) {

@@ -24,6 +24,9 @@ abstract final class GStorage {
   static late final Box<int> watchProgress;
   static late final Box<Uint8List>? reply;
 
+  /// Translation API keys. Kept out of [exportAllSettings] on purpose.
+  static late final Box<String> translateSecrets;
+
   static Future<void> init() async {
     Hive.init(path.join(appSupportDirPath, 'hive'));
     regAdapter();
@@ -54,6 +57,9 @@ abstract final class GStorage {
       ).then((res) => historyWord = res),
       // 视频设置
       Hive.openBox('video').then((res) => video = res),
+      Hive.openBox<String>(
+        'translate_secrets',
+      ).then((res) => translateSecrets = res),
       Accounts.init(),
       Hive.openBox<int>(
         'watchProgress',
@@ -77,6 +83,7 @@ abstract final class GStorage {
     }
   }
 
+  // translateSecrets (API keys) is intentionally not exported.
   static String exportAllSettings() {
     return Utils.jsonEncoder.convert({
       setting.name: setting.toMap(),
@@ -128,6 +135,7 @@ abstract final class GStorage {
       localCache.close(),
       setting.close(),
       video.close(),
+      translateSecrets.close(),
       Accounts.account.close(),
       watchProgress.close(),
       ?reply?.close(),
@@ -141,6 +149,7 @@ abstract final class GStorage {
       localCache.clear(),
       setting.clear(),
       video.clear(),
+      translateSecrets.clear(),
       Accounts.clear(),
       watchProgress.clear(),
       ?reply?.clear(),

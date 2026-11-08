@@ -709,7 +709,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       height: 35,
                       onTap: () => videoDetailController.setSubtitle(i + 1),
                       child: Text(
-                        e.lanDoc ?? e.lan,
+                        videoDetailController.subtitleLabel(i),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const .new(color: Colors.white, fontSize: 13),
@@ -1565,13 +1565,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                     child: CdnStatusPanel(
                       videoUrl: widget.videoDetailController?.videoUrl,
                       audioUrl: widget.videoDetailController?.audioUrl,
-                      cacheSpeed: () => switch (plPlayerController
-                          .videoPlayerController) {
-                        final NativePlayer player => player.getProperty(
-                          'cache-speed',
-                        ),
-                        _ => null,
-                      },
+                      cacheSpeed: () =>
+                          switch (plPlayerController.videoPlayerController) {
+                            final NativePlayer player => player.getProperty(
+                              'cache-speed',
+                            ),
+                            _ => null,
+                          },
                     ),
                   ),
                 )
@@ -2494,7 +2494,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       return const SizedBox.shrink();
     }
 
-    final seekOffset = _getValidOffset(item.content.text);
+    final seekOffset = _getValidOffset(
+      item.content.extra?.original ?? item.content.text,
+    );
 
     final overlayWidth = _actionItemWidth * (seekOffset == null ? 3 : 4);
 
@@ -2569,7 +2571,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   CustomIcons.player_dm_tip_copy,
                   color: Colors.white,
                 ),
-                onTap: () => Utils.copyText(item.content.text),
+                onTap: () => Utils.copyText(
+                  item.content.extra?.original ?? item.content.text,
+                ),
               ),
               if (item.content.selfSend)
                 _dmActionItem(
@@ -2624,7 +2628,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   CustomIcons.player_dm_tip_copy,
                   color: Colors.white,
                 ),
-                onTap: () => Utils.copyText(item.content.text),
+                onTap: () => Utils.copyText(
+                  item.content.extra?.original ?? item.content.text,
+                ),
               ),
               _dmActionItem(
                 const Icon(

@@ -6,6 +6,8 @@ import 'package:PiliPlus/grpc/dm.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
+import 'package:PiliPlus/services/translate/translate_queue.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
@@ -30,7 +32,18 @@ class PlDanmakuController {
   // 已请求的段落标记
   late final Set<int> _requestedSeg = HashSet();
 
+  // English mode: offline translation in the background, nearest to the
+  // playback position first. Read results with [Translator.cached].
+  late final bool translateEnabled = Translator.danmakuEnabled;
+  late final TranslateQueue? _translateQueue = translateEnabled
+      ? TranslateQueue(
+          maxPending: 500,
+          positionMs: () => _plPlayerController.positionInMilliseconds,
+        )
+      : null;
+
   void dispose() {
+    _translateQueue?.dispose();
     _dmSegMap.clear();
     _requestedSeg.clear();
   }
@@ -90,7 +103,31 @@ class PlDanmakuController {
     }
   }
 
+  int _lastFeed = -1;
+
+  /// Feeds the filtered / deduped danmaku of the next 2 minutes to the
+  /// translation queue (at most every 10 s of playback, and after a seek).
+  void _feedTranslate(int progress) {
+    final queue = _translateQueue;
+    if (queue == null) return;
+    if (_lastFeed >= 0 &&
+        progress >= _lastFeed &&
+        progress < _lastFeed + 10000) {
+      return;
+    }
+    _lastFeed = progress;
+    final start = progress ~/ 100;
+    for (var i = start; i < start + 1200; i++) {
+      if (_dmSegMap[i] case final list?) {
+        for (final e in list) {
+          if (e.mode != 7) queue.add(e.content, e.progress);
+        }
+      }
+    }
+  }
+
   List<DanmakuElem>? getCurrentDanmaku(int progress) {
+    _feedTranslate(progress);
     if (_isFileSource) {
       initFileDmIfNeeded();
     } else {

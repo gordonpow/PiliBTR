@@ -1078,12 +1078,17 @@ abstract final class VideoHttp {
     }
   }
 
+  /// Raw subtitle entries (`from` / `to` / `content`).
+  static Future<List?> getSubtitleBody(String subtitleUrl) async {
+    final res = await Request().get("https:$subtitleUrl");
+    return res.data?['body'] as List?;
+  }
+
   static Future<String?> getSubtitles(
     String subtitleUrl, {
     SubtitleFormat format = .vtt,
   }) async {
-    final res = await Request().get("https:$subtitleUrl");
-    if (res.data?['body'] case List list) {
+    if (await getSubtitleBody(subtitleUrl) case final list?) {
       switch (format) {
         case .json:
           throw UnimplementedError();

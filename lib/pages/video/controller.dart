@@ -71,7 +71,9 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart' show Options;
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
     show ExtendedNestedScrollViewState;
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint, compute;
+import 'package:PiliPlus/services/translate/translator.dart';
+import 'package:PiliPlus/utils/subtitle_utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
@@ -1172,16 +1174,50 @@ class VideoDetailController extends GetxController
   late final viewPointList = <ViewPointSegment>[].obs;
 
   // 设定字幕轨道
+  /// Bumped on every [setSubtitle] call; guards async translation results.
+  int _subtitleToken = 0;
+
+  /// Translated VTT in memory, keyed by cid + lan.
+  final Map<String, String> _translatedVtt = {};
+
+  /// Raw subtitle bodies, keyed by cid + lan (needed to translate).
+  final Map<String, List> _subtitleBodies = {};
+
+  /// In-flight translation requests, keyed by cid + lan.
+  final Map<String, Future<List<String>>> _translating = {};
+
+  String _subtitleKey(Subtitle sub) => '${cid.value}|${sub.lan}';
+
+  bool _canTranslate(Subtitle sub) =>
+      Translator.isEnglishMode &&
+      sub.isChinese &&
+      !sub.isEnglish &&
+      sub.subtitleUrl != null &&
+      sub.subtitleUrl!.isNotEmpty;
+
+  /// Menu label of a track, with " (Translated)" when its translation is
+  /// ready.
+  String subtitleLabel(int i) {
+    final sub = subtitles[i];
+    final label = sub.lanDoc ?? sub.lan;
+    return _translatedVtt.containsKey(_subtitleKey(sub))
+        ? '$label (Translated)'
+        : label;
+  }
+
   Future<void> setSubtitle(int index) async {
+    final token = ++_subtitleToken;
     if (index <= 0) {
       await plPlayerController.videoPlayerController?.setSubtitleTrack(.no());
       vttSubtitlesIndex.value = index;
       return;
     }
 
-    Future<void> setSub(({bool isData, String id}) subtitle) async {
-      final sub = subtitles[index - 1];
+    final sub = subtitles[index - 1];
+    final subCid = cid.value;
+    final key = _subtitleKey(sub);
 
+    Future<void> setSub(({bool isData, String id}) subtitle) async {
       String subUri = subtitle.id;
       if (subtitle.isData) {
         subUri = 'memory://$subUri';
@@ -1192,19 +1228,91 @@ class VideoDetailController extends GetxController
       vttSubtitlesIndex.value = index;
     }
 
+    final canTranslate = _canTranslate(sub);
+    final translatedVtt = canTranslate ? _translatedVtt[key] : null;
+    if (translatedVtt != null) {
+      await setSub((isData: true, id: translatedVtt));
+      return;
+    }
+
     var subtitle = vttSubtitles[index - 1];
     if (subtitle == null) {
-      final result = await VideoHttp.getSubtitles(
-        subtitles[index - 1].subtitleUrl!,
-      );
-      if (!isClosed && result != null) {
-        subtitle = (isData: true, id: result);
-        vttSubtitles[index - 1] = subtitle;
-      } else {
+      final List? body;
+      try {
+        body = await VideoHttp.getSubtitleBody(sub.subtitleUrl!);
+      } catch (_) {
         return;
       }
+      if (isClosed || body == null) return;
+      final result = await compute<List, String>(SubtitleUtils.json2Vtt, body);
+      if (isClosed) return;
+      subtitle = (isData: true, id: result);
+      vttSubtitles[index - 1] = subtitle;
+      if (canTranslate) _subtitleBodies[key] = body;
+      // A newer setSubtitle call owns the player now.
+      if (token != _subtitleToken) return;
     }
     await setSub(subtitle);
+
+    if (canTranslate && !isClosed && token == _subtitleToken) {
+      // Original is shown first; the translation replaces it when ready.
+      _translateSubtitle(sub, key, subCid, index, token);
+    }
+  }
+
+  Future<void> _translateSubtitle(
+    Subtitle sub,
+    String key,
+    int subCid,
+    int index,
+    int token,
+  ) async {
+    try {
+      var body = _subtitleBodies[key];
+      if (body == null) {
+        body = await VideoHttp.getSubtitleBody(sub.subtitleUrl!);
+        if (body == null) return;
+        _subtitleBodies[key] = body;
+      }
+      final originals = [
+        for (final item in body) (item['content'] as String).trim(),
+      ];
+      // Reuse a request already in flight for this cid + lan.
+      final translated = await (_translating[key] ??= Translator.translateBatch(
+        originals,
+        online: Translator.onlineConfigured,
+      ).whenComplete(() => _translating.remove(key)));
+      // Nothing was translated (all failed): keep the original.
+      var changed = false;
+      for (var i = 0; i < originals.length; i++) {
+        if (translated[i] != originals[i]) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed || isClosed) return;
+      final newBody = [
+        for (var i = 0; i < body.length; i++)
+          {...body[i] as Map, 'content': translated[i]},
+      ];
+      final vtt = await compute<List, String>(SubtitleUtils.json2Vtt, newBody);
+      if (isClosed) return;
+      _translatedVtt['$subCid|${sub.lan}'] = vtt;
+      // Replace only if nothing changed meanwhile: same cid, same track,
+      // latest request.
+      if (token != _subtitleToken ||
+          cid.value != subCid ||
+          vttSubtitlesIndex.value != index ||
+          subtitles.length < index ||
+          !identical(subtitles[index - 1], sub)) {
+        return;
+      }
+      await plPlayerController.videoPlayerController?.setSubtitleTrack(
+        SubtitleTrack('memory://$vtt', sub.lanDoc, sub.lan, uri: true),
+      );
+    } catch (e, s) {
+      if (kDebugMode) debugPrint('translate subtitle: $e $s');
+    }
   }
 
   // interactive video

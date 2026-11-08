@@ -1,3 +1,5 @@
+import 'package:PiliPlus/utils/storage_pref.dart';
+
 class Subtitle implements Comparable<Subtitle> {
   late String lan;
   String? lanDoc;
@@ -20,8 +22,22 @@ class Subtitle implements Comparable<Subtitle> {
     subtitleUrlV2 = json["subtitle_url_v2"];
   }
 
+  /// English track: `en`, `en-US`, `ai-en`, ...
+  bool get isEnglish => lan.startsWith('en') || lan == 'ai-en';
+
+  /// Chinese track: `zh-CN`, `ai-zh`, ...
+  bool get isChinese => lan.contains('zh');
+
   @override
-  int compareTo(Subtitle other) {
+  int compareTo(Subtitle other) =>
+      compareWith(other, englishFirst: Pref.appLanguage == 3);
+
+  /// With [englishFirst] (English UI mode) English tracks sort before the
+  /// rest; otherwise Chinese first, then non-AI first.
+  int compareWith(Subtitle other, {required bool englishFirst}) {
+    if (englishFirst && isEnglish != other.isEnglish) {
+      return isEnglish ? -1 : 1;
+    }
     final thisHasZh = lan.contains('zh');
     final otherHasZh = other.lan.contains('zh');
     if (thisHasZh != otherHasZh) return thisHasZh ? -1 : 1;

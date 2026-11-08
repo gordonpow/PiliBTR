@@ -2,7 +2,23 @@
 
 import 'package:PiliPlus/utils/zh_convert.dart';
 import 'package:material_ui/material_ui.dart' as material;
-import 'package:material_ui/material_ui.dart' show InputDecoration;
+import 'package:material_ui/material_ui.dart'
+    show
+        AlignmentGeometry,
+        BorderSide,
+        ButtonShapeVariant,
+        ButtonSizeVariant,
+        ButtonStyle,
+        Color,
+        EdgeInsetsGeometry,
+        IconButtonWidthVariant,
+        InputDecoration,
+        InteractiveInkFeatureFactory,
+        MaterialTapTargetSize,
+        MouseCursor,
+        OutlinedBorder,
+        Size,
+        VisualDensity;
 
 // Material widgets that take label text as a String and draw it with
 // Flutter's own Text. These versions convert the String to the script of
@@ -10,6 +26,224 @@ import 'package:material_ui/material_ui.dart' show InputDecoration;
 // place of the material_ui ones.
 
 String? _zh(String? text) => text == null ? null : ZhConvert.convert(text);
+
+/// [material.Tooltip] with the [message] converted.
+class Tooltip extends material.Tooltip {
+  const Tooltip({
+    super.key,
+    super.message,
+    super.richMessage,
+    super.height,
+    super.constraints,
+    super.padding,
+    super.margin,
+    super.verticalOffset,
+    super.preferBelow,
+    super.excludeFromSemantics,
+    super.decoration,
+    super.textStyle,
+    super.textAlign,
+    super.waitDuration,
+    super.showDuration,
+    super.exitDuration,
+    super.enableTapToDismiss,
+    super.triggerMode,
+    super.enableFeedback,
+    super.onTriggered,
+    super.mouseCursor,
+    super.ignorePointer,
+    super.positionDelegate,
+    super.child,
+  });
+
+  @override
+  String? get message => _zh(super.message);
+}
+
+/// [material.IconButton] with the [tooltip] converted.
+class IconButton extends material.IconButton {
+  const IconButton({
+    super.key,
+    super.iconSize,
+    super.visualDensity,
+    super.padding,
+    super.alignment,
+    super.splashRadius,
+    super.color,
+    super.focusColor,
+    super.hoverColor,
+    super.highlightColor,
+    super.splashColor,
+    super.disabledColor,
+    required super.onPressed,
+    super.onHover,
+    super.onLongPress,
+    super.mouseCursor,
+    super.focusNode,
+    super.autofocus,
+    super.tooltip,
+    super.enableFeedback,
+    super.constraints,
+    super.style,
+    super.isSelected,
+    super.selectedIcon,
+    super.statesController,
+    required super.icon,
+  });
+
+  const IconButton.outlined({
+    super.key,
+    super.iconSize,
+    super.visualDensity,
+    super.padding,
+    super.alignment,
+    super.splashRadius,
+    super.color,
+    super.focusColor,
+    super.hoverColor,
+    super.highlightColor,
+    super.splashColor,
+    super.disabledColor,
+    required super.onPressed,
+    super.onHover,
+    super.onLongPress,
+    super.mouseCursor,
+    super.focusNode,
+    super.autofocus,
+    super.tooltip,
+    super.enableFeedback,
+    super.constraints,
+    super.style,
+    super.isSelected,
+    super.selectedIcon,
+    super.statesController,
+    required super.icon,
+  }) : super.outlined();
+
+  const IconButton.filled({
+    super.key,
+    super.iconSize,
+    super.visualDensity,
+    super.padding,
+    super.alignment,
+    super.splashRadius,
+    super.color,
+    super.focusColor,
+    super.hoverColor,
+    super.highlightColor,
+    super.splashColor,
+    super.disabledColor,
+    required super.onPressed,
+    super.onHover,
+    super.onLongPress,
+    super.mouseCursor,
+    super.focusNode,
+    super.autofocus,
+    super.tooltip,
+    super.enableFeedback,
+    super.constraints,
+    super.style,
+    super.isSelected,
+    super.selectedIcon,
+    super.statesController,
+    required super.icon,
+  }) : super.filled();
+
+  const IconButton.filledTonal({
+    super.key,
+    super.iconSize,
+    super.visualDensity,
+    super.padding,
+    super.alignment,
+    super.splashRadius,
+    super.color,
+    super.focusColor,
+    super.hoverColor,
+    super.highlightColor,
+    super.splashColor,
+    super.disabledColor,
+    required super.onPressed,
+    super.onHover,
+    super.onLongPress,
+    super.mouseCursor,
+    super.focusNode,
+    super.autofocus,
+    super.tooltip,
+    super.enableFeedback,
+    super.constraints,
+    super.style,
+    super.isSelected,
+    super.selectedIcon,
+    super.statesController,
+    required super.icon,
+  }) : super.filledTonal();
+
+  /// Same as [material.IconButton.styleFrom] (statics are not inherited).
+  static ButtonStyle styleFrom({
+    Color? foregroundColor,
+    Color? backgroundColor,
+    Color? disabledForegroundColor,
+    Color? disabledBackgroundColor,
+    Color? focusColor,
+    Color? hoverColor,
+    Color? highlightColor,
+    Color? shadowColor,
+    Color? surfaceTintColor,
+    Color? overlayColor,
+    double? elevation,
+    Size? minimumSize,
+    Size? fixedSize,
+    Size? maximumSize,
+    double? iconSize,
+    BorderSide? side,
+    OutlinedBorder? shape,
+    EdgeInsetsGeometry? padding,
+    MouseCursor? enabledMouseCursor,
+    MouseCursor? disabledMouseCursor,
+    VisualDensity? visualDensity,
+    MaterialTapTargetSize? tapTargetSize,
+    Duration? animationDuration,
+    bool? enableFeedback,
+    AlignmentGeometry? alignment,
+    InteractiveInkFeatureFactory? splashFactory,
+    ButtonSizeVariant? sizeVariant,
+    IconButtonWidthVariant? iconButtonWidth,
+    ButtonShapeVariant? shapeVariant,
+  }) => material.IconButton.styleFrom(
+    foregroundColor: foregroundColor,
+    backgroundColor: backgroundColor,
+    disabledForegroundColor: disabledForegroundColor,
+    disabledBackgroundColor: disabledBackgroundColor,
+    focusColor: focusColor,
+    hoverColor: hoverColor,
+    highlightColor: highlightColor,
+    shadowColor: shadowColor,
+    surfaceTintColor: surfaceTintColor,
+    overlayColor: overlayColor,
+    elevation: elevation,
+    minimumSize: minimumSize,
+    fixedSize: fixedSize,
+    maximumSize: maximumSize,
+    iconSize: iconSize,
+    side: side,
+    shape: shape,
+    padding: padding,
+    enabledMouseCursor: enabledMouseCursor,
+    disabledMouseCursor: disabledMouseCursor,
+    visualDensity: visualDensity,
+    tapTargetSize: tapTargetSize,
+    animationDuration: animationDuration,
+    enableFeedback: enableFeedback,
+    alignment: alignment,
+    splashFactory: splashFactory,
+    sizeVariant: sizeVariant,
+    iconButtonWidth: iconButtonWidth,
+    shapeVariant: shapeVariant,
+  );
+
+  @override
+  String? get tooltip => _zh(super.tooltip);
+}
 
 /// [material.Tab] with the [text] label converted.
 class Tab extends material.Tab {

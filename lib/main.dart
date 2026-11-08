@@ -109,8 +109,11 @@ const _zhCN = Locale.fromSubtags(
 );
 
 /// Locale for the script chosen in the language setting.
-Locale get _appLocale =>
-    ZhConvert.script == ZhScript.simplified ? _zhCN : _zhTW;
+Locale get _appLocale => switch (ZhConvert.script) {
+  ZhScript.simplified => _zhCN,
+  ZhScript.english => const Locale('en', 'US'),
+  ZhScript.traditional => _zhTW,
+};
 
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();

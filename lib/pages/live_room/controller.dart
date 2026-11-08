@@ -49,6 +49,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:PiliPlus/utils/zh_convert.dart';
+import 'package:PiliPlus/services/translate/translate_queue.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
 
 const int _kMaxChatCount = 500;
 const int _kTrimCount = _kMaxChatCount + 50;
@@ -464,6 +466,12 @@ class LiveRoomController extends GetxController {
     _shieldUids = uids;
   }
 
+  // Low priority background translation, newest 200 kept. Only fills the
+  // cache for repeated danmaku.
+  late final TranslateQueue? _liveTranslateQueue = Translator.danmakuEnabled
+      ? TranslateQueue(maxPending: 200)
+      : null;
+
   bool isBlocked(String text, Object uid) {
     return _keywordList.any(text.contains) || _shieldUids.contains(uid);
   }
@@ -513,6 +521,7 @@ class LiveRoomController extends GetxController {
   @override
   void onClose() {
     _stopSizeSub();
+    _liveTranslateQueue?.dispose();
     closeLiveMsg();
     cancelLikeTimer();
     cancelLiveTimer();
@@ -599,7 +608,14 @@ class LiveRoomController extends GetxController {
             uemote = BaseEmote.fromJson(map);
           }
           final checkInfo = info[9];
+          // Never wait for translation: cached translation or the original.
+          // Blocking above and copy / report use the original text.
+          final translated = Translator.danmakuEnabled
+              ? Translator.cached(msg)
+              : null;
+          if (translated == null) _liveTranslateQueue?.add(msg);
           final liveExtra = LiveDanmaku(
+            original: translated == null ? null : msg,
             id: extra['id_str'],
             mid: uid,
             dmType: extra['dm_type'],
@@ -629,7 +645,7 @@ class LiveRoomController extends GetxController {
                   : null,
             ),
             DanmakuContentItem(
-              ZhConvert.convert(msg),
+              ZhConvert.convert(translated ?? msg),
               color: DanmakuOptions.blockColorful
                   ? Colors.white
                   : DmUtils.decimalToColor(extra['color']),

@@ -38,6 +38,8 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
+import 'package:PiliPlus/utils/i18n_pack.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -69,6 +71,14 @@ List<SettingsModel> get styleSettings => [
     ),
   ],
   if (Platform.isLinux) _useSSDModel(),
+  if (Pref.appLanguage == 3)
+    NormalModel(
+      leading: const Icon(Icons.system_update_alt),
+      title: '更新語言包',
+      getSubtitle: () =>
+          '目前版本：${I18nPack.version.isEmpty ? '無' : I18nPack.version}',
+      onTap: _updateLanguagePack,
+    ),
   NormalModel(
     leading: const Icon(Icons.translate),
     title: '語言',
@@ -95,8 +105,7 @@ List<SettingsModel> get styleSettings => [
     NormalModel(
       leading: const Icon(Icons.view_column_outlined),
       title: '全螢幕中間區塊寬度',
-      getSubtitle: () =>
-          '當前：${(Pref.fullscreenCenterRatio * 100).round()}%',
+      getSubtitle: () => '當前：${(Pref.fullscreenCenterRatio * 100).round()}%',
       onTap: _showFullscreenCenterRatioDialog,
     ),
   const SwitchModel(
@@ -913,6 +922,20 @@ Future<void> _showCardWidthDialog(
   }
 }
 
+Future<void> _updateLanguagePack(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  SmartDialog.showToast('正在檢查語言包…');
+  try {
+    final changed = await I18nPack.checkUpdate();
+    SmartDialog.showToast(changed ? '語言包已更新，重新啟動後生效' : '已是最新版本');
+    setState();
+  } catch (e) {
+    SmartDialog.showToast('檢查失敗：$e');
+  }
+}
+
 String _columnsLabel(int columns) => columns > 0 ? '$columns 排' : '自動';
 
 String _languageLabel(int value) => switch (value) {
@@ -920,6 +943,8 @@ String _languageLabel(int value) => switch (value) {
   // Shown in Simplified so a Simplified reader can find it. In Traditional
   // mode the Text widget converts it to Traditional.
   2 => '简体中文',
+  // Not translated on purpose: shown as is in every language.
+  3 => 'English',
   _ => '跟隨系統',
 };
 
@@ -934,14 +959,85 @@ Future<void> _showLanguageDialog(
     builder: (context) => SelectDialog<int>(
       title: '語言',
       value: old,
-      values: [for (var i = 0; i < 3; i++) (i, _languageLabel(i))],
+      values: [for (var i = 0; i < 4; i++) (i, _languageLabel(i))],
     ),
   );
   if (res != null && res != old) {
+    // English needs the language pack first; stay on the old language if
+    // it cannot be downloaded.
+    if (res == 3 &&
+        (!context.mounted || !await _downloadEnglishPack(context))) {
+      return;
+    }
     await GStorage.setting.put(SettingBoxKey.appLanguage, res);
     setState();
     AppRestart.ask();
   }
+}
+
+/// Shows a progress dialog while the English language pack (and, if the
+/// translation service is there, its model) is downloaded.
+Future<bool> _downloadEnglishPack(BuildContext context) async {
+  final status = ValueNotifier<String>('正在下載語言包…');
+  final progress = ValueNotifier<double?>(null);
+  final dialog = showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: const Text('English'),
+        content: ValueListenableBuilder<String>(
+          valueListenable: status,
+          builder: (context, text, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(text),
+              const SizedBox(height: 16),
+              ValueListenableBuilder<double?>(
+                valueListenable: progress,
+                builder: (context, value, _) =>
+                    LinearProgressIndicator(value: value),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  var ok = false;
+  try {
+    // A valid local pack is enough, so offline users can switch back.
+    if (!await I18nPack.loadValid()) {
+      await I18nPack.download(
+        onProgress: (received, total) {
+          if (total > 0) progress.value = received / total;
+        },
+      );
+      await I18nPack.load();
+    }
+    ok = true;
+    status.value = '正在下載離線翻譯模型…';
+    progress.value = null;
+    try {
+      // A model failure does not stop the switch.
+      final model = await Translator.ensureModel();
+      if (!model.ok) {
+        SmartDialog.showToast(
+          model.error ?? Translator.modelUnavailableMessage,
+        );
+      }
+    } catch (_) {}
+  } catch (e) {
+    SmartDialog.showToast('語言包下載失敗：$e');
+  }
+  if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+  // Dispose after the route is gone, so its builders no longer listen.
+  await dialog;
+  status.dispose();
+  progress.dispose();
+  return ok;
 }
 
 /// Fixed columns of the related video list in the side pane of the video

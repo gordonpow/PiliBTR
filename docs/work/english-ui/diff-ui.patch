@@ -1,0 +1,713 @@
+diff --git a/lib/common/widgets/zh_material.dart b/lib/common/widgets/zh_material.dart
+index 91fce1933..a69037af5 100644
+--- a/lib/common/widgets/zh_material.dart
++++ b/lib/common/widgets/zh_material.dart
+@@ -2,4 +2,4 @@
+ // (zh_text.dart). See lib/scripts/use_zh_text.py.
+ export 'package:PiliPlus/common/widgets/zh_material_widgets.dart';
+ export 'package:PiliPlus/common/widgets/zh_text.dart';
+-export 'package:material_ui/material_ui.dart' hide Tab, Text, TextField;
++export 'package:material_ui/material_ui.dart' hide IconButton, Tab, Text, TextField, Tooltip;
+diff --git a/lib/common/widgets/zh_material_widgets.dart b/lib/common/widgets/zh_material_widgets.dart
+index 1339989bc..668a0d09b 100644
+--- a/lib/common/widgets/zh_material_widgets.dart
++++ b/lib/common/widgets/zh_material_widgets.dart
+@@ -2,7 +2,23 @@
+ 
+ import 'package:PiliPlus/utils/zh_convert.dart';
+ import 'package:material_ui/material_ui.dart' as material;
+-import 'package:material_ui/material_ui.dart' show InputDecoration;
++import 'package:material_ui/material_ui.dart'
++    show
++        AlignmentGeometry,
++        BorderSide,
++        ButtonShapeVariant,
++        ButtonSizeVariant,
++        ButtonStyle,
++        Color,
++        EdgeInsetsGeometry,
++        IconButtonWidthVariant,
++        InputDecoration,
++        InteractiveInkFeatureFactory,
++        MaterialTapTargetSize,
++        MouseCursor,
++        OutlinedBorder,
++        Size,
++        VisualDensity;
+ 
+ // Material widgets that take label text as a String and draw it with
+ // Flutter's own Text. These versions convert the String to the script of
+@@ -11,6 +27,166 @@ import 'package:material_ui/material_ui.dart' show InputDecoration;
+ 
+ String? _zh(String? text) => text == null ? null : ZhConvert.convert(text);
+ 
++/// [material.Tooltip] with the [message] converted.
++class Tooltip extends material.Tooltip {
++  const Tooltip({
++    super.key,
++    super.message,
++    super.richMessage,
++    super.height,
++    super.constraints,
++    super.padding,
++    super.margin,
++    super.verticalOffset,
++    super.preferBelow,
++    super.excludeFromSemantics,
++    super.decoration,
++    super.textStyle,
++    super.textAlign,
++    super.waitDuration,
++    super.showDuration,
++    super.exitDuration,
++    super.enableTapToDismiss,
++    super.triggerMode,
++    super.enableFeedback,
++    super.onTriggered,
++    super.mouseCursor,
++    super.ignorePointer,
++    super.positionDelegate,
++    super.child,
++  });
++
++  @override
++  String? get message => _zh(super.message);
++}
++
++/// [material.IconButton] with the [tooltip] converted.
++class IconButton extends material.IconButton {
++  const IconButton({
++    super.key,
++    super.iconSize,
++    super.visualDensity,
++    super.padding,
++    super.alignment,
++    super.splashRadius,
++    super.color,
++    super.focusColor,
++    super.hoverColor,
++    super.highlightColor,
++    super.splashColor,
++    super.disabledColor,
++    required super.onPressed,
++    super.onHover,
++    super.onLongPress,
++    super.mouseCursor,
++    super.focusNode,
++    super.autofocus,
++    super.tooltip,
++    super.enableFeedback,
++    super.constraints,
++    super.style,
++    super.isSelected,
++    super.selectedIcon,
++    super.statesController,
++    required super.icon,
++  });
++
++  const IconButton.outlined({
++    super.key,
++    super.iconSize,
++    super.visualDensity,
++    super.padding,
++    super.alignment,
++    super.splashRadius,
++    super.color,
++    super.focusColor,
++    super.hoverColor,
++    super.highlightColor,
++    super.splashColor,
++    super.disabledColor,
++    required super.onPressed,
++    super.onHover,
++    super.onLongPress,
++    super.mouseCursor,
++    super.focusNode,
++    super.autofocus,
++    super.tooltip,
++    super.enableFeedback,
++    super.constraints,
++    super.style,
++    super.isSelected,
++    super.selectedIcon,
++    super.statesController,
++    required super.icon,
++  }) : super.outlined();
++
++  /// Same as [material.IconButton.styleFrom] (statics are not inherited).
++  static ButtonStyle styleFrom({
++    Color? foregroundColor,
++    Color? backgroundColor,
++    Color? disabledForegroundColor,
++    Color? disabledBackgroundColor,
++    Color? focusColor,
++    Color? hoverColor,
++    Color? highlightColor,
++    Color? shadowColor,
++    Color? surfaceTintColor,
++    Color? overlayColor,
++    double? elevation,
++    Size? minimumSize,
++    Size? fixedSize,
++    Size? maximumSize,
++    double? iconSize,
++    BorderSide? side,
++    OutlinedBorder? shape,
++    EdgeInsetsGeometry? padding,
++    MouseCursor? enabledMouseCursor,
++    MouseCursor? disabledMouseCursor,
++    VisualDensity? visualDensity,
++    MaterialTapTargetSize? tapTargetSize,
++    Duration? animationDuration,
++    bool? enableFeedback,
++    AlignmentGeometry? alignment,
++    InteractiveInkFeatureFactory? splashFactory,
++    ButtonSizeVariant? sizeVariant,
++    IconButtonWidthVariant? iconButtonWidth,
++    ButtonShapeVariant? shapeVariant,
++  }) => material.IconButton.styleFrom(
++    foregroundColor: foregroundColor,
++    backgroundColor: backgroundColor,
++    disabledForegroundColor: disabledForegroundColor,
++    disabledBackgroundColor: disabledBackgroundColor,
++    focusColor: focusColor,
++    hoverColor: hoverColor,
++    highlightColor: highlightColor,
++    shadowColor: shadowColor,
++    surfaceTintColor: surfaceTintColor,
++    overlayColor: overlayColor,
++    elevation: elevation,
++    minimumSize: minimumSize,
++    fixedSize: fixedSize,
++    maximumSize: maximumSize,
++    iconSize: iconSize,
++    side: side,
++    shape: shape,
++    padding: padding,
++    enabledMouseCursor: enabledMouseCursor,
++    disabledMouseCursor: disabledMouseCursor,
++    visualDensity: visualDensity,
++    tapTargetSize: tapTargetSize,
++    animationDuration: animationDuration,
++    enableFeedback: enableFeedback,
++    alignment: alignment,
++    splashFactory: splashFactory,
++    sizeVariant: sizeVariant,
++    iconButtonWidth: iconButtonWidth,
++    shapeVariant: shapeVariant,
++  );
++
++  @override
++  String? get tooltip => _zh(super.tooltip);
++}
++
+ /// [material.Tab] with the [text] label converted.
+ class Tab extends material.Tab {
+   const Tab({
+diff --git a/lib/main.dart b/lib/main.dart
+index b28b52192..67ae14f71 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -109,8 +109,11 @@ const _zhCN = Locale.fromSubtags(
+ );
+ 
+ /// Locale for the script chosen in the language setting.
+-Locale get _appLocale =>
+-    ZhConvert.script == ZhScript.simplified ? _zhCN : _zhTW;
++Locale get _appLocale => switch (ZhConvert.script) {
++  ZhScript.simplified => _zhCN,
++  ZhScript.english => const Locale('en', 'US'),
++  ZhScript.traditional => _zhTW,
++};
+ 
+ void main() async {
+   ScaledWidgetsFlutterBinding.ensureInitialized();
+diff --git a/lib/pages/setting/models/style_settings.dart b/lib/pages/setting/models/style_settings.dart
+index 1a00d58ad..a4582c693 100644
+--- a/lib/pages/setting/models/style_settings.dart
++++ b/lib/pages/setting/models/style_settings.dart
+@@ -38,6 +38,8 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
+ import 'package:PiliPlus/utils/extension/num_ext.dart';
+ import 'package:PiliPlus/utils/extension/theme_ext.dart';
+ import 'package:PiliPlus/utils/global_data.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
++import 'package:PiliPlus/utils/i18n_pack.dart';
+ import 'package:PiliPlus/utils/path_utils.dart';
+ import 'package:PiliPlus/utils/platform_utils.dart';
+ import 'package:PiliPlus/utils/storage.dart';
+@@ -69,6 +71,14 @@ List<SettingsModel> get styleSettings => [
+     ),
+   ],
+   if (Platform.isLinux) _useSSDModel(),
++  if (Pref.appLanguage == 3)
++    NormalModel(
++      leading: const Icon(Icons.system_update_alt),
++      title: '更新語言包',
++      getSubtitle: () =>
++          '目前版本：${I18nPack.version.isEmpty ? '無' : I18nPack.version}',
++      onTap: _updateLanguagePack,
++    ),
+   NormalModel(
+     leading: const Icon(Icons.translate),
+     title: '語言',
+@@ -95,8 +105,7 @@ List<SettingsModel> get styleSettings => [
+     NormalModel(
+       leading: const Icon(Icons.view_column_outlined),
+       title: '全螢幕中間區塊寬度',
+-      getSubtitle: () =>
+-          '當前：${(Pref.fullscreenCenterRatio * 100).round()}%',
++      getSubtitle: () => '當前：${(Pref.fullscreenCenterRatio * 100).round()}%',
+       onTap: _showFullscreenCenterRatioDialog,
+     ),
+   const SwitchModel(
+@@ -913,6 +922,20 @@ Future<void> _showCardWidthDialog(
+   }
+ }
+ 
++Future<void> _updateLanguagePack(
++  BuildContext context,
++  VoidCallback setState,
++) async {
++  SmartDialog.showToast('正在檢查語言包…');
++  try {
++    final changed = await I18nPack.checkUpdate();
++    SmartDialog.showToast(changed ? '語言包已更新，重新啟動後生效' : '已是最新版本');
++    setState();
++  } catch (e) {
++    SmartDialog.showToast('檢查失敗：$e');
++  }
++}
++
+ String _columnsLabel(int columns) => columns > 0 ? '$columns 排' : '自動';
+ 
+ String _languageLabel(int value) => switch (value) {
+@@ -920,6 +943,8 @@ String _languageLabel(int value) => switch (value) {
+   // Shown in Simplified so a Simplified reader can find it. In Traditional
+   // mode the Text widget converts it to Traditional.
+   2 => '简体中文',
++  // Not translated on purpose: shown as is in every language.
++  3 => 'English',
+   _ => '跟隨系統',
+ };
+ 
+@@ -934,16 +959,82 @@ Future<void> _showLanguageDialog(
+     builder: (context) => SelectDialog<int>(
+       title: '語言',
+       value: old,
+-      values: [for (var i = 0; i < 3; i++) (i, _languageLabel(i))],
++      values: [for (var i = 0; i < 4; i++) (i, _languageLabel(i))],
+     ),
+   );
+   if (res != null && res != old) {
++    // English needs the language pack first; stay on the old language if
++    // it cannot be downloaded.
++    if (res == 3 &&
++        (!context.mounted || !await _downloadEnglishPack(context))) {
++      return;
++    }
+     await GStorage.setting.put(SettingBoxKey.appLanguage, res);
+     setState();
+     AppRestart.ask();
+   }
+ }
+ 
++/// Shows a progress dialog while the English language pack (and, if the
++/// translation service is there, its model) is downloaded.
++Future<bool> _downloadEnglishPack(BuildContext context) async {
++  final status = ValueNotifier<String>('正在下載語言包…');
++  final progress = ValueNotifier<double?>(null);
++  showDialog<void>(
++    context: context,
++    barrierDismissible: false,
++    builder: (context) => PopScope(
++      canPop: false,
++      child: AlertDialog(
++        title: const Text('English'),
++        content: ValueListenableBuilder<String>(
++          valueListenable: status,
++          builder: (context, text, _) => Column(
++            mainAxisSize: MainAxisSize.min,
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [
++              Text(text),
++              const SizedBox(height: 16),
++              ValueListenableBuilder<double?>(
++                valueListenable: progress,
++                builder: (context, value, _) =>
++                    LinearProgressIndicator(value: value),
++              ),
++            ],
++          ),
++        ),
++      ),
++    ),
++  );
++  var ok = false;
++  try {
++    await I18nPack.download(
++      onProgress: (received, total) {
++        if (total > 0) progress.value = received / total;
++      },
++    );
++    await I18nPack.load();
++    ok = true;
++    status.value = '正在下載離線翻譯模型…';
++    progress.value = null;
++    try {
++      // A model failure does not stop the switch.
++      final model = await Translator.ensureModel();
++      if (!model.ok) {
++        SmartDialog.showToast(
++          model.error ?? Translator.modelUnavailableMessage,
++        );
++      }
++    } catch (_) {}
++  } catch (e) {
++    SmartDialog.showToast('語言包下載失敗：$e');
++  }
++  if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
++  status.dispose();
++  progress.dispose();
++  return ok;
++}
++
+ /// Fixed columns of the related video list in the side pane of the video
+ /// page (landscape).
+ Future<void> _showRelatedColumnsDialog(
+diff --git a/lib/utils/zh_convert.dart b/lib/utils/zh_convert.dart
+index 81343af08..06b0e58be 100644
+--- a/lib/utils/zh_convert.dart
++++ b/lib/utils/zh_convert.dart
+@@ -1,11 +1,14 @@
+ import 'dart:ui' show PlatformDispatcher;
+ 
++import 'package:PiliPlus/utils/i18n_pack.dart';
+ import 'package:PiliPlus/utils/storage_pref.dart';
+ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+ import 'package:flutter/painting.dart' show InlineSpan, TextSpan;
+ import 'package:flutter/services.dart' show rootBundle;
+ 
+-enum ZhScript { traditional, simplified }
++/// [english] shows the English language pack ([I18nPack]); text that the
++/// pack does not have stays Traditional Chinese.
++enum ZhScript { traditional, simplified, english }
+ 
+ /// Converts text between Traditional and Simplified Chinese when it is
+ /// shown. Data (server responses, user input, values compared in code)
+@@ -31,6 +34,7 @@ abstract final class ZhConvert {
+   static ZhScript resolve(int language) => switch (language) {
+     1 => ZhScript.traditional,
+     2 => ZhScript.simplified,
++    3 => ZhScript.english,
+     _ => systemScript,
+   };
+ 
+@@ -73,6 +77,12 @@ abstract final class ZhConvert {
+   /// the settings storage is open.
+   static Future<void> init() async {
+     script = resolve(Pref.appLanguage);
++    if (script == ZhScript.english) {
++      // Awaited before runApp. Never throws; without a pack the UI is
++      // Traditional Chinese.
++      await I18nPack.load();
++      I18nPack.maybeUpdateInBackground();
++    }
+     try {
+       final simplified = script == ZhScript.simplified;
+       final raw = await rootBundle.loadString(
+@@ -100,7 +110,14 @@ abstract final class ZhConvert {
+         return hit;
+       }
+     }
+-    final result = _exact[text] ?? _convert(text);
++    String result;
++    if (script == ZhScript.english) {
++      // Pack first; what it lacks stays Traditional Chinese.
++      final en = I18nPack.translate(text);
++      result = en == text ? _convert(text) : en;
++    } else {
++      result = _exact[text] ?? _convert(text);
++    }
+     if (cacheable) {
+       if (_cache.length >= _cacheSize) _cache.remove(_cache.keys.first);
+       _cache[text] = result;
+diff --git a/lib/utils/i18n_pack.dart b/lib/utils/i18n_pack.dart
+new file mode 100644
+index 000000000..e8e41c858
+--- /dev/null
++++ b/lib/utils/i18n_pack.dart
+@@ -0,0 +1,274 @@
++import 'dart:convert';
++import 'dart:io';
++
++import 'package:dio/dio.dart';
++import 'package:flutter/foundation.dart'
++    show debugPrint, kDebugMode, visibleForTesting;
++import 'package:path/path.dart' as path;
++import 'package:path_provider/path_provider.dart';
++
++/// A template of the language pack, for example `{0}分鐘前` -> `{0} min ago`.
++/// The Chinese key becomes an anchored [RegExp]; each `{n}` is `(.+?)`.
++class I18nTemplate {
++  I18nTemplate._(this.regex, this.groupNumbers, this.english, this.zhLength);
++
++  final RegExp regex;
++
++  /// The `{n}` number of each capture group, in order of appearance.
++  final List<int> groupNumbers;
++  final String english;
++
++  /// Length of the Chinese part without placeholders. Longer goes first.
++  final int zhLength;
++
++  static final _placeholder = RegExp(r'\{(\d+)\}');
++
++  /// Returns null when the template cannot be matched safely: two
++  /// placeholders side by side, no Chinese part, or a Chinese part with
++  /// fewer than 2 characters.
++  static I18nTemplate? tryParse(String zh, String english) {
++    final buf = StringBuffer('^');
++    final numbers = <int>[];
++    var last = 0;
++    var zhLength = 0;
++    var prevWasPlaceholder = false;
++    for (final m in _placeholder.allMatches(zh)) {
++      final literal = zh.substring(last, m.start);
++      if (literal.isEmpty && prevWasPlaceholder) return null;
++      buf
++        ..write(RegExp.escape(literal))
++        ..write('(.+?)');
++      zhLength += literal.length;
++      numbers.add(int.parse(m.group(1)!));
++      prevWasPlaceholder = true;
++      last = m.end;
++    }
++    final tail = zh.substring(last);
++    buf
++      ..write(RegExp.escape(tail))
++      ..write(r'$');
++    zhLength += tail.length;
++    if (numbers.isEmpty || zhLength < 2) return null;
++    return I18nTemplate._(
++      RegExp(buf.toString(), dotAll: true),
++      numbers,
++      english,
++      zhLength,
++    );
++  }
++
++  /// English text with the captured fragments put in, or null if no match.
++  String? apply(String text, String Function(String fragment) lookup) {
++    final m = regex.firstMatch(text);
++    if (m == null) return null;
++    final fragments = <int, String>{};
++    for (var i = 0; i < groupNumbers.length; i++) {
++      fragments[groupNumbers[i]] = lookup(m.group(i + 1)!);
++    }
++    return english.replaceAllMapped(
++      _placeholder,
++      (p) => fragments[int.parse(p.group(1)!)] ?? p.group(0)!,
++    );
++  }
++}
++
++/// The English UI language pack (`i18n/en.json` of the repo). It is
++/// downloaded when the user picks English and read from the app documents
++/// folder at start. [translate] is called by `ZhConvert.convert`.
++abstract final class I18nPack {
++  static const url =
++      'https://raw.githubusercontent.com/gordonpow/PiliBTR/main/i18n/en.json';
++  static const _checkInterval = Duration(days: 7);
++  static const _cacheSize = 4096;
++  static const _cacheMaxLength = 200;
++
++  static Map<String, String> _strings = const {};
++  static List<I18nTemplate> _templates = const [];
++  static String _version = '';
++
++  // Map literals keep insertion order, which makes this an LRU cache.
++  static final _cache = <String, String>{};
++
++  static final _cjk = RegExp(r'[㐀-鿿豈-﫿]');
++
++  /// Version of the loaded pack, empty when none is loaded.
++  static String get version => _version;
++  static bool get isLoaded => _strings.isNotEmpty || _templates.isNotEmpty;
++
++  static Future<File> _file(String name) async {
++    final dir = Directory(
++      path.join((await getApplicationDocumentsDirectory()).path, 'i18n'),
++    );
++    if (!dir.existsSync()) await dir.create(recursive: true);
++    return File(path.join(dir.path, name));
++  }
++
++  /// Reads the saved pack into memory. Never throws: on any error the
++  /// pack stays empty and the UI stays in Traditional Chinese.
++  static Future<void> load() async {
++    try {
++      final file = await _file('en.json');
++      if (!file.existsSync()) return;
++      final json = jsonDecode(await file.readAsString());
++      if (json is Map<String, dynamic>) loadJson(json);
++    } catch (e) {
++      if (kDebugMode) debugPrint('I18nPack.load: $e');
++    }
++  }
++
++  /// Puts a decoded pack into memory.
++  @visibleForTesting
++  static void loadJson(Map<String, dynamic> json) {
++    final strings = _stringMap(json['strings']);
++    final templates = buildTemplates(_stringMap(json['templates']));
++    _strings = strings;
++    _templates = templates;
++    _version = json['version']?.toString() ?? '';
++    _cache.clear();
++  }
++
++  @visibleForTesting
++  static void clear() {
++    _strings = const {};
++    _templates = const [];
++    _version = '';
++    _cache.clear();
++  }
++
++  static Map<String, String> _stringMap(Object? raw) {
++    if (raw is! Map) return const {};
++    return {
++      for (final e in raw.entries)
++        if (e.key is String &&
++            e.value is String &&
++            (e.value as String).isNotEmpty)
++          e.key as String: e.value as String,
++    };
++  }
++
++  /// Turns the template map into regexps, longest Chinese part first.
++  @visibleForTesting
++  static List<I18nTemplate> buildTemplates(Map<String, String> templates) {
++    final list = <I18nTemplate>[];
++    for (final e in templates.entries) {
++      final t = I18nTemplate.tryParse(e.key, e.value);
++      if (t != null) list.add(t);
++    }
++    list.sort((a, b) => b.zhLength.compareTo(a.zhLength));
++    return list;
++  }
++
++  /// English text for [s], or [s] when the pack has none.
++  static String translate(String s) {
++    if (s.isEmpty || !isLoaded) return s;
++    final exact = _strings[s];
++    if (exact != null) return exact;
++    if (!_cjk.hasMatch(s)) return s;
++    final cacheable = s.length <= _cacheMaxLength;
++    if (cacheable) {
++      final hit = _cache.remove(s);
++      if (hit != null) {
++        _cache[s] = hit;
++        return hit;
++      }
++    }
++    final result = _templateTranslate(s, 0);
++    if (cacheable) {
++      if (_cache.length >= _cacheSize) _cache.remove(_cache.keys.first);
++      _cache[s] = result;
++    }
++    return result;
++  }
++
++  static String _templateTranslate(String s, int depth) {
++    for (final t in _templates) {
++      final out = t.apply(s, (fragment) {
++        // Captured fragment can be a fixed string: 進入 / 退出.
++        final hit = _strings[fragment];
++        if (hit != null) return hit;
++        if (depth < 2 && _cjk.hasMatch(fragment)) {
++          return _templateTranslate(fragment, depth + 1);
++        }
++        return fragment;
++      });
++      if (out != null) return out;
++    }
++    return s;
++  }
++
++  // ---- download and update ----
++
++  static Dio _newDio() => Dio(
++    BaseOptions(
++      connectTimeout: const Duration(seconds: 15),
++      receiveTimeout: const Duration(seconds: 30),
++      responseType: ResponseType.plain,
++    ),
++  );
++
++  /// Downloads the pack and saves it. Returns the pack version. Throws on
++  /// a network error or an invalid pack. Does not load it into memory.
++  static Future<String> download({
++    void Function(int received, int total)? onProgress,
++  }) async {
++    final res = await _newDio().get<String>(
++      url,
++      onReceiveProgress: onProgress,
++    );
++    final body = res.data;
++    if (body == null) throw const FormatException('empty language pack');
++    final json = jsonDecode(body);
++    if (json is! Map<String, dynamic> ||
++        json['strings'] is! Map ||
++        (json['strings'] as Map).isEmpty) {
++      throw const FormatException('invalid language pack');
++    }
++    final file = await _file('en.json');
++    final tmp = File('${file.path}.tmp');
++    await tmp.writeAsString(body);
++    await tmp.rename(file.path);
++    await _saveCheckTime();
++    return json['version']?.toString() ?? '';
++  }
++
++  static Future<void> _saveCheckTime() async {
++    try {
++      final meta = await _file('meta.json');
++      await meta.writeAsString(
++        jsonEncode({'lastCheck': DateTime.now().millisecondsSinceEpoch}),
++      );
++    } catch (_) {}
++  }
++
++  static Future<int> _lastCheck() async {
++    try {
++      final meta = await _file('meta.json');
++      if (!meta.existsSync()) return 0;
++      final json = jsonDecode(await meta.readAsString());
++      return json is Map ? (json['lastCheck'] as int? ?? 0) : 0;
++    } catch (_) {
++      return 0;
++    }
++  }
++
++  /// Downloads the pack when its version differs from the loaded one.
++  /// Returns true if a new version was saved (used at next start). Throws
++  /// on error.
++  static Future<bool> checkUpdate() async {
++    final old = _version;
++    final latest = await download();
++    return latest != old;
++  }
++
++  /// English mode only: check in the background when the last check is
++  /// more than 7 days ago. Errors are ignored.
++  static Future<void> maybeUpdateInBackground() async {
++    try {
++      final last = DateTime.fromMillisecondsSinceEpoch(await _lastCheck());
++      if (DateTime.now().difference(last) < _checkInterval) return;
++      await checkUpdate();
++    } catch (e) {
++      if (kDebugMode) debugPrint('I18nPack update: $e');
++    }
++  }
++}

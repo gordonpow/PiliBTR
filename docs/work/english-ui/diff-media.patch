@@ -1,0 +1,1291 @@
+diff --git a/lib/http/video.dart b/lib/http/video.dart
+index baa174aa7..b944f978d 100644
+--- a/lib/http/video.dart
++++ b/lib/http/video.dart
+@@ -1078,12 +1078,17 @@ abstract final class VideoHttp {
+     }
+   }
+ 
++  /// Raw subtitle entries (`from` / `to` / `content`).
++  static Future<List?> getSubtitleBody(String subtitleUrl) async {
++    final res = await Request().get("https:$subtitleUrl");
++    return res.data?['body'] as List?;
++  }
++
+   static Future<String?> getSubtitles(
+     String subtitleUrl, {
+     SubtitleFormat format = .vtt,
+   }) async {
+-    final res = await Request().get("https:$subtitleUrl");
+-    if (res.data?['body'] case List list) {
++    if (await getSubtitleBody(subtitleUrl) case final list?) {
+       switch (format) {
+         case .json:
+           throw UnimplementedError();
+diff --git a/lib/models_new/video/video_play_info/subtitle.dart b/lib/models_new/video/video_play_info/subtitle.dart
+index f3bf28306..1cba4db36 100644
+--- a/lib/models_new/video/video_play_info/subtitle.dart
++++ b/lib/models_new/video/video_play_info/subtitle.dart
+@@ -1,3 +1,5 @@
++import 'package:PiliPlus/utils/storage_pref.dart';
++
+ class Subtitle implements Comparable<Subtitle> {
+   late String lan;
+   String? lanDoc;
+@@ -20,8 +22,22 @@ class Subtitle implements Comparable<Subtitle> {
+     subtitleUrlV2 = json["subtitle_url_v2"];
+   }
+ 
++  /// English track: `en`, `en-US`, `ai-en`, ...
++  bool get isEnglish => lan.startsWith('en') || lan == 'ai-en';
++
++  /// Chinese track: `zh-CN`, `ai-zh`, ...
++  bool get isChinese => lan.contains('zh');
++
+   @override
+-  int compareTo(Subtitle other) {
++  int compareTo(Subtitle other) =>
++      compareWith(other, englishFirst: Pref.appLanguage == 3);
++
++  /// With [englishFirst] (English UI mode) English tracks sort before the
++  /// rest; otherwise Chinese first, then non-AI first.
++  int compareWith(Subtitle other, {required bool englishFirst}) {
++    if (englishFirst && isEnglish != other.isEnglish) {
++      return isEnglish ? -1 : 1;
++    }
+     final thisHasZh = lan.contains('zh');
+     final otherHasZh = other.lan.contains('zh');
+     if (thisHasZh != otherHasZh) return thisHasZh ? -1 : 1;
+diff --git a/lib/pages/danmaku/controller.dart b/lib/pages/danmaku/controller.dart
+index 456870ddb..5e8444e23 100644
+--- a/lib/pages/danmaku/controller.dart
++++ b/lib/pages/danmaku/controller.dart
+@@ -6,6 +6,8 @@ import 'package:PiliPlus/grpc/dm.dart';
+ import 'package:PiliPlus/http/loading_state.dart';
+ import 'package:PiliPlus/plugin/pl_player/controller.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
++import 'package:PiliPlus/services/translate/translate_queue.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
+ import 'package:PiliPlus/utils/accounts.dart';
+ import 'package:PiliPlus/utils/danmaku_utils.dart';
+ import 'package:PiliPlus/utils/path_utils.dart';
+@@ -30,7 +32,17 @@ class PlDanmakuController {
+   // 已请求的段落标记
+   late final Set<int> _requestedSeg = HashSet();
+ 
++  // English mode: offline translation in the background, nearest to the
++  // playback position first. Read results with [Translator.cached].
++  late final bool translateEnabled = Translator.danmakuEnabled;
++  late final TranslateQueue? _translateQueue = translateEnabled
++      ? TranslateQueue(
++          positionMs: () => _plPlayerController.positionInMilliseconds,
++        )
++      : null;
++
+   void dispose() {
++    _translateQueue?.dispose();
+     _dmSegMap.clear();
+     _requestedSeg.clear();
+   }
+@@ -85,6 +97,11 @@ class PlDanmakuController {
+         }
+       }
+ 
++      // After filtering / dedupe, which use the original text.
++      if (element.mode != 7) {
++        _translateQueue?.add(element.content, element.progress);
++      }
++
+       final int pos = element.progress ~/ 100; //每0.1秒存储一次
+       (_dmSegMap[pos] ??= []).add(element);
+     }
+diff --git a/lib/pages/danmaku/danmaku_model.dart b/lib/pages/danmaku/danmaku_model.dart
+index 30ff9c798..635744b83 100644
+--- a/lib/pages/danmaku/danmaku_model.dart
++++ b/lib/pages/danmaku/danmaku_model.dart
+@@ -2,6 +2,10 @@ sealed class DanmakuExtra {
+   Object get mid;
+   Object get id;
+ 
++  /// Original text when the displayed text is a translation. Blocking,
++  /// dedupe, copy and report use the original.
++  String? get original;
++
+   const DanmakuExtra();
+ }
+ 
+@@ -15,11 +19,15 @@ class VideoDanmaku extends DanmakuExtra {
+ 
+   bool isLike;
+ 
++  @override
++  final String? original;
++
+   VideoDanmaku({
+     required this.id,
+     required this.mid,
+     this.like = 0,
+     this.isLike = false,
++    this.original,
+   });
+ }
+ 
+@@ -34,12 +42,16 @@ class LiveDanmaku extends DanmakuExtra {
+   final Object ts;
+   final Object ct;
+ 
++  @override
++  final String? original;
++
+   const LiveDanmaku({
+     required this.id,
+     required this.mid,
+     required this.dmType,
+     required this.ts,
+     required this.ct,
++    this.original,
+   });
+ 
+   Map<String, dynamic> toJson() => <String, dynamic>{
+diff --git a/lib/pages/danmaku/view.dart b/lib/pages/danmaku/view.dart
+index 3d033cfa6..f970688e8 100644
+--- a/lib/pages/danmaku/view.dart
++++ b/lib/pages/danmaku/view.dart
+@@ -11,6 +11,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
+ import 'package:get/get.dart';
+ import 'package:PiliPlus/common/widgets/zh_material.dart';
+ import 'package:PiliPlus/utils/zh_convert.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
+ 
+ /// 传入播放器控制器，监听播放进度，加载对应弹幕
+ class PlDanmaku extends StatefulWidget {
+@@ -135,9 +136,13 @@ class _PlDanmakuState extends State<PlDanmaku> {
+             );
+           } catch (_) {}
+         } else {
++          // Use the translation only if it is already cached; never wait.
++          final translated = _plDanmakuController.translateEnabled
++              ? Translator.cached(e.content)
++              : null;
+           _controller!.addDanmaku(
+             DanmakuContentItem(
+-              ZhConvert.convert(e.content),
++              ZhConvert.convert(translated ?? e.content),
+               color: blockColorful
+                   ? Colors.white
+                   : DmUtils.decimalToColor(e.color),
+@@ -151,6 +156,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
+                 id: e.id.toInt(),
+                 mid: e.midHash,
+                 like: e.likeCount.toInt(),
++                original: translated == null ? null : e.content,
+               ),
+             ),
+           );
+diff --git a/lib/pages/live_room/controller.dart b/lib/pages/live_room/controller.dart
+index 97681add4..ed2b260ca 100644
+--- a/lib/pages/live_room/controller.dart
++++ b/lib/pages/live_room/controller.dart
+@@ -49,6 +49,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+ import 'package:get/get.dart';
+ import 'package:PiliPlus/common/widgets/zh_material.dart';
+ import 'package:PiliPlus/utils/zh_convert.dart';
++import 'package:PiliPlus/services/translate/translate_queue.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
+ 
+ const int _kMaxChatCount = 500;
+ const int _kTrimCount = _kMaxChatCount + 50;
+@@ -464,6 +466,12 @@ class LiveRoomController extends GetxController {
+     _shieldUids = uids;
+   }
+ 
++  // Low priority background translation, newest 200 kept. Only fills the
++  // cache for repeated danmaku.
++  late final TranslateQueue? _liveTranslateQueue = Translator.danmakuEnabled
++      ? TranslateQueue(maxPending: 200)
++      : null;
++
+   bool isBlocked(String text, Object uid) {
+     return _keywordList.any(text.contains) || _shieldUids.contains(uid);
+   }
+@@ -513,6 +521,7 @@ class LiveRoomController extends GetxController {
+   @override
+   void onClose() {
+     _stopSizeSub();
++    _liveTranslateQueue?.dispose();
+     closeLiveMsg();
+     cancelLikeTimer();
+     cancelLiveTimer();
+@@ -599,7 +608,14 @@ class LiveRoomController extends GetxController {
+             uemote = BaseEmote.fromJson(map);
+           }
+           final checkInfo = info[9];
++          // Never wait for translation: cached translation or the original.
++          // Blocking above and copy / report use the original text.
++          final translated = Translator.danmakuEnabled
++              ? Translator.cached(msg)
++              : null;
++          if (translated == null) _liveTranslateQueue?.add(msg);
+           final liveExtra = LiveDanmaku(
++            original: translated == null ? null : msg,
+             id: extra['id_str'],
+             mid: uid,
+             dmType: extra['dm_type'],
+@@ -629,7 +645,7 @@ class LiveRoomController extends GetxController {
+                   : null,
+             ),
+             DanmakuContentItem(
+-              ZhConvert.convert(msg),
++              ZhConvert.convert(translated ?? msg),
+               color: DanmakuOptions.blockColorful
+                   ? Colors.white
+                   : DmUtils.decimalToColor(extra['color']),
+diff --git a/lib/pages/setting/models/dm_settings.dart b/lib/pages/setting/models/dm_settings.dart
+index 9497a2d5c..bc94d10bf 100644
+--- a/lib/pages/setting/models/dm_settings.dart
++++ b/lib/pages/setting/models/dm_settings.dart
+@@ -2,6 +2,7 @@ import 'dart:math' show max;
+ 
+ import 'package:PiliPlus/common/widgets/custom_icon.dart';
+ import 'package:PiliPlus/pages/setting/models/model.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
+ import 'package:PiliPlus/utils/extension/num_ext.dart';
+ import 'package:PiliPlus/utils/filtering_text.dart';
+ import 'package:PiliPlus/utils/platform_utils.dart';
+@@ -52,6 +53,14 @@ List<SettingsModel> get dmSettings => [
+     setKey: SettingBoxKey.mergeDanmaku,
+     defaultVal: false,
+   ),
++  if (Translator.isEnglishMode && Translator.offlineSupported)
++    const SwitchModel(
++      title: '翻譯彈幕',
++      subtitle: '使用離線模型把中文彈幕翻成英文（僅英文模式）',
++      leading: Icon(Icons.translate),
++      setKey: SettingBoxKey.translateDanmaku,
++      defaultVal: true,
++    ),
+ ];
+ 
+ void _showDmHeightDialog(BuildContext context, VoidCallback setState) {
+diff --git a/lib/pages/setting/models/play_settings.dart b/lib/pages/setting/models/play_settings.dart
+index 882eeb630..92754f621 100644
+--- a/lib/pages/setting/models/play_settings.dart
++++ b/lib/pages/setting/models/play_settings.dart
+@@ -10,11 +10,13 @@ import 'package:PiliPlus/pages/setting/models/model.dart';
+ import 'package:PiliPlus/pages/setting/pages/fullscreen_sc.dart';
+ import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
+ import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
++import 'package:PiliPlus/pages/setting/widgets/translate_dialogs.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+ import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
+ import 'package:PiliPlus/services/service_locator.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
+ import 'package:PiliPlus/utils/android/android_helper.dart';
+ import 'package:PiliPlus/utils/desktop/window_controller.dart';
+ import 'package:PiliPlus/utils/extension/num_ext.dart';
+@@ -263,6 +265,39 @@ List<SettingsModel> get playSettings => [
+     getSubtitle: () => '當前選擇偏好：${Pref.subtitlePreferenceV2.desc}',
+     onTap: _showSubtitleDialog,
+   ),
++  NormalModel(
++    title: '翻譯服務',
++    leading: const Icon(Icons.translate),
++    subtitle: '英文模式下翻譯中文字幕；彈幕只使用離線模型',
++    getTrailing: (theme) =>
++        Text(Translator.service.label, style: theme.textTheme.titleSmall),
++    onTap: _showTranslateServiceDialog,
++  ),
++  NormalModel(
++    title: 'DeepL 金鑰',
++    leading: const Icon(Icons.key_outlined),
++    getSubtitle: () => maskApiKey(Translator.deeplApiKey),
++    onTap: (context, setState) async {
++      if (await showApiKeyDialog(context, TranslateService.deepl)) setState();
++    },
++  ),
++  NormalModel(
++    title: 'Google Cloud 金鑰',
++    leading: const Icon(Icons.key_outlined),
++    getSubtitle: () => maskApiKey(Translator.googleApiKey),
++    onTap: (context, setState) async {
++      if (await showApiKeyDialog(context, TranslateService.google)) {
++        setState();
++      }
++    },
++  ),
++  if (Translator.offlineSupported)
++    NormalModel(
++      title: '離線翻譯模型',
++      leading: const Icon(Icons.download_for_offline_outlined),
++      subtitle: '檢視狀態、下載或刪除（中文 → 英文）',
++      onTap: (context, setState) => showTranslateModelDialog(context),
++    ),
+   if (PlatformUtils.isDesktop)
+     SwitchModel(
+       title: '最小化時暫停/還原時播放',
+@@ -454,6 +489,24 @@ Future<void> _showMiniPlayerSizeDialog(
+   }
+ }
+ 
++Future<void> _showTranslateServiceDialog(
++  BuildContext context,
++  VoidCallback setState,
++) async {
++  final res = await showDialog<TranslateService>(
++    context: context,
++    builder: (context) => SelectDialog<TranslateService>(
++      title: '翻譯服務',
++      value: Translator.service,
++      values: TranslateService.values.map((e) => (e, e.label)).toList(),
++    ),
++  );
++  if (res != null) {
++    await GStorage.setting.put(SettingBoxKey.translateService, res.index);
++    setState();
++  }
++}
++
+ Future<void> _showSubtitleDialog(
+   BuildContext context,
+   VoidCallback setState,
+diff --git a/lib/pages/setting/models/setting_tree.dart b/lib/pages/setting/models/setting_tree.dart
+index a289ed90f..07a93d30f 100644
+--- a/lib/pages/setting/models/setting_tree.dart
++++ b/lib/pages/setting/models/setting_tree.dart
+@@ -222,7 +222,14 @@ class SettingTree {
+           title: '字幕',
+           subtitle: '自動啟用字幕、字幕偏好、字幕位置',
+           icon: Icons.closed_caption_outlined,
+-          titles: {'自動啟用字幕', '啟用拖拽字幕調整底部邊距'},
++          titles: {
++            '自動啟用字幕',
++            '啟用拖拽字幕調整底部邊距',
++            '翻譯服務',
++            'DeepL 金鑰',
++            'Google Cloud 金鑰',
++            '離線翻譯模型',
++          },
+         ),
+       ],
+     ),
+diff --git a/lib/pages/video/controller.dart b/lib/pages/video/controller.dart
+index 960560d2b..18704aaf4 100644
+--- a/lib/pages/video/controller.dart
++++ b/lib/pages/video/controller.dart
+@@ -71,7 +71,9 @@ import 'package:collection/collection.dart';
+ import 'package:dio/dio.dart' show Options;
+ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
+     show ExtendedNestedScrollViewState;
+-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
++import 'package:flutter/foundation.dart' show kDebugMode, debugPrint, compute;
++import 'package:PiliPlus/services/translate/translator.dart';
++import 'package:PiliPlus/utils/subtitle_utils.dart';
+ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
+ import 'package:get/get.dart';
+@@ -1172,16 +1174,47 @@ class VideoDetailController extends GetxController
+   late final viewPointList = <ViewPointSegment>[].obs;
+ 
+   // 设定字幕轨道
++  /// Bumped on every [setSubtitle] call; guards async translation results.
++  int _subtitleToken = 0;
++
++  /// Translated VTT in memory, keyed by cid + lan.
++  final Map<String, String> _translatedVtt = {};
++
++  /// Raw subtitle bodies, keyed by cid + lan (needed to translate).
++  final Map<String, List> _subtitleBodies = {};
++
++  String _subtitleKey(Subtitle sub) => '${cid.value}|${sub.lan}';
++
++  bool _canTranslate(Subtitle sub) =>
++      Translator.isEnglishMode &&
++      sub.isChinese &&
++      !sub.isEnglish &&
++      sub.subtitleUrl != null &&
++      sub.subtitleUrl!.isNotEmpty;
++
++  /// Menu label of a track, with " (Translated)" when its translation is
++  /// ready.
++  String subtitleLabel(int i) {
++    final sub = subtitles[i];
++    final label = sub.lanDoc ?? sub.lan;
++    return _translatedVtt.containsKey(_subtitleKey(sub))
++        ? '$label (Translated)'
++        : label;
++  }
++
+   Future<void> setSubtitle(int index) async {
++    final token = ++_subtitleToken;
+     if (index <= 0) {
+       await plPlayerController.videoPlayerController?.setSubtitleTrack(.no());
+       vttSubtitlesIndex.value = index;
+       return;
+     }
+ 
+-    Future<void> setSub(({bool isData, String id}) subtitle) async {
+-      final sub = subtitles[index - 1];
++    final sub = subtitles[index - 1];
++    final subCid = cid.value;
++    final key = _subtitleKey(sub);
+ 
++    Future<void> setSub(({bool isData, String id}) subtitle) async {
+       String subUri = subtitle.id;
+       if (subtitle.isData) {
+         subUri = 'memory://$subUri';
+@@ -1192,19 +1225,90 @@ class VideoDetailController extends GetxController
+       vttSubtitlesIndex.value = index;
+     }
+ 
++    final canTranslate = _canTranslate(sub);
++    final translatedVtt = canTranslate ? _translatedVtt[key] : null;
++    if (translatedVtt != null) {
++      await setSub((isData: true, id: translatedVtt));
++      return;
++    }
++
+     var subtitle = vttSubtitles[index - 1];
+     if (subtitle == null) {
+-      final result = await VideoHttp.getSubtitles(
+-        subtitles[index - 1].subtitleUrl!,
+-      );
+-      if (!isClosed && result != null) {
+-        subtitle = (isData: true, id: result);
+-        vttSubtitles[index - 1] = subtitle;
+-      } else {
++      final List? body;
++      try {
++        body = await VideoHttp.getSubtitleBody(sub.subtitleUrl!);
++      } catch (_) {
+         return;
+       }
++      if (isClosed || body == null) return;
++      final result = await compute<List, String>(SubtitleUtils.json2Vtt, body);
++      if (isClosed) return;
++      subtitle = (isData: true, id: result);
++      vttSubtitles[index - 1] = subtitle;
++      if (canTranslate) _subtitleBodies[key] = body;
++      // A newer setSubtitle call owns the player now.
++      if (token != _subtitleToken) return;
+     }
+     await setSub(subtitle);
++
++    if (canTranslate && !isClosed && token == _subtitleToken) {
++      // Original is shown first; the translation replaces it when ready.
++      _translateSubtitle(sub, key, subCid, index, token);
++    }
++  }
++
++  Future<void> _translateSubtitle(
++    Subtitle sub,
++    String key,
++    int subCid,
++    int index,
++    int token,
++  ) async {
++    try {
++      var body = _subtitleBodies[key];
++      if (body == null) {
++        body = await VideoHttp.getSubtitleBody(sub.subtitleUrl!);
++        if (body == null) return;
++        _subtitleBodies[key] = body;
++      }
++      final originals = [
++        for (final item in body) (item['content'] as String).trim(),
++      ];
++      final translated = await Translator.translateBatch(
++        originals,
++        online: Translator.onlineConfigured,
++      );
++      // Nothing was translated (all failed): keep the original.
++      var changed = false;
++      for (var i = 0; i < originals.length; i++) {
++        if (translated[i] != originals[i]) {
++          changed = true;
++          break;
++        }
++      }
++      if (!changed || isClosed) return;
++      final newBody = [
++        for (var i = 0; i < body.length; i++)
++          {...body[i] as Map, 'content': translated[i]},
++      ];
++      final vtt = await compute<List, String>(SubtitleUtils.json2Vtt, newBody);
++      if (isClosed) return;
++      _translatedVtt['$subCid|${sub.lan}'] = vtt;
++      // Replace only if nothing changed meanwhile: same cid, same track,
++      // latest request.
++      if (token != _subtitleToken ||
++          cid.value != subCid ||
++          vttSubtitlesIndex.value != index ||
++          subtitles.length < index ||
++          !identical(subtitles[index - 1], sub)) {
++        return;
++      }
++      await plPlayerController.videoPlayerController?.setSubtitleTrack(
++        SubtitleTrack('memory://$vtt', sub.lanDoc, sub.lan, uri: true),
++      );
++    } catch (e, s) {
++      if (kDebugMode) debugPrint('translate subtitle: $e $s');
++    }
+   }
+ 
+   // interactive video
+diff --git a/lib/pages/video/widgets/header_control.dart b/lib/pages/video/widgets/header_control.dart
+index 0cf439e90..6d9d10ff2 100644
+--- a/lib/pages/video/widgets/header_control.dart
++++ b/lib/pages/video/widgets/header_control.dart
+@@ -1437,7 +1437,7 @@ class HeaderControlState extends State<HeaderControl>
+         return ListTile(
+           dense: true,
+           contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+-          onLongPress: () => Utils.copyText(item.content.text),
++          onLongPress: () => Utils.copyText(extra.original ?? item.content.text),
+           title: Text(
+             item.content.text,
+             style: const TextStyle(fontSize: 14),
+diff --git a/lib/plugin/pl_player/view/view.dart b/lib/plugin/pl_player/view/view.dart
+index 71545c468..e19d7874e 100644
+--- a/lib/plugin/pl_player/view/view.dart
++++ b/lib/plugin/pl_player/view/view.dart
+@@ -709,7 +709,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+                       height: 35,
+                       onTap: () => videoDetailController.setSubtitle(i + 1),
+                       child: Text(
+-                        e.lanDoc ?? e.lan,
++                        videoDetailController.subtitleLabel(i),
+                         maxLines: 1,
+                         overflow: TextOverflow.ellipsis,
+                         style: const .new(color: Colors.white, fontSize: 13),
+@@ -1565,13 +1565,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+                     child: CdnStatusPanel(
+                       videoUrl: widget.videoDetailController?.videoUrl,
+                       audioUrl: widget.videoDetailController?.audioUrl,
+-                      cacheSpeed: () => switch (plPlayerController
+-                          .videoPlayerController) {
+-                        final NativePlayer player => player.getProperty(
+-                          'cache-speed',
+-                        ),
+-                        _ => null,
+-                      },
++                      cacheSpeed: () =>
++                          switch (plPlayerController.videoPlayerController) {
++                            final NativePlayer player => player.getProperty(
++                              'cache-speed',
++                            ),
++                            _ => null,
++                          },
+                     ),
+                   ),
+                 )
+@@ -2494,7 +2494,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+       return const SizedBox.shrink();
+     }
+ 
+-    final seekOffset = _getValidOffset(item.content.text);
++    final seekOffset = _getValidOffset(
++      item.content.extra?.original ?? item.content.text,
++    );
+ 
+     final overlayWidth = _actionItemWidth * (seekOffset == null ? 3 : 4);
+ 
+@@ -2569,7 +2571,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+                   CustomIcons.player_dm_tip_copy,
+                   color: Colors.white,
+                 ),
+-                onTap: () => Utils.copyText(item.content.text),
++                onTap: () => Utils.copyText(
++                  item.content.extra?.original ?? item.content.text,
++                ),
+               ),
+               if (item.content.selfSend)
+                 _dmActionItem(
+@@ -2624,7 +2628,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
+                   CustomIcons.player_dm_tip_copy,
+                   color: Colors.white,
+                 ),
+-                onTap: () => Utils.copyText(item.content.text),
++                onTap: () => Utils.copyText(
++                  item.content.extra?.original ?? item.content.text,
++                ),
+               ),
+               _dmActionItem(
+                 const Icon(
+diff --git a/lib/utils/storage.dart b/lib/utils/storage.dart
+index b364d254b..0a4fea7a8 100644
+--- a/lib/utils/storage.dart
++++ b/lib/utils/storage.dart
+@@ -24,6 +24,9 @@ abstract final class GStorage {
+   static late final Box<int> watchProgress;
+   static late final Box<Uint8List>? reply;
+ 
++  /// Translation API keys. Kept out of [exportAllSettings] on purpose.
++  static late final Box<String> translateSecrets;
++
+   static Future<void> init() async {
+     Hive.init(path.join(appSupportDirPath, 'hive'));
+     regAdapter();
+@@ -54,6 +57,9 @@ abstract final class GStorage {
+       ).then((res) => historyWord = res),
+       // 视频设置
+       Hive.openBox('video').then((res) => video = res),
++      Hive.openBox<String>(
++        'translate_secrets',
++      ).then((res) => translateSecrets = res),
+       Accounts.init(),
+       Hive.openBox<int>(
+         'watchProgress',
+@@ -77,6 +83,7 @@ abstract final class GStorage {
+     }
+   }
+ 
++  // translateSecrets (API keys) is intentionally not exported.
+   static String exportAllSettings() {
+     return Utils.jsonEncoder.convert({
+       setting.name: setting.toMap(),
+@@ -128,6 +135,7 @@ abstract final class GStorage {
+       localCache.close(),
+       setting.close(),
+       video.close(),
++      translateSecrets.close(),
+       Accounts.account.close(),
+       watchProgress.close(),
+       ?reply?.close(),
+@@ -141,6 +149,7 @@ abstract final class GStorage {
+       localCache.clear(),
+       setting.clear(),
+       video.clear(),
++      translateSecrets.clear(),
+       Accounts.clear(),
+       watchProgress.clear(),
+       ?reply?.clear(),
+diff --git a/lib/utils/storage_key.dart b/lib/utils/storage_key.dart
+index d63c53b24..031c1d578 100644
+--- a/lib/utils/storage_key.dart
++++ b/lib/utils/storage_key.dart
+@@ -261,6 +261,8 @@ abstract final class SettingBoxKey {
+       videoCardColumnsLandscape = 'videoCardColumnsLandscape',
+       videoPageRelatedColumns = 'videoPageRelatedColumns',
+       appLanguage = 'appLanguage',
++      translateService = 'translateService',
++      translateDanmaku = 'translateDanmaku',
+       enableSplashAnimation = 'enableSplashAnimation',
+       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
+       upPanelPosition = 'upPanelPosition',
+diff --git a/lib/utils/storage_pref.dart b/lib/utils/storage_pref.dart
+index f4226b507..0a6586137 100644
+--- a/lib/utils/storage_pref.dart
++++ b/lib/utils/storage_pref.dart
+@@ -210,6 +210,14 @@ abstract final class Pref {
+   static int get appLanguage =>
+       _setting.get(SettingBoxKey.appLanguage, defaultValue: 0);
+ 
++  /// Subtitle translation service: 0 offline model, 1 DeepL, 2 Google Cloud.
++  static int get translateService =>
++      _setting.get(SettingBoxKey.translateService, defaultValue: 0);
++
++  /// Translate danmaku in English mode (offline model only).
++  static bool get translateDanmaku =>
++      _setting.get(SettingBoxKey.translateDanmaku, defaultValue: true);
++
+   /// Play the PiliBTR splash animation on cold start (mobile only).
+   static bool get enableSplashAnimation =>
+       _setting.get(SettingBoxKey.enableSplashAnimation, defaultValue: true);
+diff --git a/lib/services/translate/translator.dart b/lib/services/translate/translator.dart
+new file mode 100644
+index 000000000..695784ad9
+--- /dev/null
++++ b/lib/services/translate/translator.dart
+@@ -0,0 +1,323 @@
++import 'dart:collection';
++import 'dart:io' show Platform;
++
++import 'package:PiliPlus/utils/storage.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
++import 'package:dio/dio.dart';
++import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
++import 'package:google_mlkit_translation/google_mlkit_translation.dart';
++
++/// Subtitle translation service. The index is stored in
++/// `SettingBoxKey.translateService`.
++enum TranslateService {
++  offline('離線模型'),
++  deepl('DeepL'),
++  google('Google Cloud');
++
++  const TranslateService(this.label);
++  final String label;
++}
++
++enum ModelStatus { unsupported, notDownloaded, downloaded }
++
++/// Result of [Translator.ensureModel].
++typedef ModelResult = ({bool ok, String? error});
++
++/// Chinese to English translation: on-device ML Kit (Android only), plus
++/// DeepL / Google Cloud Translation for subtitles.
++///
++/// Every failure returns the original text, so callers can always display
++/// the result.
++abstract final class Translator {
++  /// English UI mode (`Pref.appLanguage == 3`).
++  static bool get isEnglishMode => Pref.appLanguage == 3;
++
++  static bool get offlineSupported => Platform.isAndroid;
++
++  /// Danmaku are translated with the offline model only.
++  static bool get danmakuEnabled =>
++      isEnglishMode && Pref.translateDanmaku && offlineSupported;
++
++  static TranslateService get service {
++    final i = Pref.translateService;
++    return TranslateService.values[i >= 0 && i < 3 ? i : 0];
++  }
++
++  static const _deeplKey = 'deepl';
++  static const _googleKey = 'google';
++
++  static String get deeplApiKey =>
++      GStorage.translateSecrets.get(_deeplKey)?.trim() ?? '';
++  static String get googleApiKey =>
++      GStorage.translateSecrets.get(_googleKey)?.trim() ?? '';
++
++  static Future<void> setApiKey(TranslateService service, String key) {
++    final k = switch (service) {
++      TranslateService.deepl => _deeplKey,
++      TranslateService.google => _googleKey,
++      TranslateService.offline => null,
++    };
++    if (k == null) return Future.value();
++    key = key.trim();
++    return key.isEmpty
++        ? GStorage.translateSecrets.delete(k)
++        : GStorage.translateSecrets.put(k, key);
++  }
++
++  /// A key is present for the selected online service.
++  static bool get onlineConfigured => switch (service) {
++    TranslateService.deepl => deeplApiKey.isNotEmpty,
++    TranslateService.google => googleApiKey.isNotEmpty,
++    TranslateService.offline => false,
++  };
++
++  static const modelUnavailableMessage =
++      '離線模型無法使用，可在 播放 › 字幕 › 翻譯服務 填入 DeepL 或 Google Cloud 金鑰';
++
++  static final _cjk = RegExp(r'[㐀-鿿]');
++
++  static bool needsTranslation(String text) => _cjk.hasMatch(text);
++
++  // ---- LRU cache (key: original text) ----
++
++  static const _cacheLimit = 5000;
++  static final LinkedHashMap<String, String> _cache = LinkedHashMap();
++
++  /// Cached translation, or null.
++  static String? cached(String text) {
++    final v = _cache.remove(text);
++    if (v != null) _cache[text] = v;
++    return v;
++  }
++
++  static void _put(String text, String translated) {
++    _cache.remove(text);
++    _cache[text] = translated;
++    if (_cache.length > _cacheLimit) {
++      _cache.remove(_cache.keys.first);
++    }
++  }
++
++  // ---- Public API ----
++
++  /// Translates [texts]; items that fail (or do not need translation) are
++  /// returned unchanged. With [online] and a configured key the online
++  /// service is used first, then the offline model.
++  static Future<List<String>> translateBatch(
++    List<String> texts, {
++    bool online = false,
++  }) async {
++    final result = List<String>.of(texts);
++    final todo = <String>{};
++    for (var i = 0; i < texts.length; i++) {
++      final t = texts[i];
++      if (!needsTranslation(t)) continue;
++      final c = cached(t);
++      if (c != null) {
++        result[i] = c;
++      } else {
++        todo.add(t);
++      }
++    }
++    if (todo.isEmpty) return result;
++
++    final done = <String, String>{};
++    var remaining = todo.toList();
++
++    if (online && onlineConfigured) {
++      remaining = await _translateOnline(remaining, done);
++    }
++    if (remaining.isNotEmpty) {
++      await _translateOffline(remaining, done);
++    }
++
++    done.forEach(_put);
++    for (var i = 0; i < texts.length; i++) {
++      if (done[texts[i]] case final v?) result[i] = v;
++    }
++    return result;
++  }
++
++  // ---- Online ----
++
++  static Dio? _dio;
++  // Own Dio: no bilibili base url, cookies or account interceptors.
++  static Dio get _client => _dio ??= Dio(
++    BaseOptions(
++      connectTimeout: const Duration(seconds: 10),
++      receiveTimeout: const Duration(seconds: 30),
++    ),
++  );
++
++  /// Returns the texts that failed.
++  static Future<List<String>> _translateOnline(
++    List<String> texts,
++    Map<String, String> out,
++  ) async {
++    final failed = <String>[];
++    final isDeepl = service == TranslateService.deepl;
++    final size = isDeepl ? 50 : 128;
++    for (var i = 0; i < texts.length; i += size) {
++      final end = i + size > texts.length ? texts.length : i + size;
++      final chunk = texts.sublist(i, end);
++      try {
++        final res = isDeepl ? await _deepl(chunk) : await _google(chunk);
++        if (res.length != chunk.length) throw StateError('length mismatch');
++        for (var j = 0; j < chunk.length; j++) {
++          if (res[j].isNotEmpty) {
++            out[chunk[j]] = res[j];
++          } else {
++            failed.add(chunk[j]);
++          }
++        }
++      } catch (e) {
++        if (kDebugMode) debugPrint('online translate failed: $e');
++        failed.addAll(chunk);
++      }
++    }
++    return failed;
++  }
++
++  static Future<List<String>> _deepl(List<String> chunk) async {
++    final key = deeplApiKey;
++    final host = key.endsWith(':fx') ? 'api-free.deepl.com' : 'api.deepl.com';
++    final res = await _client.post(
++      'https://$host/v2/translate',
++      data: {
++        'text': chunk,
++        'source_lang': 'ZH',
++        'target_lang': 'EN-US',
++      },
++      options: Options(headers: {'Authorization': 'DeepL-Auth-Key $key'}),
++    );
++    return (res.data['translations'] as List)
++        .map((e) => e['text'] as String)
++        .toList();
++  }
++
++  static Future<List<String>> _google(List<String> chunk) async {
++    final res = await _client.post(
++      'https://translation.googleapis.com/language/translate/v2',
++      queryParameters: {'key': googleApiKey},
++      data: {'q': chunk, 'source': 'zh', 'target': 'en', 'format': 'text'},
++    );
++    return (res.data['data']['translations'] as List)
++        .map((e) => _unescapeHtml(e['translatedText'] as String))
++        .toList();
++  }
++
++  static String _unescapeHtml(String s) => s
++      .replaceAll('&#39;', "'")
++      .replaceAll('&quot;', '"')
++      .replaceAll('&lt;', '<')
++      .replaceAll('&gt;', '>')
++      .replaceAll('&amp;', '&');
++
++  // ---- Offline (ML Kit, Android only) ----
++
++  static const _zh = 'zh';
++  static const _en = 'en';
++
++  static OnDeviceTranslatorModelManager? _manager;
++  static OnDeviceTranslatorModelManager get _modelManager =>
++      _manager ??= OnDeviceTranslatorModelManager();
++  static OnDeviceTranslator? _translator;
++
++  static bool _modelReady = false;
++  static DateTime? _lastCheck;
++
++  /// Last error from [ensureModel], for display.
++  static String? lastModelError;
++
++  /// Whether the offline model is usable now. A negative answer is cached
++  /// for 30 seconds so repeated callers do not hammer the platform channel.
++  static Future<bool> isOfflineReady() async {
++    if (!offlineSupported) return false;
++    if (_modelReady) return true;
++    final last = _lastCheck;
++    if (last != null &&
++        DateTime.now().difference(last) < const Duration(seconds: 30)) {
++      return false;
++    }
++    _lastCheck = DateTime.now();
++    try {
++      _modelReady = await _modelManager.isModelDownloaded(_zh);
++    } catch (_) {
++      _modelReady = false;
++    }
++    return _modelReady;
++  }
++
++  static Future<void> _translateOffline(
++    List<String> texts,
++    Map<String, String> out,
++  ) async {
++    if (!await isOfflineReady()) return;
++    final t = _translator ??= OnDeviceTranslator(
++      sourceLanguage: TranslateLanguage.chinese,
++      targetLanguage: TranslateLanguage.english,
++    );
++    for (final text in texts) {
++      try {
++        final r = (await t.translateText(text)).trim();
++        if (r.isNotEmpty) out[text] = r;
++      } catch (e) {
++        if (kDebugMode) debugPrint('offline translate failed: $e');
++      }
++    }
++  }
++
++  static Future<ModelStatus> modelStatus() async {
++    if (!offlineSupported) return ModelStatus.unsupported;
++    try {
++      final ok = await _modelManager.isModelDownloaded(_zh);
++      _modelReady = ok;
++      return ok ? ModelStatus.downloaded : ModelStatus.notDownloaded;
++    } catch (_) {
++      return ModelStatus.notDownloaded;
++    }
++  }
++
++  /// Downloads the zh and en models when missing. The plugin reports no
++  /// progress, so callers only get the final result. This is also the entry
++  /// point to call when the user switches to English.
++  static Future<ModelResult> ensureModel() async {
++    if (!offlineSupported) {
++      return (ok: false, error: '此平台不支援離線翻譯');
++    }
++    try {
++      final zh = await _modelManager.downloadModel(
++        _zh,
++        isWifiRequired: false,
++      );
++      final en = await _modelManager.downloadModel(
++        _en,
++        isWifiRequired: false,
++      );
++      if (zh && en) {
++        _modelReady = true;
++        lastModelError = null;
++        return (ok: true, error: null);
++      }
++    } catch (e) {
++      if (kDebugMode) debugPrint('model download failed: $e');
++    }
++    _modelReady = false;
++    _lastCheck = DateTime.now();
++    lastModelError = modelUnavailableMessage;
++    return (ok: false, error: modelUnavailableMessage);
++  }
++
++  static Future<bool> deleteModel() async {
++    if (!offlineSupported) return false;
++    try {
++      await _translator?.close();
++      _translator = null;
++      final ok = await _modelManager.deleteModel(_zh);
++      if (ok) _modelReady = false;
++      return ok;
++    } catch (_) {
++      return false;
++    }
++  }
++}
+diff --git a/lib/services/translate/translate_queue.dart b/lib/services/translate/translate_queue.dart
+new file mode 100644
+index 000000000..4ec634614
+--- /dev/null
++++ b/lib/services/translate/translate_queue.dart
+@@ -0,0 +1,88 @@
++import 'dart:collection';
++
++import 'package:PiliPlus/services/translate/translator.dart';
++
++/// Background (offline) translation queue for danmaku. Results land in the
++/// [Translator] cache; callers read them with [Translator.cached] and never
++/// wait.
++class TranslateQueue {
++  TranslateQueue({this.maxPending, this.batchSize = 12, this.positionMs});
++
++  /// Max pending texts; the oldest are dropped first. Null for unlimited.
++  final int? maxPending;
++  final int batchSize;
++
++  /// Current playback position. When set, the nearest upcoming texts are
++  /// translated first (those within the next 30 s come first naturally),
++  /// then later ones, then already-played ones. When null the queue is FIFO.
++  final int Function()? positionMs;
++
++  /// text -> time in ms (insertion ordered).
++  final LinkedHashMap<String, int> _jobs = LinkedHashMap();
++  bool _running = false;
++  bool _disposed = false;
++
++  int get length => _jobs.length;
++
++  void add(String text, [int timeMs = 0]) {
++    if (_disposed ||
++        !Translator.needsTranslation(text) ||
++        Translator.cached(text) != null) {
++      return;
++    }
++    final old = _jobs[text];
++    if (old != null) {
++      if (timeMs < old) _jobs[text] = timeMs;
++      return;
++    }
++    _jobs[text] = timeMs;
++    final cap = maxPending;
++    if (cap != null) {
++      while (_jobs.length > cap) {
++        _jobs.remove(_jobs.keys.first);
++      }
++    }
++    _run();
++  }
++
++  List<String> _takeBatch() {
++    final List<String> batch;
++    final pos = positionMs;
++    if (pos == null) {
++      batch = _jobs.keys.take(batchSize).toList();
++    } else {
++      final now = pos();
++      int score(int t) => t >= now ? t - now : (1 << 40) + (now - t);
++      final entries = _jobs.entries.toList()
++        ..sort((a, b) => score(a.value).compareTo(score(b.value)));
++      batch = entries.take(batchSize).map((e) => e.key).toList();
++    }
++    batch.forEach(_jobs.remove);
++    return batch;
++  }
++
++  Future<void> _run() async {
++    if (_running) return;
++    _running = true;
++    try {
++      while (!_disposed && _jobs.isNotEmpty) {
++        if (!await Translator.isOfflineReady()) {
++          _jobs.clear();
++          break;
++        }
++        if (_disposed) break;
++        final batch = _takeBatch();
++        try {
++          await Translator.translateBatch(batch);
++        } catch (_) {}
++      }
++    } finally {
++      _running = false;
++    }
++  }
++
++  void dispose() {
++    _disposed = true;
++    _jobs.clear();
++  }
++}
+diff --git a/lib/pages/setting/widgets/translate_dialogs.dart b/lib/pages/setting/widgets/translate_dialogs.dart
+new file mode 100644
+index 000000000..f843483fd
+--- /dev/null
++++ b/lib/pages/setting/widgets/translate_dialogs.dart
+@@ -0,0 +1,167 @@
++import 'package:PiliPlus/common/widgets/zh_material.dart';
++import 'package:PiliPlus/services/translate/translator.dart';
++import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
++
++/// Masks a key for display, keeping the last 4 characters.
++String maskApiKey(String key) {
++  if (key.isEmpty) return '未設定';
++  final tail = key.length > 4 ? key.substring(key.length - 4) : '';
++  return '已設定 ••••$tail';
++}
++
++/// Edit an API key. The field is obscured; an empty value clears the key.
++Future<bool> showApiKeyDialog(
++  BuildContext context,
++  TranslateService service,
++) async {
++  final current = service == TranslateService.deepl
++      ? Translator.deeplApiKey
++      : Translator.googleApiKey;
++  final controller = TextEditingController(text: current);
++  final res = await showDialog<bool>(
++    context: context,
++    builder: (context) => AlertDialog(
++      title: Text('${service.label} 金鑰'),
++      content: TextField(
++        controller: controller,
++        autofocus: true,
++        obscureText: true,
++        enableSuggestions: false,
++        autocorrect: false,
++        decoration: InputDecoration(
++          hintText: service == TranslateService.deepl
++              ? '貼上 DeepL API 金鑰（免費版以 :fx 結尾）'
++              : '貼上 Google Cloud Translation API 金鑰',
++          helperText: '金鑰只存在本機，不會被匯出設定',
++        ),
++      ),
++      actions: [
++        TextButton(
++          onPressed: Navigator.of(context).pop,
++          child: Text(
++            '取消',
++            style: TextStyle(color: Theme.of(context).colorScheme.outline),
++          ),
++        ),
++        TextButton(
++          onPressed: () => Navigator.of(context).pop(true),
++          child: const Text('確定'),
++        ),
++      ],
++    ),
++  );
++  final text = controller.text;
++  controller.dispose();
++  if (res == true) {
++    await Translator.setApiKey(service, text);
++    return true;
++  }
++  return false;
++}
++
++/// Offline model: shows the status, with download and delete actions.
++Future<void> showTranslateModelDialog(BuildContext context) {
++  return showDialog<void>(
++    context: context,
++    builder: (context) => const _ModelDialog(),
++  );
++}
++
++class _ModelDialog extends StatefulWidget {
++  const _ModelDialog();
++
++  @override
++  State<_ModelDialog> createState() => _ModelDialogState();
++}
++
++class _ModelDialogState extends State<_ModelDialog> {
++  ModelStatus? _status;
++  bool _busy = false;
++  String? _error;
++
++  @override
++  void initState() {
++    super.initState();
++    _refresh();
++  }
++
++  Future<void> _refresh() async {
++    final s = await Translator.modelStatus();
++    if (mounted) setState(() => _status = s);
++  }
++
++  Future<void> _download() async {
++    setState(() {
++      _busy = true;
++      _error = null;
++    });
++    final res = await Translator.ensureModel();
++    final s = await Translator.modelStatus();
++    if (!mounted) return;
++    setState(() {
++      _busy = false;
++      _status = s;
++      _error = res.ok ? null : res.error;
++    });
++  }
++
++  Future<void> _delete() async {
++    setState(() => _busy = true);
++    final ok = await Translator.deleteModel();
++    final s = await Translator.modelStatus();
++    if (!mounted) return;
++    setState(() {
++      _busy = false;
++      _status = s;
++    });
++    if (!ok) SmartDialog.showToast('刪除失敗');
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final status = _status;
++    final text = switch (status) {
++      null => '檢查中…',
++      ModelStatus.unsupported => '此平台不支援離線翻譯',
++      ModelStatus.notDownloaded => '尚未下載',
++      ModelStatus.downloaded => '已下載（中文 → 英文）',
++    };
++    return AlertDialog(
++      title: const Text('離線翻譯模型'),
++      content: Column(
++        mainAxisSize: MainAxisSize.min,
++        crossAxisAlignment: CrossAxisAlignment.start,
++        children: [
++          Text(text),
++          if (_busy) ...[
++            const SizedBox(height: 12),
++            const LinearProgressIndicator(),
++          ],
++          if (_error != null) ...[
++            const SizedBox(height: 12),
++            Text(
++              _error!,
++              style: TextStyle(color: Theme.of(context).colorScheme.error),
++            ),
++          ],
++        ],
++      ),
++      actions: [
++        if (status == ModelStatus.downloaded)
++          TextButton(
++            onPressed: _busy ? null : _delete,
++            child: const Text('刪除'),
++          ),
++        if (status == ModelStatus.notDownloaded)
++          TextButton(
++            onPressed: _busy ? null : _download,
++            child: const Text('下載'),
++          ),
++        TextButton(
++          onPressed: Navigator.of(context).pop,
++          child: const Text('關閉'),
++        ),
++      ],
++    );
++  }
++}

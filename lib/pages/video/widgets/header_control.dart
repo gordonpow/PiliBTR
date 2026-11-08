@@ -1437,7 +1437,8 @@ class HeaderControlState extends State<HeaderControl>
         return ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-          onLongPress: () => Utils.copyText(item.content.text),
+          onLongPress: () =>
+              Utils.copyText(extra.original ?? item.content.text),
           title: Text(
             item.content.text,
             style: const TextStyle(fontSize: 14),

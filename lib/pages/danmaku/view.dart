@@ -11,6 +11,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:PiliPlus/utils/zh_convert.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
 
 /// 传入播放器控制器，监听播放进度，加载对应弹幕
 class PlDanmaku extends StatefulWidget {
@@ -135,9 +136,13 @@ class _PlDanmakuState extends State<PlDanmaku> {
             );
           } catch (_) {}
         } else {
+          // Use the translation only if it is already cached; never wait.
+          final translated = _plDanmakuController.translateEnabled
+              ? Translator.cached(e.content)
+              : null;
           _controller!.addDanmaku(
             DanmakuContentItem(
-              ZhConvert.convert(e.content),
+              ZhConvert.convert(translated ?? e.content),
               color: blockColorful
                   ? Colors.white
                   : DmUtils.decimalToColor(e.color),
@@ -151,6 +156,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
                 id: e.id.toInt(),
                 mid: e.midHash,
                 like: e.likeCount.toInt(),
+                original: translated == null ? null : e.content,
               ),
             ),
           );

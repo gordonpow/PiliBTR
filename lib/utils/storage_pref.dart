@@ -210,6 +210,14 @@ abstract final class Pref {
   static int get appLanguage =>
       _setting.get(SettingBoxKey.appLanguage, defaultValue: 0);
 
+  /// Subtitle translation service: 0 offline model, 1 DeepL, 2 Google Cloud.
+  static int get translateService =>
+      _setting.get(SettingBoxKey.translateService, defaultValue: 0);
+
+  /// Translate danmaku in English mode (offline model only).
+  static bool get translateDanmaku =>
+      _setting.get(SettingBoxKey.translateDanmaku, defaultValue: true);
+
   /// Play the PiliBTR splash animation on cold start (mobile only).
   static bool get enableSplashAnimation =>
       _setting.get(SettingBoxKey.enableSplashAnimation, defaultValue: true);

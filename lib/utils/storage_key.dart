@@ -261,6 +261,8 @@ abstract final class SettingBoxKey {
       videoCardColumnsLandscape = 'videoCardColumnsLandscape',
       videoPageRelatedColumns = 'videoPageRelatedColumns',
       appLanguage = 'appLanguage',
+      translateService = 'translateService',
+      translateDanmaku = 'translateDanmaku',
       enableSplashAnimation = 'enableSplashAnimation',
       dynamicsWaterfallFlow = 'dynamicsWaterfallFlow',
       upPanelPosition = 'upPanelPosition',

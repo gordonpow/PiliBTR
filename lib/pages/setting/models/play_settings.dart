@@ -10,11 +10,13 @@ import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/pages/fullscreen_sc.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
+import 'package:PiliPlus/pages/setting/widgets/translate_dialogs.dart';
 import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/services/service_locator.dart';
+import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -263,6 +265,39 @@ List<SettingsModel> get playSettings => [
     getSubtitle: () => '當前選擇偏好：${Pref.subtitlePreferenceV2.desc}',
     onTap: _showSubtitleDialog,
   ),
+  NormalModel(
+    title: '翻譯服務',
+    leading: const Icon(Icons.translate),
+    subtitle: '英文模式下翻譯中文字幕；彈幕只使用離線模型',
+    getTrailing: (theme) =>
+        Text(Translator.service.label, style: theme.textTheme.titleSmall),
+    onTap: _showTranslateServiceDialog,
+  ),
+  NormalModel(
+    title: 'DeepL 金鑰',
+    leading: const Icon(Icons.key_outlined),
+    getSubtitle: () => maskApiKey(Translator.deeplApiKey),
+    onTap: (context, setState) async {
+      if (await showApiKeyDialog(context, TranslateService.deepl)) setState();
+    },
+  ),
+  NormalModel(
+    title: 'Google Cloud 金鑰',
+    leading: const Icon(Icons.key_outlined),
+    getSubtitle: () => maskApiKey(Translator.googleApiKey),
+    onTap: (context, setState) async {
+      if (await showApiKeyDialog(context, TranslateService.google)) {
+        setState();
+      }
+    },
+  ),
+  if (Translator.offlineSupported)
+    NormalModel(
+      title: '離線翻譯模型',
+      leading: const Icon(Icons.download_for_offline_outlined),
+      subtitle: '檢視狀態、下載或刪除（中文 → 英文）',
+      onTap: (context, setState) => showTranslateModelDialog(context),
+    ),
   if (PlatformUtils.isDesktop)
     SwitchModel(
       title: '最小化時暫停/還原時播放',
@@ -450,6 +485,24 @@ Future<void> _showMiniPlayerSizeDialog(
   );
   if (res != null) {
     await GStorage.setting.put(SettingBoxKey.miniPlayerSize, res);
+    setState();
+  }
+}
+
+Future<void> _showTranslateServiceDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<TranslateService>(
+    context: context,
+    builder: (context) => SelectDialog<TranslateService>(
+      title: '翻譯服務',
+      value: Translator.service,
+      values: Translator.availableServices.map((e) => (e, e.label)).toList(),
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.translateService, res.index);
     setState();
   }
 }

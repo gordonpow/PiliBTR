@@ -1,16 +1,21 @@
 """Tiny Dart lexer: yields string-literal content spans (start, end) in a file.
 
-Only the text parts of a literal are yielded; `${...}` interpolations are
-skipped (their nested literals are yielded on their own).
+Only the text parts of a literal are yielded; `${...}` and `$name`
+interpolations are skipped (their nested literals are yielded on their own).
+
+`literals(src)` returns one record per literal:
+(quote_start, end, parts, raw) where parts is a list of ('t', s, e) text
+spans and ('e', s, e) interpolation spans, in source order.
 """
 import re
 
 CJK = re.compile(r'[㐀-鿿]')
 
 
-def spans(src):
+def _lex(src):
     i, n = 0, len(src)
     out = []
+    lits = []
 
     def lex_code(i, stop_brace):
         depth = 0
@@ -49,24 +54,50 @@ def spans(src):
         delim = q * 3 if triple else q
         i += len(delim)
         seg = i
+        qstart = i - len(delim)
+        parts = []
+
+        def close(end, stop):
+            out.append((seg, stop))
+            parts.append(('t', seg, stop))
+            lits.append((qstart, end, parts, raw))
+            return end
+
         while i < n:
             if src.startswith(delim, i):
-                out.append((seg, i))
-                return i + len(delim)
+                return close(i + len(delim), i)
             c = src[i]
             if not triple and c == '\n':
-                out.append((seg, i))
-                return i
+                return close(i, i)
             if not raw and c == '\\':
                 i += 2
             elif not raw and c == '$' and i + 1 < n and src[i + 1] == '{':
                 out.append((seg, i))
+                parts.append(('t', seg, i))
+                st = i
                 i = lex_code(i + 2, True)
+                parts.append(('e', st, i))
+                seg = i
+            elif not raw and c == '$' and i + 1 < n and src[i + 1].isascii() and (src[i + 1].isalpha() or src[i + 1] == '_'):
+                out.append((seg, i))
+                parts.append(('t', seg, i))
+                st = i
+                i += 2
+                while i < n and src[i].isascii() and (src[i].isalnum() or src[i] == '_'):
+                    i += 1
+                parts.append(('e', st, i))
                 seg = i
             else:
                 i += 1
-        out.append((seg, i))
-        return i
+        return close(i, i)
 
     lex_code(0, False)
-    return out
+    return out, lits
+
+
+def spans(src):
+    return _lex(src)[0]
+
+
+def literals(src):
+    return sorted(_lex(src)[1], key=lambda x: x[0])

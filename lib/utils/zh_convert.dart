@@ -1,11 +1,14 @@
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:PiliPlus/utils/i18n_pack.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/painting.dart' show InlineSpan, TextSpan;
 import 'package:flutter/services.dart' show rootBundle;
 
-enum ZhScript { traditional, simplified }
+/// [english] shows the English language pack ([I18nPack]); text that the
+/// pack does not have stays Traditional Chinese.
+enum ZhScript { traditional, simplified, english }
 
 /// Converts text between Traditional and Simplified Chinese when it is
 /// shown. Data (server responses, user input, values compared in code)
@@ -31,6 +34,7 @@ abstract final class ZhConvert {
   static ZhScript resolve(int language) => switch (language) {
     1 => ZhScript.traditional,
     2 => ZhScript.simplified,
+    3 => ZhScript.english,
     _ => systemScript,
   };
 
@@ -73,6 +77,12 @@ abstract final class ZhConvert {
   /// the settings storage is open.
   static Future<void> init() async {
     script = resolve(Pref.appLanguage);
+    if (script == ZhScript.english) {
+      // Awaited before runApp. Never throws; without a pack the UI is
+      // Traditional Chinese.
+      await I18nPack.load();
+      I18nPack.maybeUpdateInBackground();
+    }
     try {
       final simplified = script == ZhScript.simplified;
       final raw = await rootBundle.loadString(
@@ -91,7 +101,9 @@ abstract final class ZhConvert {
   }
 
   static String convert(String text) {
-    if (text.isEmpty || _table.isEmpty) return text;
+    // English mode translates even when the Chinese table is missing.
+    if (text.isEmpty) return text;
+    if (_table.isEmpty && script != ZhScript.english) return text;
     final cacheable = text.length <= _cacheMaxLength;
     if (cacheable) {
       final hit = _cache.remove(text);
@@ -100,7 +112,14 @@ abstract final class ZhConvert {
         return hit;
       }
     }
-    final result = _exact[text] ?? _convert(text);
+    String result;
+    if (script == ZhScript.english) {
+      // Pack first; what it lacks stays Traditional Chinese.
+      final en = I18nPack.translate(text);
+      result = en == text ? _convert(text) : en;
+    } else {
+      result = _exact[text] ?? _convert(text);
+    }
     if (cacheable) {
       if (_cache.length >= _cacheSize) _cache.remove(_cache.keys.first);
       _cache[text] = result;
@@ -144,7 +163,10 @@ abstract final class ZhConvert {
   /// spans (for example WidgetSpan) stay as they are: the widgets in them
   /// convert their own text.
   static InlineSpan span(InlineSpan span) {
-    if (_table.isEmpty || span.runtimeType != TextSpan) return span;
+    if ((_table.isEmpty && script != ZhScript.english) ||
+        span.runtimeType != TextSpan) {
+      return span;
+    }
     span as TextSpan;
     return TextSpan(
       text: span.text == null ? null : convert(span.text!),
