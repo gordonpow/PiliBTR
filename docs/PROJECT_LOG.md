@@ -116,7 +116,11 @@
 
 | `642533a2a` | 掃描電視 QR code 出現 Null check 錯誤（掃描頁缺 MaterialLocalizations，showDialog 失敗）；以 Localizations.override 補上 |
 
-發布：v2.2.6（2026-11-08，pubspec 2.2.6+7）。待使用者實機確認電視登入。
+v2.2.6（pubspec 2.2.6+7）：已推送、APK 已建置；GitHub release 尚未建立。待使用者實機確認電視登入。
+
+| `d75d58857` | 長按播放器 CC 按鈕複製字幕（純文字／含時間文字／SRT，合併所有字幕軌，已翻譯的用譯文）；設定「長按字幕按鈕複製字幕」預設關閉 |
+
+已推送，尚未發布 release。待使用者實機測試。
 
 ### 已實作、尚未 commit
 
@@ -272,4 +276,6 @@
 | 11:20 | 發布 | `71abd606c`、`6f374fec5`、`e7819d529`；版本 v2.2.4 |
 | 13:50 | 英文模式下影片卡、標題、評論等仍是中文 | 使用者選翻譯卡片／影片頁標題、簡介、評論、動態、分區名稱，加開關預設開；agy 探索、規格審查；Sonnet 實作；agy 實作審查 4 條 |
 | 15:15 | 確認階段、完成工作並發布 | 審查 4 條（ML Kit 併發、重複訂閱、失敗冷卻、譯文跑繁簡轉換）由 Sonnet 修正；補 25 筆英文字串；analyze 0 error、0 warning；`31def5b5f`，版本 v2.2.5 |
-| 15:55 | 掃描電視 QR code 顯示「Null check operator used on a null value」，電視沒反應 | 解碼截圖確認是 TV auth_code 網址；Sonnet 在模擬器取得 stack：掃描頁取不到 MaterialLocalizations，showDialog 失敗；以 Localizations.override 修正，模擬器確認對話框出現；`642533a2a`，版本 v2.2.6 |
+| 15:55 | 掃描電視 QR code 顯示「Null check operator used on a null value」，電視沒反應 | 解碼截圖確認是 TV auth_code 網址；Sonnet 在模擬器取得 stack：掃描頁取不到 MaterialLocalizations，showDialog 失敗；以 Localizations.override 修正，模擬器確認對話框出現；`642533a2a`，版本號 v2.2.6；建置完成，GitHub release 被 auto mode 擋下，待使用者確認是否發布 |
+| 16:30 | 流程全數改用 Claude | dev-workflow、全域 CLAUDE.md、記憶移除 agy：探索用 Explore、查資料與草稿用 Haiku、審查用全新 Sonnet／Haiku 子代理、實作與裝置操作用 Sonnet |
+| 16:40 | 使用者回報：長按 CC 字幕按鈕直接複製字幕檔 | 使用者選：跳出選單選格式、複製所有字幕軌、已翻譯的複製譯文；追加「預設關閉，可在設定開啟」；Sonnet 實作，analyze 0 error、0 warning；`d75d58857` 已推送 |
