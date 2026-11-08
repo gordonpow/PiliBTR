@@ -255,10 +255,10 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   android_12:
-    color: "#ffffff"
-    color_dark: "#212121"
-  color: "#ffffff"
-  color_dark: "#212121"
+    color: "#000000"
+    color_dark: "#000000"
+  color: "#000000"
+  color_dark: "#000000"
   image: assets/images/logo/logo_2.png
   image_dark: assets/images/logo/logo_2.png
 

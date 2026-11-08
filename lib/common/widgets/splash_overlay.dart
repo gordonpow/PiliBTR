@@ -110,10 +110,9 @@ class _SplashOverlayState extends State<SplashOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Same as flutter_native_splash colors in pubspec.yaml.
-    final bg = isDark ? const Color(0xFF212121) : const Color(0xFFFFFFFF);
-    final fg = isDark ? Colors.white : Colors.black87;
+    // 不論深淺色模式都用黑底，與 pubspec.yaml 的 flutter_native_splash 一致。
+    const bg = Color(0xFF000000);
+    const fg = Colors.white;
     final logoWidth = math.min(MediaQuery.sizeOf(context).width * 0.3, 160.0);
 
     return PopScope(
