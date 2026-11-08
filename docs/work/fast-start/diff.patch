@@ -1,0 +1,1109 @@
+diff --git a/lib/common/widgets/video_card/video_preview.dart b/lib/common/widgets/video_card/video_preview.dart
+index 686413ca4..76759ddf2 100644
+--- a/lib/common/widgets/video_card/video_preview.dart
++++ b/lib/common/widgets/video_card/video_preview.dart
+@@ -12,6 +12,7 @@ import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
+ import 'package:PiliPlus/services/download/btr_proxy.dart';
+ import 'package:PiliPlus/utils/accounts.dart';
+ import 'package:PiliPlus/utils/id_utils.dart';
++import 'package:PiliPlus/utils/play_url_cache.dart';
+ import 'package:PiliPlus/utils/storage.dart';
+ import 'package:PiliPlus/utils/storage_key.dart';
+ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+@@ -160,8 +161,16 @@ abstract final class VideoPreview {
+ 
+   /// Starts to get the streams early (for example, when the finger touches
+   /// the card), so the preview starts faster after a long press.
++  ///
++  /// The playurl is fetched with the same params as the video page and kept
++  /// in [PlayUrlCache], even when the preview is off (no preview player is
++  /// created then). Without a cid, only the preview (if on) resolves it.
+   static void prefetch({int? aid, required String bvid, int? cid}) {
+-    if (enabled) source(aid: aid, bvid: bvid, cid: cid);
++    if (enabled) {
++      source(aid: aid, bvid: bvid, cid: cid);
++    } else if (cid != null) {
++      PlayUrlCache.prefetch(bvid: bvid, cid: cid);
++    }
+   }
+ 
+   /// Streams for the preview of [bvid] (about 480P).
+@@ -204,12 +213,11 @@ abstract final class VideoPreview {
+         }
+       }
+       if (cid == null) return null;
+-      final res = await VideoHttp.videoUrl(
++      // Same params as the video page: the full response is shared.
++      final res = await PlayUrlCache.get(
+         bvid: bvid,
+         cid: cid,
+-        qn: 32,
+-        tryLook: false,
+-        videoType: .ugc,
++        params: await PlayUrlCache.defaultParams(),
+       );
+       final dash = switch (res) {
+         Success(:final response) => response.dash,
+@@ -267,6 +275,12 @@ class InlineVideoPreview extends StatefulWidget {
+   State<InlineVideoPreview> createState() => _InlineVideoPreviewState();
+ }
+ 
++/// 預覽的聲音開關，所有影片與直播預覽共用：一個開聲音，之後的預覽也開；
++/// 一個靜音，之後的預覽也靜音。只存在記憶體，重開 App 後回到靜音。
++abstract final class PreviewAudio {
++  static bool muted = true;
++}
++
+ class _InlineVideoPreviewState extends State<InlineVideoPreview>
+     with WidgetsBindingObserver {
+   Player? _player;
+@@ -379,7 +393,8 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
+     _cid = source.cid;
+     _loadSubtitle(source.cid);
+     try {
+-      player.setVolume(0);
++      if (mounted) setState(() => _muted = PreviewAudio.muted);
++      player.setVolume(_muted ? 0 : 100);
+       // BTR: fetch from several CDN nodes in parallel.
+       final video = await BtrProxy.wrap(source.video);
+       final audio = source.audio == null
+@@ -511,6 +526,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
+     final player = _player;
+     if (player == null) return;
+     setState(() => _muted = !_muted);
++    PreviewAudio.muted = _muted;
+     player.setVolume(_muted ? 0 : 100);
+   }
+ 
+diff --git a/lib/pages/video/controller.dart b/lib/pages/video/controller.dart
+index e2a691441..8f0e29ce3 100644
+--- a/lib/pages/video/controller.dart
++++ b/lib/pages/video/controller.dart
+@@ -59,6 +59,7 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
+ import 'package:PiliPlus/utils/extension/size_ext.dart';
+ import 'package:PiliPlus/utils/page_utils.dart';
+ import 'package:PiliPlus/utils/platform_utils.dart';
++import 'package:PiliPlus/utils/play_url_cache.dart';
+ import 'package:PiliPlus/utils/reply_scheme_helper.dart';
+ import 'package:PiliPlus/utils/storage.dart';
+ import 'package:PiliPlus/utils/storage_pref.dart';
+@@ -69,7 +70,7 @@ import 'package:collection/collection.dart';
+ import 'package:dio/dio.dart' show Options;
+ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
+     show ExtendedNestedScrollViewState;
+-import 'package:flutter/foundation.dart' show kDebugMode;
++import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
+ import 'package:get/get.dart';
+@@ -903,12 +904,56 @@ class VideoDetailController extends GetxController
+     );
+   }
+ 
+-  Future<void> _supplementVideoQualities() async {
+-    final quality = data.missingVideoQualityBelowHighest;
+-    if (quality == -1) return;
+-    final result = await _getVideoUrl(quality);
+-    if (result case Success(:final response)) {
+-      data.dash!.video!.merge(response.dash?.video);
++  /// 背景補齊畫質清單：不阻擋開播，只更新畫質清單，不重開播放器、不改目前畫質。
++  /// 補齊「低於最高」缺少的畫質；若首播用的目標畫質低於帳號可用的更高畫質，
++  /// 也在背景取得更高畫質，讓使用者之後可以手動切換。
++  Future<void> _supplementVideoQualities(PlayUrlModel model) async {
++    try {
++      var changed = false;
++      final missing = model.missingVideoQualityBelowHighest;
++      if (missing != -1) {
++        final result = await _getVideoUrl(missing);
++        if (result case Success(:final response)) {
++          model.dash?.video?.merge(response.dash?.video);
++          changed = true;
++        }
++      }
++      final higher = _missingHigherQuality(model);
++      if (higher != -1) {
++        final result = await _getVideoUrl(higher);
++        if (result case Success(:final response)) {
++          model.dash?.video?.merge(response.dash?.video);
++          changed = true;
++        }
++      }
++      // 期間若已換成新的回應（重新查詢），這份結果就不再使用。
++      if (changed && identical(model, data)) currentVideoQa.refresh();
++    } catch (e) {
++      if (kDebugMode) debugPrint('supplementVideoQualities: $e');
++    }
++  }
++
++  /// 回應中沒有、但帳號可用（acceptQuality）的最高畫質，沒有則回傳 -1。
++  int _missingHigherQuality(PlayUrlModel model) {
++    try {
++      final video = model.dash!.video!;
++      final available = video.availableVideoQualities;
++      final highest = available.reduce((a, b) => a > b ? a : b);
++      final accept = model.acceptQuality;
++      var best = -1;
++      for (final item in model.supportFormats!) {
++        final q = item.quality;
++        if (q != null &&
++            q > highest &&
++            q > best &&
++            !available.contains(q) &&
++            (accept == null || accept.contains(q))) {
++          best = q;
++        }
++      }
++      return best;
++    } catch (_) {
++      return -1;
+     }
+   }
+ 
+@@ -953,11 +998,31 @@ class VideoDetailController extends GetxController
+       preferCodecs = isWiFi ? Pref.preferCodecs : Pref.preferCodecsCellular;
+     }
+ 
+-    final result = await _getVideoUrl(VideoQuality.hdrVivid.code);
++    // 首播用目標畫質請求（不再固定 qn=129）；更高畫質與缺少的畫質在背景補齊。
++    final firstQn = plPlayerController.cacheVideoQa!;
++    // 只有 UGC 的首次查詢（非重新查詢、未切換語言）才使用共用快取，
++    // 且參數（qn、tryLook、voiceBalance）必須與預取時相同。
++    final useCache =
++        !fromReset &&
++        currLang.value == null &&
++        epId == null &&
++        (_actualVideoType ?? videoType) == VideoType.ugc;
++    final result = useCache
++        ? await PlayUrlCache.get(
++            bvid: bvid,
++            cid: cid.value,
++            params: (
++              qn: firstQn,
++              tryLook: plPlayerController.tryLook,
++              voiceBalance: plPlayerController.enableAudioNormalization,
++            ),
++            fromDetail: true,
++          )
++        : await _getVideoUrl(firstQn);
+ 
+     if (result case Success(:final response)) {
+       data = response;
+-      if (data.dash != null) await _supplementVideoQualities();
++      if (data.dash != null) _supplementVideoQualities(data).ignore();
+ 
+       languages.value = data.language?.items;
+       currLang.value = data.curLanguage;
+diff --git a/lib/plugin/pl_player/controller.dart b/lib/plugin/pl_player/controller.dart
+index ce4d237b7..7def471a4 100644
+--- a/lib/plugin/pl_player/controller.dart
++++ b/lib/plugin/pl_player/controller.dart
+@@ -843,6 +843,8 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+       _isVertical = isVertical ?? false;
+       _aid = aid;
+       _bvid = bvid;
++      // 換影片時重設「停用 BTR」旗標
++      if (this.cid != cid) _btrDisabledCid = null;
+       this.cid = cid;
+       _epid = epid;
+       _seasonId = seasonId;
+@@ -997,7 +999,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+       player.setProperty('force-window', 'no');
+     }
+ 
+-    player.setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
++    // media_kit 在 Player.create 內會把 network-timeout 覆寫成 5（晚於
++    // PlayerConfiguration.options 套用），所以要在建立後再設定，才不會比 BTR 的
++    // 恢復時間（節點切換、2 秒首 byte 逾時）短而誤判開檔失敗。
++    player
++      ..setProperty('network-timeout', '15')
++      ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
+ 
+     _startListeners(player);
+ 
+@@ -1048,7 +1055,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+     String video = dataSource.videoSource;
+     String? audioSource = dataSource.audioSource;
+     // BTR: fetch media from several CDN nodes in parallel via a local proxy.
+-    if (dataSource is! FileSource && !isLive) {
++    if (dataSource is! FileSource && !isLive && !_btrDisabled) {
+       video = await BtrProxy.wrap(video);
+       if (audioSource != null && audioSource.isNotEmpty) {
+         audioSource = await BtrProxy.wrap(audioSource);
+@@ -1058,15 +1065,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+       if (onlyPlayAudio.value) {
+         video = audio;
+       } else {
+-        // dely_open need provide length
+-        video =
+-            ('edl://'
+-            '!no_chapters;'
+-            // '!delay_open,media_type=video;'
+-            '%${isFileSource ? utf8.encode(video).length : video.length}%$video;'
+-            '!new_stream;!no_chapters;'
+-            // '!delay_open,media_type=audio;'
+-            '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio');
++        video = _buildEdl(video, audio);
+       }
+       audioFilterExtras(volume, map: extras);
+     }
+@@ -1082,12 +1081,46 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+     );
+   }
+ 
++  /// 這部影片（以 cid 判斷）是否停用 BTR。換影片時會重設。
++  int? _btrDisabledCid;
++  bool get _btrDisabled => _btrDisabledCid != null && _btrDisabledCid == cid;
++
++  String _buildEdl(String video, String audio) {
++    // dely_open need provide length
++    return 'edl://'
++        '!no_chapters;'
++        // '!delay_open,media_type=video;'
++        '%${isFileSource ? utf8.encode(video).length : video.length}%$video;'
++        '!new_stream;!no_chapters;'
++        // '!delay_open,media_type=audio;'
++        '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio';
++  }
++
++  /// BTR 代理（127.0.0.1）開檔失敗時，這部影片改用原始 CDN 網址重試。
++  void _disableBtrForCurrent() {
++    if (isLive || dataSource is FileSource || cid == null) return;
++    _btrDisabledCid = cid;
++  }
++
+   Future<void>? refreshPlayer() {
+     if (dataSource is FileSource) {
+       return null;
+     }
+     if (_videoPlayerController case final ctr? when (ctr.current.isNotEmpty)) {
+       var media = ctr.current.last;
++      if (_btrDisabled && !isLive) {
++        // 用 dataSource 內的原始網址重組，不重播已包裝過的 127.0.0.1 字串
++        final audio = dataSource.audioSource;
++        final String uri;
++        if (audio != null && audio.isNotEmpty) {
++          uri = onlyPlayAudio.value
++              ? audio
++              : _buildEdl(dataSource.videoSource, audio);
++        } else {
++          uri = dataSource.videoSource;
++        }
++        if (media.uri != uri) media = media.copyWith(uri: uri);
++      }
+       if (!isLive) media = media.copyWith(start: ctr.state.position);
+       return ctr.open(media, play: true);
+     }
+@@ -1279,11 +1312,21 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
+           }
+           return;
+         }
+-        if (event.startsWith("Failed to open https://") ||
++        final btrFailed =
++            event.startsWith('Failed to open http://127.0.0.1') ||
++            event.startsWith('Can not open external file http://127.0.0.1') ||
++            event.startsWith('Failed to open edl://');
++        if (btrFailed ||
++            event.startsWith("Failed to open https://") ||
+             event.startsWith("Can not open external file https://") ||
+             //tcp: ffurl_read returned 0xdfb9b0bb
+             //tcp: ffurl_read returned 0xffffff99
+             event.startsWith('tcp: ffurl_read returned ')) {
++          // 開檔失敗且可能走了 BTR：這部影片改用原始網址
++          if (btrFailed) {
++            if (kDebugMode) debugPrint('BTR: open failed, disable BTR: $event');
++            _disableBtrForCurrent();
++          }
+           EasyThrottle.throttle(
+             'controllerStream.error.listen',
+             const Duration(milliseconds: 10000),
+diff --git a/lib/services/download/btr_cdn.dart b/lib/services/download/btr_cdn.dart
+index 0edf5435a..a6c9dd2f6 100644
+--- a/lib/services/download/btr_cdn.dart
++++ b/lib/services/download/btr_cdn.dart
+@@ -12,6 +12,62 @@ final Dio btrDio = Request.http11Dio.clone(
+   ),
+ );
+ 
++/// Probe client: 3 s connect and 3 s receive timeout, so a dead node does not
++/// delay playback start.
++final Dio btrProbeDio = Request.http11Dio.clone(
++  options: Request.http11Dio.options.copyWith(
++    connectTimeout: const Duration(seconds: 3),
++    receiveTimeout: const Duration(seconds: 3),
++  ),
++);
++
++/// Process-wide host statistics, shared by every media file so a new video
++/// does not retry a host that is known to be bad.
++abstract final class BtrHostStats {
++  /// Consecutive failures that ban a host.
++  static const int banAfter = 2;
++  static const Duration banDuration = Duration(minutes: 10);
++
++  static final Map<String, _HostStat> _stats = {};
++
++  static bool isBanned(String host) {
++    final stat = _stats[host];
++    if (stat == null) return false;
++    final until = stat.bannedUntil;
++    if (until == null) return false;
++    if (DateTime.now().isBefore(until)) return true;
++    // Ban expired: give the host a clean start.
++    stat
++      ..bannedUntil = null
++      ..failures = 0;
++    return false;
++  }
++
++  /// Speed EMA in bytes per millisecond. 0 = unknown.
++  static double speedOf(String host) => _stats[host]?.speed ?? 0;
++
++  static void recordSuccess(String host, {double? speed}) {
++    final stat = _stats.putIfAbsent(host, _HostStat.new)..failures = 0;
++    if (speed != null && speed > 0) {
++      stat.speed = stat.speed == 0 ? speed : stat.speed * 0.7 + speed * 0.3;
++    }
++  }
++
++  static void recordFailure(String host) {
++    final stat = _stats.putIfAbsent(host, _HostStat.new)..speed *= 0.5;
++    if (++stat.failures >= banAfter && stat.bannedUntil == null) {
++      stat.bannedUntil = DateTime.now().add(banDuration);
++      if (kDebugMode) debugPrint('BTR: host banned 10 min $host');
++    }
++  }
++}
++
++class _HostStat {
++  int failures = 0;
++  DateTime? bannedUntil;
++  double speed = 0;
++}
++
+ /// One CDN address for a media file.
+ class BtrNode {
+   final String url;
+@@ -38,9 +94,13 @@ class BtrNode {
+ class BtrNodePool {
+   BtrNodePool(String url) : nodes = _build(url);
+ 
++  /// Fixed number of hosts a probe tries at the same time.
++  static const int probeCount = 3;
++
+   static const int strikeLimit = 2;
+ 
+-  /// Times all nodes may be enabled again before [pick] throws.
++  /// Times per-file bans may be cleared again before [pick] uses the original
++  /// URL only.
+   static const int maxResets = 3;
+ 
+   static final _mediaHost = RegExp(
+@@ -70,24 +130,81 @@ class BtrNodePool {
+         }
+       }
+     }
+-    return [for (final u in urls) BtrNode(u)];
++    final nodes = [for (final u in urls) BtrNode(u)];
++    // Use the process-wide statistics: drop banned mirrors (the original URL
++    // stays as the last resort), start with known speeds, and order mirrors
++    // from fast to slow. The original URL stays first.
++    final original = nodes.first;
++    final mirrors = [
++      for (final n in nodes.skip(1))
++        if (!BtrHostStats.isBanned(n.host)) n,
++    ];
++    for (final n in [original, ...mirrors]) {
++      n.speed = BtrHostStats.speedOf(n.host);
++    }
++    final order = {for (var i = 0; i < mirrors.length; i++) mirrors[i]: i};
++    mirrors.sort((a, b) {
++      final c = b.speed.compareTo(a.speed);
++      return c != 0 ? c : order[a]!.compareTo(order[b]!);
++    });
++    return [original, ...mirrors];
++  }
++
++  bool _isUsable(BtrNode n) => !n.banned && !BtrHostStats.isBanned(n.host);
++
++  /// Up to [probeCount] nodes for a probe: known fast ones first. Uses the
++  /// original URL when every node is banned.
++  List<BtrNode> probeNodes() {
++    final usable = nodes.where(_isUsable).toList();
++    if (usable.isEmpty) return [nodes.first];
++    final known = usable.where((n) => n.speed > 0).toList()
++      ..sort((a, b) => b.speed.compareTo(a.speed));
++    return [...known, ...usable.where((n) => n.speed == 0)]
++        .take(probeCount)
++        .toList();
++  }
++
++  /// Node for the streamed head piece: the fastest usable node that is not in
++  /// [exclude]; the original URL when there are no statistics. Returns null
++  /// when nothing is left (the first call never returns null). Call [report]
++  /// when the request ends.
++  BtrNode? pickHead({Set<BtrNode> exclude = const {}}) {
++    final usable = nodes
++        .where((n) => !exclude.contains(n) && _isUsable(n))
++        .toList();
++    BtrNode? node;
++    if (usable.isNotEmpty) {
++      final known = usable.where((n) => n.speed > 0).toList();
++      if (known.isNotEmpty) {
++        node = known.reduce((a, b) => a.speed >= b.speed ? a : b);
++      } else {
++        node = usable.contains(nodes.first) ? nodes.first : usable.first;
++      }
++    } else if (exclude.isEmpty) {
++      node = nodes.first;
++    }
++    node?.inflight++;
++    return node;
+   }
+ 
+   /// Selects a node for one request and counts it as in flight.
+   /// Call [report] when the request ends.
+   BtrNode pick() {
+-    var usable = nodes.where((n) => !n.banned).toList();
+-    if (usable.isEmpty) {
+-      if (++_resets > maxResets) {
+-        throw Exception('BTR: all CDN nodes failed');
+-      }
+-      if (kDebugMode) debugPrint('BTR: all nodes banned, using all again');
++    var usable = nodes.where(_isUsable).toList();
++    if (usable.isEmpty && ++_resets <= maxResets) {
++      // Give nodes banned only for this file another chance. Hosts banned
++      // process-wide stay banned until their ban expires.
+       for (final n in nodes) {
+         n
+           ..banned = false
+           ..strikes = 0;
+       }
+-      usable = nodes;
++      usable = nodes.where(_isUsable).toList();
++    }
++    if (usable.isEmpty) {
++      // Every node is banned: use the original URL instead of failing.
++      if (kDebugMode) debugPrint('BTR: all nodes banned, using original URL');
++      return nodes.first..inflight += 1;
+     }
+ 
+     BtrNode node;
+@@ -126,15 +243,18 @@ class BtrNodePool {
+     if (bytes >= 64 * 1024 && elapsed != null) {
+       final sample = bytes / (elapsed.inMilliseconds + 1);
+       node.speed = node.speed == 0 ? sample : node.speed * 0.7 + sample * 0.3;
++      BtrHostStats.recordSuccess(node.host, speed: sample);
+     }
+     if (cancelled) return;
+     if (bytes > 0) {
+       node.strikes = 0;
+       _resets = 0;
++      BtrHostStats.recordSuccess(node.host);
+       return;
+     }
+     // A failed request also lowers the measured speed.
+     node.speed *= 0.5;
++    BtrHostStats.recordFailure(node.host);
+     if (++node.strikes >= strikeLimit && !node.banned) {
+       node.banned = true;
+       if (kDebugMode) debugPrint('BTR: node banned ${node.host}');
+diff --git a/lib/services/download/btr_proxy.dart b/lib/services/download/btr_proxy.dart
+index 201890749..b8068c260 100644
+--- a/lib/services/download/btr_proxy.dart
++++ b/lib/services/download/btr_proxy.dart
+@@ -15,7 +15,7 @@ import 'dart:typed_data';
+ 
+ import 'package:PiliPlus/http/init.dart';
+ import 'package:PiliPlus/services/download/btr_cdn.dart'
+-    show BtrNode, BtrNodePool, btrDio;
++    show BtrHostStats, BtrNode, BtrNodePool, btrDio, btrProbeDio;
+ import 'package:PiliPlus/services/download/btr_config.dart';
+ import 'package:PiliPlus/utils/extension/string_ext.dart';
+ import 'package:dio/dio.dart';
+@@ -117,6 +117,8 @@ abstract final class BtrProxy {
+       await source.serve(req);
+     } catch (e) {
+       if (kDebugMode) debugPrint('BTR: serve error: $e');
++    } finally {
++      // Every path ends with a closed response (closing twice is harmless).
+       try {
+         await req.response.close();
+       } catch (_) {}
+@@ -137,23 +139,27 @@ class _BtrSource {
+   static const _maxWindowBytes = 64 * 1024 * 1024;
+   static const _pieceAttempts = 6;
+ 
++  /// After a failed probe the source goes direct for this long.
++  static const _probeRetryAfter = Duration(seconds: 30);
++  static const _headTimeout = Duration(seconds: 2);
++  static const _headSwitches = 2;
++
+   int? _total;
+-  bool _probed = false;
++  DateTime? _probeFailedAt;
+   Future<void>? _probing;
+   String _contentType = 'video/mp4';
+-  late Map<String, String> _headers;
++  Map<String, String>? _headersOrNull;
++  Map<String, String> get _headers => _headersOrNull!;
+ 
+   static final _rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
+ 
+   Future<void> serve(HttpRequest req) async {
+-    if (!_probed) {
+-      _headers = {
+-        'user-agent': req.headers.value('user-agent') ?? 'Mozilla/5.0',
+-        'referer': req.headers.value('referer') ?? 'https://www.bilibili.com/',
+-        'accept-encoding': 'identity',
+-      };
+-      await (_probing ??= _probe());
+-    }
++    _headersOrNull ??= {
++      'user-agent': req.headers.value('user-agent') ?? 'Mozilla/5.0',
++      'referer': req.headers.value('referer') ?? 'https://www.bilibili.com/',
++      'accept-encoding': 'identity',
++    };
++    await _ensureProbed();
+ 
+     final total = _total;
+     final range = req.headers.value('range');
+@@ -199,32 +205,80 @@ class _BtrSource {
+       return;
+     }
+ 
+-    await _Pump(this, res, start, end).run();
++    await _Pump(this, res, start, end, range).run();
++  }
++
++  /// Probes once. A failed probe is sticky for [_probeRetryAfter] only.
++  Future<void> _ensureProbed() {
++    if (_total != null) return Future.value();
++    final failedAt = _probeFailedAt;
++    if (failedAt != null &&
++        DateTime.now().difference(failedAt) < _probeRetryAfter) {
++      return Future.value();
++    }
++    return _probing ??= _probe().whenComplete(() => _probing = null);
+   }
+ 
++  /// Sends `bytes=0-0` to up to 3 nodes at the same time and uses the first
++  /// 206 answer with a `content-range`. The other requests are cancelled.
+   Future<void> _probe() async {
+-    for (final node in pool.nodes.take(3)) {
++    final candidates = pool.probeNodes();
++    final completer = Completer<({int total, String? type})?>();
++    final tokens = [for (final _ in candidates) CancelToken()];
++    var pending = candidates.length;
++
++    Future<void> probeOne(BtrNode node, CancelToken token) async {
+       try {
+-        final response = await btrDio.get<ResponseBody>(
++        final response = await btrProbeDio.get<ResponseBody>(
+           node.url,
+           options: Options(
+             headers: {..._headers, 'range': 'bytes=0-0'},
+             responseType: ResponseType.stream,
+           ),
++          cancelToken: token,
+         );
+         await response.data?.stream.drain<void>().catchError((_) {});
+         final contentRange = response.headers.value('content-range');
+         final slash = contentRange?.lastIndexOf('/') ?? -1;
+-        if (response.statusCode == 206 && slash != -1) {
+-          _total = int.tryParse(contentRange!.substring(slash + 1).trim());
+-          _contentType = response.headers.value('content-type') ?? _contentType;
+-          if (_total != null) break;
++        final total = response.statusCode == 206 && slash != -1
++            ? int.tryParse(contentRange!.substring(slash + 1).trim())
++            : null;
++        if (total == null) {
++          BtrHostStats.recordFailure(node.host);
++        } else {
++          BtrHostStats.recordSuccess(node.host);
++          if (!completer.isCompleted) {
++            completer.complete((
++              total: total,
++              type: response.headers.value('content-type'),
++            ));
++          }
+         }
+       } catch (e) {
+-        if (kDebugMode) debugPrint('BTR: probe failed ${node.host}: $e');
++        // A request cancelled because another node won is not a failure.
++        if (!token.isCancelled) {
++          BtrHostStats.recordFailure(node.host);
++          if (kDebugMode) debugPrint('BTR: probe failed ${node.host}: $e');
++        }
++      } finally {
++        if (--pending == 0 && !completer.isCompleted) completer.complete(null);
+       }
+     }
+-    _probed = true;
++
++    for (var i = 0; i < candidates.length; i++) {
++      probeOne(candidates[i], tokens[i]);
++    }
++    final result = await completer.future;
++    for (final t in tokens) {
++      if (!t.isCancelled) t.cancel();
++    }
++    if (result != null) {
++      _total = result.total;
++      _contentType = result.type ?? _contentType;
++      _probeFailedAt = null;
++    } else {
++      _probeFailedAt = DateTime.now();
++    }
+     if (kDebugMode) {
+       debugPrint(
+         'BTR: play ${Uri.parse(url).pathSegments.last} '
+@@ -328,7 +382,12 @@ class _BtrSource {
+   }
+ 
+   /// Pipes [start]..[end] from the original URL into an open response.
+-  Future<void> pipeRemaining(HttpResponse res, int start, int end) async {
++  Future<void> pipeRemaining(
++    HttpResponse res,
++    int start,
++    int end, {
++    void Function()? onWrite,
++  }) async {
+     final response = await Request.http11Dio.get<ResponseBody>(
+       url,
+       options: Options(
+@@ -342,6 +401,7 @@ class _BtrSource {
+     await res.addStream(
+       response.data!.stream.map((c) {
+         served += c.length;
++        onWrite?.call();
+         return c;
+       }),
+     );
+@@ -406,20 +466,32 @@ class _Piece {
+   }
+ }
+ 
+-/// Serves one player request: keeps up to `threads` pieces in flight and
+-/// writes them to the player in order.
++/// Serves one player request: streams the head piece from one node, keeps up
++/// to `threads` later pieces in flight and writes them to the player in order.
+ class _Pump {
+-  _Pump(this.source, this.res, this.start, this.end);
++  _Pump(this.source, this.res, this.start, this.end, this.range);
+ 
+   final _BtrSource source;
+   final HttpResponse res;
+   final int start;
+   final int end;
++  final String? range;
+ 
+   final _queue = Queue<_Piece>();
+   late int _next = start;
+   bool _closed = false;
+ 
++  /// True once any body byte was written. Response headers go out with the
++  /// first write, so before that a failure can still use `_passthrough`.
++  bool _wrote = false;
++
++  /// Next byte (absolute offset) the player has not received yet. Every
++  /// `res.add` advances it by exactly the bytes added, so switching nodes
++  /// never repeats or skips a byte.
++  late int _position = start;
++
++  CancelToken? _headToken;
++
+   /// Moving average of the time a piece needs, in ms.
+   double _pieceMs = 0;
+ 
+@@ -431,6 +503,17 @@ class _Pump {
+   );
+ 
+   Future<void> run() async {
++    try {
++      await _run();
++    } finally {
++      _stop();
++      try {
++        await res.close();
++      } catch (_) {}
++    }
++  }
++
++  Future<void> _run() async {
+     res.done.then((_) => _stop(), onError: (_) => _stop());
+ 
+     final threads = BtrConfig.playbackThreads;
+@@ -442,52 +525,186 @@ class _Pump {
+ 
+     void fill() {
+       while (!_closed && _queue.length < window && _next <= end) {
+-        final size = _next == start ? _BtrSource._firstPiece : pieceSize;
+         final s = _next;
+-        final e = math.min(s + size - 1, end);
++        final e = math.min(s + pieceSize - 1, end);
+         _next = e + 1;
+         _queue.add(_Piece(source, s, e));
+       }
+     }
+ 
+-    int position = start;
++    // The head piece is streamed below; later pieces start downloading now.
++    final headEnd = math.min(start + _BtrSource._firstPiece - 1, end);
++    _next = headEnd + 1;
+     fill();
+     try {
++      final headDone = await _streamHead(headEnd);
++      if (_closed) return;
++      if (!headDone) {
++        // Head failed on every node: continue with one connection.
++        await _fallback('head piece failed');
++        return;
++      }
+       while (_queue.isNotEmpty && !_closed) {
+         final head = _queue.first;
++        assert(head.start == _position, 'BTR: position mismatch');
+         final Uint8List bytes;
+         try {
+           bytes = await head.result(_hedgeAfter);
+         } catch (e) {
+           if (_closed) return;
+           // Every node failed for this piece: continue with one connection.
+-          if (kDebugMode) debugPrint('BTR: fallback to original URL: $e');
+-          _stop();
+-          await source.pipeRemaining(res, position, end);
+-          break;
++          await _fallback('$e');
++          return;
+         }
+         _queue.removeFirst();
+         if (_closed) return;
+         final ms = head.age.inMilliseconds.toDouble();
+         _pieceMs = _pieceMs == 0 ? ms : _pieceMs * 0.8 + ms * 0.2;
+         res.add(bytes);
++        _wrote = true;
+         source.served += bytes.length;
+-        position += bytes.length;
++        _position += bytes.length;
+         fill();
+         await res.flush();
+       }
+-      await res.close();
+     } catch (_) {
+-      // Player closed the connection (seek or stop).
++      // Player closed the connection (seek or stop), or the fallback failed.
++      final retryDirect = !_closed && !_wrote;
+       _stop();
++      if (retryDirect) {
++        // No byte was sent yet, so the headers can still change.
++        try {
++          await source._passthrough(res, range);
++        } catch (_) {}
++      }
+     }
+   }
+ 
+-  void _stop() {
+-    if (_closed) return;
+-    _closed = true;
++  /// Pipes the rest of the request from the original URL.
++  Future<void> _fallback(String reason) async {
++    if (kDebugMode) {
++      debugPrint('BTR: fallback to original URL at $_position: $reason');
++    }
++    _cancelAll();
++    _queue.clear();
++    await source.pipeRemaining(
++      res,
++      _position,
++      end,
++      onWrite: () => _wrote = true,
++    );
++  }
++
++  /// Streams start..[headEnd] to the player. The first byte must arrive
++  /// within 2 s, otherwise the next node is used (at most 2 switches). After
++  /// a failure it continues from [_position] on another node. Returns false
++  /// when no node could finish the head piece.
++  Future<bool> _streamHead(int headEnd) async {
++    final tried = <BtrNode>{};
++    for (int attempt = 0; attempt <= _BtrSource._headSwitches; attempt++) {
++      if (_closed) return true;
++      final node = source.pool.pickHead(exclude: tried);
++      if (node == null) break;
++      tried.add(node);
++      if (attempt > 0 && kDebugMode) {
++        debugPrint('BTR: head switch to ${node.host} at $_position');
++      }
++      final token = _headToken = CancelToken();
++      final watch = Stopwatch()..start();
++      int got = 0;
++      bool gotFirst = false;
++      bool clientGone = false;
++      final timer = Timer(_BtrSource._headTimeout, () {
++        if (!gotFirst && !token.isCancelled) token.cancel();
++      });
++      try {
++        final response = await btrDio.get<ResponseBody>(
++          node.url,
++          options: Options(
++            headers: {
++              ...source._headers,
++              'range': 'bytes=$_position-$headEnd',
++            },
++            responseType: ResponseType.stream,
++          ),
++          cancelToken: token,
++        );
++        if (response.statusCode != 206) {
++          await response.data?.stream.drain<void>().catchError((_) {});
++          throw Exception('status ${response.statusCode}');
++        }
++        await for (final data in response.data!.stream) {
++          if (!gotFirst) {
++            gotFirst = true;
++            timer.cancel();
++            if (kDebugMode) {
++              debugPrint(
++                'BTR: head first byte ${watch.elapsedMilliseconds} ms '
++                'host=${node.host}',
++              );
++            }
++          }
++          final remain = headEnd - _position + 1;
++          final bytes = data.length > remain ? data.sublist(0, remain) : data;
++          try {
++            // The first write also sends the response headers.
++            res.add(bytes);
++            _wrote = true;
++            await res.flush();
++          } catch (_) {
++            clientGone = true;
++            break;
++          }
++          source.served += bytes.length;
++          _position += bytes.length;
++          got += bytes.length;
++          if (_position > headEnd) break;
++        }
++        if (clientGone) {
++          _stop();
++          source.pool.report(
++            node,
++            bytes: got,
++            elapsed: watch.elapsed,
++            cancelled: true,
++          );
++          return true;
++        }
++        source.pool.report(node, bytes: got, elapsed: watch.elapsed);
++        if (_position > headEnd) return true;
++      } catch (e) {
++        // Cancelled by _stop (seek or stop) is not a node failure.
++        final stopped = _closed;
++        source.pool.report(
++          node,
++          bytes: got,
++          elapsed: watch.elapsed,
++          cancelled: stopped,
++        );
++        if (stopped) return true;
++        if (kDebugMode) {
++          debugPrint(
++            'BTR: head ${gotFirst ? 'failed' : 'no first byte'} '
++            'on ${node.host} after ${watch.elapsedMilliseconds} ms: $e',
++          );
++        }
++      } finally {
++        timer.cancel();
++      }
++    }
++    return _position > headEnd;
++  }
++
++  void _cancelAll() {
++    _headToken?.cancel();
+     for (final piece in _queue) {
+       piece.cancel();
+     }
+   }
++
++  void _stop() {
++    if (_closed) return;
++    _closed = true;
++    _cancelAll();
++  }
+ }
+diff --git a/lib/utils/accounts.dart b/lib/utils/accounts.dart
+index 0ceee5f34..816ae9db4 100644
+--- a/lib/utils/accounts.dart
++++ b/lib/utils/accounts.dart
+@@ -4,6 +4,7 @@ import 'package:PiliPlus/pages/mine/controller.dart';
+ import 'package:PiliPlus/pages/rcmd/controller.dart';
+ import 'package:PiliPlus/utils/accounts/account.dart';
+ import 'package:PiliPlus/utils/login_utils.dart';
++import 'package:PiliPlus/utils/play_url_cache.dart';
+ import 'package:PiliPlus/utils/storage_pref.dart';
+ import 'package:get/get.dart';
+ import 'package:hive_ce/hive.dart';
+@@ -51,6 +52,7 @@ abstract final class Accounts {
+   }
+ 
+   static Future<void> clear() async {
++    PlayUrlCache.clear();
+     await account.clear();
+     for (int i = 0; i < AccountType.values.length; i++) {
+       accountMode[i] = AnonymousAccount();
+@@ -60,6 +62,7 @@ abstract final class Accounts {
+   }
+ 
+   static Future<void> deleteAll(Set<Account> accounts) async {
++    PlayUrlCache.clear();
+     final isLoginMain = Accounts.main.isLogin;
+     final recommendChanged = accounts.contains(
+       accountMode[AccountType.recommend.index],
+@@ -83,6 +86,7 @@ abstract final class Accounts {
+   }
+ 
+   static Future<void> set(AccountType key, Account account) async {
++    if (key == AccountType.main) PlayUrlCache.clear();
+     final oldAccount = accountMode[key.index]..type.remove(key);
+     accountMode[key.index] = account..type.add(key);
+     await Future.wait([?account.onChange(), ?oldAccount.onChange()]);
+diff --git a/lib/utils/storage_pref.dart b/lib/utils/storage_pref.dart
+index 03a0185cd..cec317011 100644
+--- a/lib/utils/storage_pref.dart
++++ b/lib/utils/storage_pref.dart
+@@ -253,7 +253,10 @@ abstract final class Pref {
+ 
+   static int get defaultVideoQa => _setting.get(
+     SettingBoxKey.defaultVideoQa,
+-    defaultValue: VideoQuality.super8k.code,
++    // 行動裝置未設定時預設 1080P（開播較快）；桌面維持原預設。
++    defaultValue: PlatformUtils.isMobile
++        ? VideoQuality.high1080.code
++        : VideoQuality.super8k.code,
+   );
+ 
+   static int get defaultVideoQaCellular => _setting.get(
+diff --git a/lib/utils/play_url_cache.dart b/lib/utils/play_url_cache.dart
+new file mode 100644
+index 000000000..a486d0a73
+--- /dev/null
++++ b/lib/utils/play_url_cache.dart
+@@ -0,0 +1,116 @@
++import 'dart:io' show Platform;
++
++import 'package:PiliPlus/http/loading_state.dart';
++import 'package:PiliPlus/http/video.dart';
++import 'package:PiliPlus/models/common/account_type.dart';
++import 'package:PiliPlus/models/common/video/video_type.dart';
++import 'package:PiliPlus/models/video/play/url.dart';
++import 'package:PiliPlus/plugin/pl_player/controller.dart';
++import 'package:PiliPlus/utils/accounts.dart';
++import 'package:PiliPlus/utils/connectivity_utils.dart';
++import 'package:PiliPlus/utils/platform_utils.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
++import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
++
++/// 影片頁 playurl 請求的參數。只有參數完全相同的快取才能重用。
++typedef PlayUrlParams = ({int qn, bool tryLook, bool voiceBalance});
++
++/// 共用的 playurl 快取（僅 UGC）：卡片 tap-down 預取與影片頁共用同一份回應。
++///
++/// key 為 bvid + cid + mid；有效 60 秒，最多 6 筆。同時保存進行中的 Future，
++/// 影片頁可以等待尚未完成的預取，避免重複請求。
++abstract final class PlayUrlCache {
++  static const _ttl = Duration(seconds: 60);
++  static const _maxEntries = 6;
++
++  static final _entries =
++      <
++        String,
++        ({
++          DateTime time,
++          PlayUrlParams params,
++          Future<LoadingState<PlayUrlModel>> future,
++        })
++      >{};
++
++  static String _key(String bvid, int cid) =>
++      '$bvid|$cid|${Accounts.main.mid}';
++
++  /// 影片頁與預取共用的請求參數：qn 為目標畫質。
++  static Future<PlayUrlParams> defaultParams() async {
++    var qn = PlPlayerController.instance?.cacheVideoQa;
++    if (qn == null) {
++      if (PlatformUtils.isMobile || Platform.isLinux) {
++        qn = await ConnectivityUtils.isWiFi
++            ? Pref.defaultVideoQa
++            : Pref.defaultVideoQaCellular;
++      } else {
++        qn = Pref.defaultVideoQa;
++      }
++    }
++    return (
++      qn: qn,
++      tryLook: !Accounts.get(AccountType.video).isLogin && Pref.p1080,
++      voiceBalance: Platform.isAndroid && Pref.audioNormalization != '0',
++    );
++  }
++
++  /// 取得 UGC playurl：命中快取（含進行中的請求）就重用，否則請求並存入。
++  /// [fromDetail] 為 true 時，命中會印 debug log。
++  static Future<LoadingState<PlayUrlModel>> get({
++    required String bvid,
++    required int cid,
++    required PlayUrlParams params,
++    bool fromDetail = false,
++  }) {
++    final key = _key(bvid, cid);
++    final now = DateTime.now();
++    final cached = _entries[key];
++    if (cached != null &&
++        now.difference(cached.time) < _ttl &&
++        cached.params == params) {
++      if (fromDetail && kDebugMode) {
++        debugPrint('PlayUrlCache hit bvid=$bvid cid=$cid qn=${params.qn}');
++      }
++      return cached.future;
++    }
++    final future = VideoHttp.videoUrl(
++      bvid: bvid,
++      cid: cid,
++      qn: params.qn,
++      tryLook: params.tryLook,
++      videoType: VideoType.ugc,
++      voiceBalance: params.voiceBalance,
++    );
++    _entries
++      ..remove(key)
++      ..[key] = (time: now, params: params, future: future);
++    while (_entries.length > _maxEntries) {
++      _entries.remove(_entries.keys.first);
++    }
++    // 失敗不保留，下次重新請求。
++    future.then(
++      (res) {
++        if (res is! Success && _entries[key]?.future == future) {
++          _entries.remove(key);
++        }
++      },
++      onError: (Object _) {
++        if (_entries[key]?.future == future) _entries.remove(key);
++      },
++    );
++    return future;
++  }
++
++  /// tap-down 預取：用影片頁相同的參數請求並存入快取。
++  static Future<void> prefetch({required String bvid, required int cid}) async {
++    try {
++      await get(bvid: bvid, cid: cid, params: await defaultParams());
++    } catch (e) {
++      if (kDebugMode) debugPrint('PlayUrlCache prefetch: $e');
++    }
++  }
++
++  /// 帳號切換或登出時清空。
++  static void clear() => _entries.clear();
++}

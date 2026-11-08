@@ -253,7 +253,10 @@ abstract final class Pref {
 
   static int get defaultVideoQa => _setting.get(
     SettingBoxKey.defaultVideoQa,
-    defaultValue: VideoQuality.super8k.code,
+    // 行動裝置未設定時預設 1080P（開播較快）；桌面維持原預設。
+    defaultValue: PlatformUtils.isMobile
+        ? VideoQuality.high1080.code
+        : VideoQuality.super8k.code,
   );
 
   static int get defaultVideoQaCellular => _setting.get(

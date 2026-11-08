@@ -4,6 +4,7 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
+import 'package:PiliPlus/utils/play_url_cache.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
@@ -51,6 +52,7 @@ abstract final class Accounts {
   }
 
   static Future<void> clear() async {
+    PlayUrlCache.clear();
     await account.clear();
     for (int i = 0; i < AccountType.values.length; i++) {
       accountMode[i] = AnonymousAccount();
@@ -60,6 +62,7 @@ abstract final class Accounts {
   }
 
   static Future<void> deleteAll(Set<Account> accounts) async {
+    PlayUrlCache.clear();
     final isLoginMain = Accounts.main.isLogin;
     final recommendChanged = accounts.contains(
       accountMode[AccountType.recommend.index],
@@ -83,6 +86,8 @@ abstract final class Accounts {
   }
 
   static Future<void> set(AccountType key, Account account) async {
+    // 任何帳號類型變更都清空（影片帳號也會影響 playurl）。
+    PlayUrlCache.clear();
     final oldAccount = accountMode[key.index]..type.remove(key);
     accountMode[key.index] = account..type.add(key);
     await Future.wait([?account.onChange(), ?oldAccount.onChange()]);

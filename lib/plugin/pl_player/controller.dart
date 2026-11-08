@@ -843,6 +843,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       _isVertical = isVertical ?? false;
       _aid = aid;
       _bvid = bvid;
+      // 換影片時重設「停用 BTR」旗標
+      // （refreshPlayer 重試不會經過這裡，所以重試期間旗標會保留）
+      _btrDisabledCid = null;
       this.cid = cid;
       _epid = epid;
       _seasonId = seasonId;
@@ -997,7 +1000,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       player.setProperty('force-window', 'no');
     }
 
-    player.setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
+    // media_kit 在 Player.create 內會把 network-timeout 覆寫成 5（晚於
+    // PlayerConfiguration.options 套用），所以要在建立後再設定，才不會比 BTR 的
+    // 恢復時間（節點切換、2 秒首 byte 逾時）短而誤判開檔失敗。
+    player
+      ..setProperty('network-timeout', '15')
+      ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
 
     _startListeners(player);
 
@@ -1048,7 +1056,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     String video = dataSource.videoSource;
     String? audioSource = dataSource.audioSource;
     // BTR: fetch media from several CDN nodes in parallel via a local proxy.
-    if (dataSource is! FileSource && !isLive) {
+    if (dataSource is! FileSource && !isLive && !_btrDisabled) {
       video = await BtrProxy.wrap(video);
       if (audioSource != null && audioSource.isNotEmpty) {
         audioSource = await BtrProxy.wrap(audioSource);
@@ -1058,15 +1066,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       if (onlyPlayAudio.value) {
         video = audio;
       } else {
-        // dely_open need provide length
-        video =
-            ('edl://'
-            '!no_chapters;'
-            // '!delay_open,media_type=video;'
-            '%${isFileSource ? utf8.encode(video).length : video.length}%$video;'
-            '!new_stream;!no_chapters;'
-            // '!delay_open,media_type=audio;'
-            '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio');
+        video = _buildEdl(video, audio);
       }
       audioFilterExtras(volume, map: extras);
     }
@@ -1082,12 +1082,50 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     );
   }
 
+  /// 這部影片（以 cid 判斷）是否停用 BTR。換影片時會重設。
+  int? _btrDisabledCid;
+  bool get _btrDisabled => _btrDisabledCid != null && _btrDisabledCid == cid;
+
+  String _buildEdl(String video, String audio) {
+    // dely_open need provide length
+    return 'edl://'
+        '!no_chapters;'
+        // '!delay_open,media_type=video;'
+        '%${isFileSource ? utf8.encode(video).length : video.length}%$video;'
+        '!new_stream;!no_chapters;'
+        // '!delay_open,media_type=audio;'
+        '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio';
+  }
+
+  /// BTR 代理（127.0.0.1）開檔失敗時，這部影片改用原始 CDN 網址重試。
+  /// 回傳 true 表示這次才剛停用（每部影片只會觸發一次直接重試，避免迴圈）。
+  bool _disableBtrForCurrent() {
+    if (isLive || dataSource is FileSource || cid == null || _btrDisabled) {
+      return false;
+    }
+    _btrDisabledCid = cid;
+    return true;
+  }
+
   Future<void>? refreshPlayer() {
     if (dataSource is FileSource) {
       return null;
     }
     if (_videoPlayerController case final ctr? when (ctr.current.isNotEmpty)) {
       var media = ctr.current.last;
+      if (_btrDisabled && !isLive) {
+        // 用 dataSource 內的原始網址重組，不重播已包裝過的 127.0.0.1 字串
+        final audio = dataSource.audioSource;
+        final String uri;
+        if (audio != null && audio.isNotEmpty) {
+          uri = onlyPlayAudio.value
+              ? audio
+              : _buildEdl(dataSource.videoSource, audio);
+        } else {
+          uri = dataSource.videoSource;
+        }
+        if (media.uri != uri) media = media.copyWith(uri: uri);
+      }
       if (!isLive) media = media.copyWith(start: ctr.state.position);
       return ctr.open(media, play: true);
     }
@@ -1279,11 +1317,28 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           }
           return;
         }
-        if (event.startsWith("Failed to open https://") ||
+        final btrFailed =
+            event.startsWith('Failed to open http://127.0.0.1') ||
+            event.startsWith('Can not open external file http://127.0.0.1') ||
+            event.startsWith('Failed to open edl://');
+        if (btrFailed ||
+            event.startsWith("Failed to open https://") ||
             event.startsWith("Can not open external file https://") ||
             //tcp: ffurl_read returned 0xdfb9b0bb
             //tcp: ffurl_read returned 0xffffff99
             event.startsWith('tcp: ffurl_read returned ')) {
+          // 開檔失敗且可能走了 BTR：這部影片改用原始網址，立刻重試，
+          // 不經過 isBuffering 判斷與 10 秒節流（EDL 會連續回報兩次錯誤，
+          // 第二次因旗標已設定而走下面的一般流程）。
+          if (btrFailed && _disableBtrForCurrent()) {
+            if (kDebugMode) debugPrint('BTR: open failed, disable BTR: $event');
+            SmartDialog.showToast(
+              '影片連結開啟失敗，重試中',
+              displayTime: const Duration(milliseconds: 500),
+            );
+            refreshPlayer();
+            return;
+          }
           EasyThrottle.throttle(
             'controllerStream.error.listen',
             const Duration(milliseconds: 10000),

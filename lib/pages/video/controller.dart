@@ -59,6 +59,8 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/play_url_cache.dart';
+import 'package:PiliPlus/utils/play_url_select.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -69,7 +71,7 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart' show Options;
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
     show ExtendedNestedScrollViewState;
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
@@ -424,6 +426,9 @@ class VideoDetailController extends GetxController
 
   late final String trackId;
   late final String fromSpmid;
+
+  /// 開播計時（debug log 用）：從進入影片頁到第一個畫面。
+  final Stopwatch _openWatch = Stopwatch()..start();
 
   @override
   void onInit() {
@@ -801,8 +806,16 @@ class VideoDetailController extends GetxController
     videoController.waitUntilFirstFrameRendered
         .timeout(const Duration(seconds: 8))
         .then(
-          (_) {},
-          onError: (_) {},
+          (_) {
+            if (kDebugMode) {
+              debugPrint(
+                'OPEN-TIME first frame ${_openWatch.elapsedMilliseconds} ms',
+              );
+            }
+          },
+          onError: (_) {
+            if (kDebugMode) debugPrint('OPEN-TIME first frame timeout 8 s');
+          },
         )
         .whenComplete(() {
           if (!isClosed) showCoverUntilFrame.value = false;
@@ -903,13 +916,44 @@ class VideoDetailController extends GetxController
     );
   }
 
-  Future<void> _supplementVideoQualities() async {
-    final quality = data.missingVideoQualityBelowHighest;
-    if (quality == -1) return;
-    final result = await _getVideoUrl(quality);
-    if (result case Success(:final response)) {
-      data.dash!.video!.merge(response.dash?.video);
+  /// 背景補齊「低於最高」缺少的畫質清單：只在目標畫質高於 1080P 時才執行
+  /// （一般情況首播回應已含目標畫質，不再多打一次 playurl）。
+  /// 不阻擋開播，只更新畫質清單，不重開播放器、不改目前畫質。
+  Future<void> _supplementVideoQualities(PlayUrlModel model) async {
+    try {
+      final missing = model.missingVideoQualityBelowHighest;
+      if (missing == -1) return;
+      final result = await _getVideoUrl(missing);
+      if (result case Success(:final response)) {
+        model.dash?.video?.merge(response.dash?.video);
+        // 期間若已換成新的回應（重新查詢），這份結果就不再使用。
+        if (identical(model, data)) currentVideoQa.refresh();
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('supplementVideoQualities: $e');
     }
+  }
+
+  /// 目前回應是否已有 [qa] 畫質的影片串流。
+  bool hasVideoQuality(int qa) =>
+      data.dash?.video?.any((i) => i.id == qa) ?? false;
+
+  /// 畫質選單是否可選：回應已有，或帳號可用（accept_quality）但需要稍後再取。
+  bool canSelectVideoQuality(int qa) =>
+      hasVideoQuality(qa) || (data.acceptQuality?.contains(qa) ?? false);
+
+  /// 使用者選了回應中沒有的畫質時才請求（延遲取得），合併進頁面自己的清單。
+  /// 回傳 [qa] 是否已可用；失敗時由呼叫端提示並維持目前畫質。
+  Future<bool> ensureVideoQuality(int qa) async {
+    if (hasVideoQuality(qa)) return true;
+    final model = data;
+    final result = await _getVideoUrl(qa);
+    if (!identical(model, data)) return false;
+    if (result case Success(:final response)) {
+      model.dash?.video?.merge(response.dash?.video);
+      return hasVideoQuality(qa);
+    }
+    return false;
   }
 
   Volume? volume;
@@ -953,11 +997,34 @@ class VideoDetailController extends GetxController
       preferCodecs = isWiFi ? Pref.preferCodecs : Pref.preferCodecsCellular;
     }
 
-    final result = await _getVideoUrl(VideoQuality.hdrVivid.code);
+    // 首播用目標畫質請求（不再固定 qn=129）；更高畫質與缺少的畫質在背景補齊。
+    final firstQn = plPlayerController.cacheVideoQa!;
+    // 只有 UGC 的首次查詢（非重新查詢、未切換語言）才使用共用快取，
+    // 且參數（qn、tryLook、voiceBalance）必須與預取時相同。
+    final useCache =
+        !fromReset &&
+        currLang.value == null &&
+        epId == null &&
+        (_actualVideoType ?? videoType) == VideoType.ugc;
+    final result = useCache
+        ? await PlayUrlCache.get(
+            bvid: bvid,
+            cid: cid.value,
+            params: (
+              qn: firstQn,
+              tryLook: plPlayerController.tryLook,
+              voiceBalance: plPlayerController.enableAudioNormalization,
+            ),
+            fromDetail: true,
+          )
+        : await _getVideoUrl(firstQn);
 
     if (result case Success(:final response)) {
-      data = response;
-      if (data.dash != null) await _supplementVideoQualities();
+      // 用頁面自己的副本：之後合併畫質不會改到共用快取的物件。
+      data = response.copyForPage();
+      if (data.dash != null && firstQn > VideoQuality.high1080.code) {
+        _supplementVideoQualities(data).ignore();
+      }
 
       languages.value = data.language?.items;
       currLang.value = data.curLanguage;
@@ -1031,33 +1098,21 @@ class VideoDetailController extends GetxController
         }
       }
 
-      final cacheVideoQa = plPlayerController.cacheVideoQa!;
-      final (
-        int targetQuality,
-        FormatItem targetFormat,
-        VideoDecodeFormatType targetDecode,
-        VideoItem targetVideo,
-      ) = VideoUtils.findTargetVideo(
-        dash.video!,
-        cacheVideoQa,
-        response.acceptQuality,
-        response.supportFormats!,
-        preferCodecs,
-      );
-      firstVideo = targetVideo;
-      currentDecodeFormats = targetDecode;
-      currentVideoQa.value = VideoQuality.fromCode(targetQuality);
+      // 選串流邏輯與 tap-down 預熱共用（lib/utils/play_url_select.dart）。
+      final selected = selectStreams(
+        response,
+        qn: plPlayerController.cacheVideoQa!,
+        audioQa: plPlayerController.cacheAudioQa,
+        preferCodecs: preferCodecs,
+      )!;
+      firstVideo = selected.video;
+      currentDecodeFormats = selected.targetDecode;
+      currentVideoQa.value = VideoQuality.fromCode(selected.targetQuality);
       _setVideoHeight();
-      videoUrl = VideoUtils.getCdnUrl(firstVideo.playUrls);
+      videoUrl = selected.videoUrl;
 
-      AudioItem? firstAudio;
-      final audioList = dash.audio;
-      if (audioList != null && audioList.isNotEmpty) {
-        firstAudio = VideoUtils.findTargetAudio(
-          audioList,
-          plPlayerController.cacheAudioQa,
-        );
-        audioUrl = VideoUtils.getCdnUrl(firstAudio.playUrls, isAudio: true);
+      if (selected.audio case final firstAudio?) {
+        audioUrl = selected.audioUrl;
         currentAudioQa = AudioQuality.fromCode(firstAudio.id);
       } else {
         audioUrl = '';

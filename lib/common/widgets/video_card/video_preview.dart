@@ -9,9 +9,12 @@ import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
+import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/play_url_cache.dart';
+import 'package:PiliPlus/utils/play_url_select.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -160,8 +163,31 @@ abstract final class VideoPreview {
 
   /// Starts to get the streams early (for example, when the finger touches
   /// the card), so the preview starts faster after a long press.
+  ///
+  /// The playurl is fetched with the same params as the video page and kept
+  /// in [PlayUrlCache], even when the preview is off (no preview player is
+  /// created then). Without a cid, only the preview (if on) resolves it.
   static void prefetch({int? aid, required String bvid, int? cid}) {
-    if (enabled) source(aid: aid, bvid: bvid, cid: cid);
+    if (cid != null) _warmHead(bvid, cid).ignore();
+    if (enabled) {
+      source(aid: aid, bvid: bvid, cid: cid);
+    } else if (cid != null) {
+      PlayUrlCache.prefetch(bvid: bvid, cid: cid);
+    }
+  }
+
+  /// BTR only: when the playurl is already in [PlayUrlCache] (completed), loads
+  /// the head of the streams the video page will play. Does not wait for a
+  /// request that is still running.
+  static Future<void> _warmHead(String bvid, int cid) async {
+    if (!BtrConfig.playback) return;
+    final params = await PlayUrlCache.defaultParams();
+    final data = PlayUrlCache.completedOf(
+      bvid: bvid,
+      cid: cid,
+      params: params,
+    );
+    if (data != null) await warmStreams(data, qn: params.qn);
   }
 
   /// Streams for the preview of [bvid] (about 480P).
@@ -204,12 +230,11 @@ abstract final class VideoPreview {
         }
       }
       if (cid == null) return null;
-      final res = await VideoHttp.videoUrl(
+      // Same params as the video page: the full response is shared.
+      final res = await PlayUrlCache.get(
         bvid: bvid,
         cid: cid,
-        qn: 32,
-        tryLook: false,
-        videoType: .ugc,
+        params: await PlayUrlCache.defaultParams(),
       );
       final dash = switch (res) {
         Success(:final response) => response.dash,

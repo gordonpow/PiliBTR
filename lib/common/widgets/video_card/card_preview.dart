@@ -31,8 +31,11 @@ class CardPreview {
 
   void prefetch() => VideoPreview.prefetch(aid: aid, bvid: bvid, cid: cid);
 
-  /// For `InkWell.onTapDown`. Gets the preview streams early.
-  GestureTapDownCallback? get onTapDown => _on ? (_) => prefetch() : null;
+  /// For `InkWell.onTapDown`. Gets the playurl (and the BTR warm-up) early,
+  /// even when the preview is off; `VideoPreview.prefetch` creates no preview
+  /// player in that case.
+  GestureTapDownCallback? get onTapDown =>
+      canPreview && !suspended ? (_) => prefetch() : null;
 
   /// For `InkWell.onLongPress`: preview first, [second] when it plays.
   void longPress(VoidCallback second) =>

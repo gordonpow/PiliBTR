@@ -1,0 +1,617 @@
+diff --git a/lib/services/download/btr_cdn.dart b/lib/services/download/btr_cdn.dart
+index 0edf5435a..a6c9dd2f6 100644
+--- a/lib/services/download/btr_cdn.dart
++++ b/lib/services/download/btr_cdn.dart
+@@ -12,6 +12,62 @@ final Dio btrDio = Request.http11Dio.clone(
+   ),
+ );
+ 
++/// Probe client: 3 s connect and 3 s receive timeout, so a dead node does not
++/// delay playback start.
++final Dio btrProbeDio = Request.http11Dio.clone(
++  options: Request.http11Dio.options.copyWith(
++    connectTimeout: const Duration(seconds: 3),
++    receiveTimeout: const Duration(seconds: 3),
++  ),
++);
++
++/// Process-wide host statistics, shared by every media file so a new video
++/// does not retry a host that is known to be bad.
++abstract final class BtrHostStats {
++  /// Consecutive failures that ban a host.
++  static const int banAfter = 2;
++  static const Duration banDuration = Duration(minutes: 10);
++
++  static final Map<String, _HostStat> _stats = {};
++
++  static bool isBanned(String host) {
++    final stat = _stats[host];
++    if (stat == null) return false;
++    final until = stat.bannedUntil;
++    if (until == null) return false;
++    if (DateTime.now().isBefore(until)) return true;
++    // Ban expired: give the host a clean start.
++    stat
++      ..bannedUntil = null
++      ..failures = 0;
++    return false;
++  }
++
++  /// Speed EMA in bytes per millisecond. 0 = unknown.
++  static double speedOf(String host) => _stats[host]?.speed ?? 0;
++
++  static void recordSuccess(String host, {double? speed}) {
++    final stat = _stats.putIfAbsent(host, _HostStat.new)..failures = 0;
++    if (speed != null && speed > 0) {
++      stat.speed = stat.speed == 0 ? speed : stat.speed * 0.7 + speed * 0.3;
++    }
++  }
++
++  static void recordFailure(String host) {
++    final stat = _stats.putIfAbsent(host, _HostStat.new)..speed *= 0.5;
++    if (++stat.failures >= banAfter && stat.bannedUntil == null) {
++      stat.bannedUntil = DateTime.now().add(banDuration);
++      if (kDebugMode) debugPrint('BTR: host banned 10 min $host');
++    }
++  }
++}
++
++class _HostStat {
++  int failures = 0;
++  DateTime? bannedUntil;
++  double speed = 0;
++}
++
+ /// One CDN address for a media file.
+ class BtrNode {
+   final String url;
+@@ -38,9 +94,13 @@ class BtrNode {
+ class BtrNodePool {
+   BtrNodePool(String url) : nodes = _build(url);
+ 
++  /// Fixed number of hosts a probe tries at the same time.
++  static const int probeCount = 3;
++
+   static const int strikeLimit = 2;
+ 
+-  /// Times all nodes may be enabled again before [pick] throws.
++  /// Times per-file bans may be cleared again before [pick] uses the original
++  /// URL only.
+   static const int maxResets = 3;
+ 
+   static final _mediaHost = RegExp(
+@@ -70,24 +130,81 @@ class BtrNodePool {
+         }
+       }
+     }
+-    return [for (final u in urls) BtrNode(u)];
++    final nodes = [for (final u in urls) BtrNode(u)];
++    // Use the process-wide statistics: drop banned mirrors (the original URL
++    // stays as the last resort), start with known speeds, and order mirrors
++    // from fast to slow. The original URL stays first.
++    final original = nodes.first;
++    final mirrors = [
++      for (final n in nodes.skip(1))
++        if (!BtrHostStats.isBanned(n.host)) n,
++    ];
++    for (final n in [original, ...mirrors]) {
++      n.speed = BtrHostStats.speedOf(n.host);
++    }
++    final order = {for (var i = 0; i < mirrors.length; i++) mirrors[i]: i};
++    mirrors.sort((a, b) {
++      final c = b.speed.compareTo(a.speed);
++      return c != 0 ? c : order[a]!.compareTo(order[b]!);
++    });
++    return [original, ...mirrors];
++  }
++
++  bool _isUsable(BtrNode n) => !n.banned && !BtrHostStats.isBanned(n.host);
++
++  /// Up to [probeCount] nodes for a probe: known fast ones first. Uses the
++  /// original URL when every node is banned.
++  List<BtrNode> probeNodes() {
++    final usable = nodes.where(_isUsable).toList();
++    if (usable.isEmpty) return [nodes.first];
++    final known = usable.where((n) => n.speed > 0).toList()
++      ..sort((a, b) => b.speed.compareTo(a.speed));
++    return [...known, ...usable.where((n) => n.speed == 0)]
++        .take(probeCount)
++        .toList();
++  }
++
++  /// Node for the streamed head piece: the fastest usable node that is not in
++  /// [exclude]; the original URL when there are no statistics. Returns null
++  /// when nothing is left (the first call never returns null). Call [report]
++  /// when the request ends.
++  BtrNode? pickHead({Set<BtrNode> exclude = const {}}) {
++    final usable = nodes
++        .where((n) => !exclude.contains(n) && _isUsable(n))
++        .toList();
++    BtrNode? node;
++    if (usable.isNotEmpty) {
++      final known = usable.where((n) => n.speed > 0).toList();
++      if (known.isNotEmpty) {
++        node = known.reduce((a, b) => a.speed >= b.speed ? a : b);
++      } else {
++        node = usable.contains(nodes.first) ? nodes.first : usable.first;
++      }
++    } else if (exclude.isEmpty) {
++      node = nodes.first;
++    }
++    node?.inflight++;
++    return node;
+   }
+ 
+   /// Selects a node for one request and counts it as in flight.
+   /// Call [report] when the request ends.
+   BtrNode pick() {
+-    var usable = nodes.where((n) => !n.banned).toList();
+-    if (usable.isEmpty) {
+-      if (++_resets > maxResets) {
+-        throw Exception('BTR: all CDN nodes failed');
+-      }
+-      if (kDebugMode) debugPrint('BTR: all nodes banned, using all again');
++    var usable = nodes.where(_isUsable).toList();
++    if (usable.isEmpty && ++_resets <= maxResets) {
++      // Give nodes banned only for this file another chance. Hosts banned
++      // process-wide stay banned until their ban expires.
+       for (final n in nodes) {
+         n
+           ..banned = false
+           ..strikes = 0;
+       }
+-      usable = nodes;
++      usable = nodes.where(_isUsable).toList();
++    }
++    if (usable.isEmpty) {
++      // Every node is banned: use the original URL instead of failing.
++      if (kDebugMode) debugPrint('BTR: all nodes banned, using original URL');
++      return nodes.first..inflight += 1;
+     }
+ 
+     BtrNode node;
+@@ -126,15 +243,18 @@ class BtrNodePool {
+     if (bytes >= 64 * 1024 && elapsed != null) {
+       final sample = bytes / (elapsed.inMilliseconds + 1);
+       node.speed = node.speed == 0 ? sample : node.speed * 0.7 + sample * 0.3;
++      BtrHostStats.recordSuccess(node.host, speed: sample);
+     }
+     if (cancelled) return;
+     if (bytes > 0) {
+       node.strikes = 0;
+       _resets = 0;
++      BtrHostStats.recordSuccess(node.host);
+       return;
+     }
+     // A failed request also lowers the measured speed.
+     node.speed *= 0.5;
++    BtrHostStats.recordFailure(node.host);
+     if (++node.strikes >= strikeLimit && !node.banned) {
+       node.banned = true;
+       if (kDebugMode) debugPrint('BTR: node banned ${node.host}');
+diff --git a/lib/services/download/btr_proxy.dart b/lib/services/download/btr_proxy.dart
+index 201890749..b8068c260 100644
+--- a/lib/services/download/btr_proxy.dart
++++ b/lib/services/download/btr_proxy.dart
+@@ -15,7 +15,7 @@ import 'dart:typed_data';
+ 
+ import 'package:PiliPlus/http/init.dart';
+ import 'package:PiliPlus/services/download/btr_cdn.dart'
+-    show BtrNode, BtrNodePool, btrDio;
++    show BtrHostStats, BtrNode, BtrNodePool, btrDio, btrProbeDio;
+ import 'package:PiliPlus/services/download/btr_config.dart';
+ import 'package:PiliPlus/utils/extension/string_ext.dart';
+ import 'package:dio/dio.dart';
+@@ -117,6 +117,8 @@ abstract final class BtrProxy {
+       await source.serve(req);
+     } catch (e) {
+       if (kDebugMode) debugPrint('BTR: serve error: $e');
++    } finally {
++      // Every path ends with a closed response (closing twice is harmless).
+       try {
+         await req.response.close();
+       } catch (_) {}
+@@ -137,23 +139,27 @@ class _BtrSource {
+   static const _maxWindowBytes = 64 * 1024 * 1024;
+   static const _pieceAttempts = 6;
+ 
++  /// After a failed probe the source goes direct for this long.
++  static const _probeRetryAfter = Duration(seconds: 30);
++  static const _headTimeout = Duration(seconds: 2);
++  static const _headSwitches = 2;
++
+   int? _total;
+-  bool _probed = false;
++  DateTime? _probeFailedAt;
+   Future<void>? _probing;
+   String _contentType = 'video/mp4';
+-  late Map<String, String> _headers;
++  Map<String, String>? _headersOrNull;
++  Map<String, String> get _headers => _headersOrNull!;
+ 
+   static final _rangeRegex = RegExp(r'bytes=(\d*)-(\d*)');
+ 
+   Future<void> serve(HttpRequest req) async {
+-    if (!_probed) {
+-      _headers = {
+-        'user-agent': req.headers.value('user-agent') ?? 'Mozilla/5.0',
+-        'referer': req.headers.value('referer') ?? 'https://www.bilibili.com/',
+-        'accept-encoding': 'identity',
+-      };
+-      await (_probing ??= _probe());
+-    }
++    _headersOrNull ??= {
++      'user-agent': req.headers.value('user-agent') ?? 'Mozilla/5.0',
++      'referer': req.headers.value('referer') ?? 'https://www.bilibili.com/',
++      'accept-encoding': 'identity',
++    };
++    await _ensureProbed();
+ 
+     final total = _total;
+     final range = req.headers.value('range');
+@@ -199,32 +205,80 @@ class _BtrSource {
+       return;
+     }
+ 
+-    await _Pump(this, res, start, end).run();
++    await _Pump(this, res, start, end, range).run();
++  }
++
++  /// Probes once. A failed probe is sticky for [_probeRetryAfter] only.
++  Future<void> _ensureProbed() {
++    if (_total != null) return Future.value();
++    final failedAt = _probeFailedAt;
++    if (failedAt != null &&
++        DateTime.now().difference(failedAt) < _probeRetryAfter) {
++      return Future.value();
++    }
++    return _probing ??= _probe().whenComplete(() => _probing = null);
+   }
+ 
++  /// Sends `bytes=0-0` to up to 3 nodes at the same time and uses the first
++  /// 206 answer with a `content-range`. The other requests are cancelled.
+   Future<void> _probe() async {
+-    for (final node in pool.nodes.take(3)) {
++    final candidates = pool.probeNodes();
++    final completer = Completer<({int total, String? type})?>();
++    final tokens = [for (final _ in candidates) CancelToken()];
++    var pending = candidates.length;
++
++    Future<void> probeOne(BtrNode node, CancelToken token) async {
+       try {
+-        final response = await btrDio.get<ResponseBody>(
++        final response = await btrProbeDio.get<ResponseBody>(
+           node.url,
+           options: Options(
+             headers: {..._headers, 'range': 'bytes=0-0'},
+             responseType: ResponseType.stream,
+           ),
++          cancelToken: token,
+         );
+         await response.data?.stream.drain<void>().catchError((_) {});
+         final contentRange = response.headers.value('content-range');
+         final slash = contentRange?.lastIndexOf('/') ?? -1;
+-        if (response.statusCode == 206 && slash != -1) {
+-          _total = int.tryParse(contentRange!.substring(slash + 1).trim());
+-          _contentType = response.headers.value('content-type') ?? _contentType;
+-          if (_total != null) break;
++        final total = response.statusCode == 206 && slash != -1
++            ? int.tryParse(contentRange!.substring(slash + 1).trim())
++            : null;
++        if (total == null) {
++          BtrHostStats.recordFailure(node.host);
++        } else {
++          BtrHostStats.recordSuccess(node.host);
++          if (!completer.isCompleted) {
++            completer.complete((
++              total: total,
++              type: response.headers.value('content-type'),
++            ));
++          }
+         }
+       } catch (e) {
+-        if (kDebugMode) debugPrint('BTR: probe failed ${node.host}: $e');
++        // A request cancelled because another node won is not a failure.
++        if (!token.isCancelled) {
++          BtrHostStats.recordFailure(node.host);
++          if (kDebugMode) debugPrint('BTR: probe failed ${node.host}: $e');
++        }
++      } finally {
++        if (--pending == 0 && !completer.isCompleted) completer.complete(null);
+       }
+     }
+-    _probed = true;
++
++    for (var i = 0; i < candidates.length; i++) {
++      probeOne(candidates[i], tokens[i]);
++    }
++    final result = await completer.future;
++    for (final t in tokens) {
++      if (!t.isCancelled) t.cancel();
++    }
++    if (result != null) {
++      _total = result.total;
++      _contentType = result.type ?? _contentType;
++      _probeFailedAt = null;
++    } else {
++      _probeFailedAt = DateTime.now();
++    }
+     if (kDebugMode) {
+       debugPrint(
+         'BTR: play ${Uri.parse(url).pathSegments.last} '
+@@ -328,7 +382,12 @@ class _BtrSource {
+   }
+ 
+   /// Pipes [start]..[end] from the original URL into an open response.
+-  Future<void> pipeRemaining(HttpResponse res, int start, int end) async {
++  Future<void> pipeRemaining(
++    HttpResponse res,
++    int start,
++    int end, {
++    void Function()? onWrite,
++  }) async {
+     final response = await Request.http11Dio.get<ResponseBody>(
+       url,
+       options: Options(
+@@ -342,6 +401,7 @@ class _BtrSource {
+     await res.addStream(
+       response.data!.stream.map((c) {
+         served += c.length;
++        onWrite?.call();
+         return c;
+       }),
+     );
+@@ -406,20 +466,32 @@ class _Piece {
+   }
+ }
+ 
+-/// Serves one player request: keeps up to `threads` pieces in flight and
+-/// writes them to the player in order.
++/// Serves one player request: streams the head piece from one node, keeps up
++/// to `threads` later pieces in flight and writes them to the player in order.
+ class _Pump {
+-  _Pump(this.source, this.res, this.start, this.end);
++  _Pump(this.source, this.res, this.start, this.end, this.range);
+ 
+   final _BtrSource source;
+   final HttpResponse res;
+   final int start;
+   final int end;
++  final String? range;
+ 
+   final _queue = Queue<_Piece>();
+   late int _next = start;
+   bool _closed = false;
+ 
++  /// True once any body byte was written. Response headers go out with the
++  /// first write, so before that a failure can still use `_passthrough`.
++  bool _wrote = false;
++
++  /// Next byte (absolute offset) the player has not received yet. Every
++  /// `res.add` advances it by exactly the bytes added, so switching nodes
++  /// never repeats or skips a byte.
++  late int _position = start;
++
++  CancelToken? _headToken;
++
+   /// Moving average of the time a piece needs, in ms.
+   double _pieceMs = 0;
+ 
+@@ -431,6 +503,17 @@ class _Pump {
+   );
+ 
+   Future<void> run() async {
++    try {
++      await _run();
++    } finally {
++      _stop();
++      try {
++        await res.close();
++      } catch (_) {}
++    }
++  }
++
++  Future<void> _run() async {
+     res.done.then((_) => _stop(), onError: (_) => _stop());
+ 
+     final threads = BtrConfig.playbackThreads;
+@@ -442,52 +525,186 @@ class _Pump {
+ 
+     void fill() {
+       while (!_closed && _queue.length < window && _next <= end) {
+-        final size = _next == start ? _BtrSource._firstPiece : pieceSize;
+         final s = _next;
+-        final e = math.min(s + size - 1, end);
++        final e = math.min(s + pieceSize - 1, end);
+         _next = e + 1;
+         _queue.add(_Piece(source, s, e));
+       }
+     }
+ 
+-    int position = start;
++    // The head piece is streamed below; later pieces start downloading now.
++    final headEnd = math.min(start + _BtrSource._firstPiece - 1, end);
++    _next = headEnd + 1;
+     fill();
+     try {
++      final headDone = await _streamHead(headEnd);
++      if (_closed) return;
++      if (!headDone) {
++        // Head failed on every node: continue with one connection.
++        await _fallback('head piece failed');
++        return;
++      }
+       while (_queue.isNotEmpty && !_closed) {
+         final head = _queue.first;
++        assert(head.start == _position, 'BTR: position mismatch');
+         final Uint8List bytes;
+         try {
+           bytes = await head.result(_hedgeAfter);
+         } catch (e) {
+           if (_closed) return;
+           // Every node failed for this piece: continue with one connection.
+-          if (kDebugMode) debugPrint('BTR: fallback to original URL: $e');
+-          _stop();
+-          await source.pipeRemaining(res, position, end);
+-          break;
++          await _fallback('$e');
++          return;
+         }
+         _queue.removeFirst();
+         if (_closed) return;
+         final ms = head.age.inMilliseconds.toDouble();
+         _pieceMs = _pieceMs == 0 ? ms : _pieceMs * 0.8 + ms * 0.2;
+         res.add(bytes);
++        _wrote = true;
+         source.served += bytes.length;
+-        position += bytes.length;
++        _position += bytes.length;
+         fill();
+         await res.flush();
+       }
+-      await res.close();
+     } catch (_) {
+-      // Player closed the connection (seek or stop).
++      // Player closed the connection (seek or stop), or the fallback failed.
++      final retryDirect = !_closed && !_wrote;
+       _stop();
++      if (retryDirect) {
++        // No byte was sent yet, so the headers can still change.
++        try {
++          await source._passthrough(res, range);
++        } catch (_) {}
++      }
+     }
+   }
+ 
+-  void _stop() {
+-    if (_closed) return;
+-    _closed = true;
++  /// Pipes the rest of the request from the original URL.
++  Future<void> _fallback(String reason) async {
++    if (kDebugMode) {
++      debugPrint('BTR: fallback to original URL at $_position: $reason');
++    }
++    _cancelAll();
++    _queue.clear();
++    await source.pipeRemaining(
++      res,
++      _position,
++      end,
++      onWrite: () => _wrote = true,
++    );
++  }
++
++  /// Streams start..[headEnd] to the player. The first byte must arrive
++  /// within 2 s, otherwise the next node is used (at most 2 switches). After
++  /// a failure it continues from [_position] on another node. Returns false
++  /// when no node could finish the head piece.
++  Future<bool> _streamHead(int headEnd) async {
++    final tried = <BtrNode>{};
++    for (int attempt = 0; attempt <= _BtrSource._headSwitches; attempt++) {
++      if (_closed) return true;
++      final node = source.pool.pickHead(exclude: tried);
++      if (node == null) break;
++      tried.add(node);
++      if (attempt > 0 && kDebugMode) {
++        debugPrint('BTR: head switch to ${node.host} at $_position');
++      }
++      final token = _headToken = CancelToken();
++      final watch = Stopwatch()..start();
++      int got = 0;
++      bool gotFirst = false;
++      bool clientGone = false;
++      final timer = Timer(_BtrSource._headTimeout, () {
++        if (!gotFirst && !token.isCancelled) token.cancel();
++      });
++      try {
++        final response = await btrDio.get<ResponseBody>(
++          node.url,
++          options: Options(
++            headers: {
++              ...source._headers,
++              'range': 'bytes=$_position-$headEnd',
++            },
++            responseType: ResponseType.stream,
++          ),
++          cancelToken: token,
++        );
++        if (response.statusCode != 206) {
++          await response.data?.stream.drain<void>().catchError((_) {});
++          throw Exception('status ${response.statusCode}');
++        }
++        await for (final data in response.data!.stream) {
++          if (!gotFirst) {
++            gotFirst = true;
++            timer.cancel();
++            if (kDebugMode) {
++              debugPrint(
++                'BTR: head first byte ${watch.elapsedMilliseconds} ms '
++                'host=${node.host}',
++              );
++            }
++          }
++          final remain = headEnd - _position + 1;
++          final bytes = data.length > remain ? data.sublist(0, remain) : data;
++          try {
++            // The first write also sends the response headers.
++            res.add(bytes);
++            _wrote = true;
++            await res.flush();
++          } catch (_) {
++            clientGone = true;
++            break;
++          }
++          source.served += bytes.length;
++          _position += bytes.length;
++          got += bytes.length;
++          if (_position > headEnd) break;
++        }
++        if (clientGone) {
++          _stop();
++          source.pool.report(
++            node,
++            bytes: got,
++            elapsed: watch.elapsed,
++            cancelled: true,
++          );
++          return true;
++        }
++        source.pool.report(node, bytes: got, elapsed: watch.elapsed);
++        if (_position > headEnd) return true;
++      } catch (e) {
++        // Cancelled by _stop (seek or stop) is not a node failure.
++        final stopped = _closed;
++        source.pool.report(
++          node,
++          bytes: got,
++          elapsed: watch.elapsed,
++          cancelled: stopped,
++        );
++        if (stopped) return true;
++        if (kDebugMode) {
++          debugPrint(
++            'BTR: head ${gotFirst ? 'failed' : 'no first byte'} '
++            'on ${node.host} after ${watch.elapsedMilliseconds} ms: $e',
++          );
++        }
++      } finally {
++        timer.cancel();
++      }
++    }
++    return _position > headEnd;
++  }
++
++  void _cancelAll() {
++    _headToken?.cancel();
+     for (final piece in _queue) {
+       piece.cancel();
+     }
+   }
++
++  void _stop() {
++    if (_closed) return;
++    _closed = true;
++    _cancelAll();
++  }
+ }

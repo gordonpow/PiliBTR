@@ -1,0 +1,91 @@
+===== open1 (tap 280,500) =====
+17:41:30.378 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1tmWF6CE2A&cid=42699131347&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:41:30.883 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1tmWF6CE2A&cid=42699131347&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:41:31.108 OPEN-TIME first frame 937 ms
+17:41:33.093 BTR: head first byte 918 ms host=upos-sz-mirrorcosov.bilivideo.com
+17:41:35.010 BTR: head first byte 1145 ms host=upos-sz-mirrorcosov.bilivideo.com
+17:41:37.320 BTR: head first byte 1986 ms host=upos-sz-mirrorhw.bilivideo.com
+===== open2 (tap 800,500) =====
+17:41:43.505 PlayUrlCache hit bvid=BV1mTxy6iEHX cid=43202316060 qn=80
+17:41:43.799 OPEN-TIME first frame 469 ms
+17:41:45.373 BTR: head first byte 1306 ms host=upos-sz-mirrorhw.bilivideo.com
+17:41:47.674 BTR: head no first byte on upos-sz-mirrorcoso1.bilivideo.com after 2040 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:41:47.674 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+17:41:48.176 BTR: head first byte 502 ms host=upos-sz-mirrorcosov.bilivideo.com
+===== open3 (tap 280,1070) =====
+17:41:56.793 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1kVxy6aEdQ&cid=43201859173&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:41:56.798 PlayUrlCache hit bvid=BV1kVxy6aEdQ cid=43201859173 qn=80
+17:41:57.266 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1kVxy6aEdQ&cid=43201859173&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:41:57.572 OPEN-TIME first frame 926 ms
+17:42:01.001 BTR: head no first byte on upos-sz-mirrorcoso1.bilivideo.com after 2082 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:42:01.001 BTR: head switch to upos-sz-estgoss.bilivideo.com at 0
+17:42:02.039 BTR: head first byte 1037 ms host=upos-sz-estgoss.bilivideo.com
+17:42:05.278 BTR: head no first byte on upos-sz-mirrorcoso1.bilivideo.com after 2052 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:42:05.278 BTR: head switch to upos-sz-estgoss.bilivideo.com at 0
+17:42:06.280 BTR: head first byte 1001 ms host=upos-sz-estgoss.bilivideo.com
+===== open4 (tap 800,1070) =====
+17:42:09.959 PlayUrlCache hit bvid=BV1mh4h6iEkp cid=43358619489 qn=80
+17:42:10.057 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1mh4h6iEkp&cid=43358619489&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:10.808 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1mh4h6iEkp&cid=43358619489&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:11.235 OPEN-TIME first frame 1476 ms
+17:42:13.898 BTR: head first byte 1333 ms host=upos-sz-mirrorcosov.bilivideo.com
+17:42:16.762 BTR: head first byte 1439 ms host=upos-sz-estgoss.bilivideo.com
+===== open5 (tap 280,1640) =====
+17:42:23.370 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1GDpC6qENu&cid=42730390042&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:23.400 PlayUrlCache hit bvid=BV1GDpC6qENu cid=42730390042 qn=80
+17:42:24.433 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1GDpC6qENu&cid=42730390042&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:24.739 OPEN-TIME first frame 1619 ms
+17:42:27.261 BTR: head first byte 1113 ms host=upos-hz-mirrorakam.akamaized.net
+17:42:30.913 BTR: head first byte 1866 ms host=upos-sz-mirrorcosov.bilivideo.com
+===== open6 (tap 800,1640) =====
+17:42:36.253 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1wp4u6YEpE&cid=43283058228&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:36.400 PlayUrlCache hit bvid=BV1wp4u6YEpE cid=43283058228 qn=80
+17:42:36.992 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1wp4u6YEpE&cid=43283058228&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:42:37.259 OPEN-TIME first frame 999 ms
+17:42:40.499 BTR: head no first byte on upos-sz-mirrorcoso1.bilivideo.com after 2029 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:42:40.499 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+17:42:42.073 BTR: head first byte 1573 ms host=upos-sz-mirrorcosov.bilivideo.com
+17:42:45.705 BTR: head no first byte on upos-sz-mirrorcoso1.bilivideo.com after 2129 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:42:45.705 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+===== open7 (after scroll, card A) (tap 280,700) =====
+17:43:01.365 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1tmWF6CE2A&cid=42699131347&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:43:02.963 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1tmWF6CE2A&cid=42699131347&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:43:03.359 OPEN-TIME first frame 2688 ms
+17:43:06.910 BTR: head no first byte on upos-sz-estgoss.bilivideo.com after 2102 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:06.910 BTR: head switch to upos-sz-mirrorcos.bilivideo.com at 0
+17:43:09.183 BTR: head no first byte on upos-sz-mirrorcos.bilivideo.com after 2272 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:09.184 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+===== open8 (after scroll, card B) (tap 800,700) =====
+17:43:14.386 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1mTxy6iEHX&cid=43202316060&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:43:15.780 BTR: head no first byte on upos-sz-estgoss.bilivideo.com after 2100 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:15.780 BTR: head switch to upos-sz-mirrorcos.bilivideo.com at 0
+17:43:15.935 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1mTxy6iEHX&cid=43202316060&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:43:16.098 OPEN-TIME first frame 2079 ms
+17:43:17.926 BTR: head no first byte on upos-sz-mirrorcos.bilivideo.com after 2145 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:17.926 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+17:43:18.992 BTR: head first byte 1065 ms host=upos-sz-mirrorcosov.bilivideo.com
+17:43:20.621 BTR: head no first byte on upos-sz-mirror14b.bilivideo.com after 2140 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:20.621 BTR: head switch to upos-sz-mirrorhw.bilivideo.com at 0
+17:43:22.674 BTR: head no first byte on upos-sz-mirrorhw.bilivideo.com after 2052 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:22.674 BTR: head switch to upos-sz-mirrorbos.bilivideo.com at 0
+===== open9 (same video as open8, 1st repeat) (tap 800,700) =====
+17:43:28.136 PlayUrlCache hit bvid=BV1mTxy6iEHX cid=43202316060 qn=80
+17:43:28.237 OPEN-TIME first frame 470 ms
+17:43:29.531 BTR: head no first byte on upos-sz-mirror14b.bilivideo.com after 2062 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:29.531 BTR: head switch to upos-sz-mirrorhw.bilivideo.com at 0
+17:43:31.674 BTR: head no first byte on upos-sz-mirrorhw.bilivideo.com after 2142 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:31.674 BTR: head switch to upos-sz-mirrorbos.bilivideo.com at 0
+17:43:33.345 BTR: head first byte 1670 ms host=upos-sz-mirrorbos.bilivideo.com
+17:43:35.804 BTR: head no first byte on upos-sz-mirrorcosov.bilivideo.com after 2036 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:43:35.804 BTR: head switch to upos-sz-mirrorbd.bilivideo.com at 4523695
+===== open10 (same video again, 2nd repeat) (tap 800,700) =====
+17:43:41.264 PlayUrlCache hit bvid=BV1mTxy6iEHX cid=43202316060 qn=80
+17:43:41.265 OPEN-TIME first frame 219 ms
+===== open11 (after >60s idle on home) (tap 280,1300) =====
+17:45:04.442 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1kVxy6aEdQ&cid=43201859173&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:45:05.095 uri: https://api.bilibili.com/x/player/wbi/playurl?bvid=BV1kVxy6aEdQ&cid=43201859173&qn=80&fnval=4048&fourk=1&fnver=0&voice_balance=0&gaia_source=pre-load&is
+17:45:05.318 OPEN-TIME first frame 1234 ms
+17:45:07.872 BTR: head first byte 1258 ms host=upos-sz-mirrorcos.bilivideo.com
+17:45:10.928 BTR: head no first byte on upos-sz-mirrorcos.bilivideo.com after 2074 ms: DioException [request cancelled]: The request was manually cancelled by the user.
+17:45:10.929 BTR: head switch to upos-sz-mirrorcosov.bilivideo.com at 0
+17:45:11.918 BTR: head first byte 988 ms host=upos-sz-mirrorcosov.bilivideo.com

@@ -792,7 +792,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             return const SizedBox.shrink();
           }
           final videoFormat = videoInfo.supportFormats!;
-          final availableQa = videoInfo.dash!.video!.availableVideoQualities;
           return PopupMenuButton<int>(
             tooltip: '畫質',
             requestFocus: false,
@@ -803,7 +802,12 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 videoFormat.length,
                 (index) {
                   final item = videoFormat[index];
-                  final enabled = availableQa.contains(item.quality);
+                  // 回應沒有但帳號可用的畫質也可選，選取時才延遲請求。
+                  final enabled =
+                      item.quality != null &&
+                      videoDetailController.canSelectVideoQuality(
+                        item.quality!,
+                      );
                   return PopupMenuItem<int>(
                     enabled: enabled,
                     height: 35,
@@ -815,6 +819,15 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       }
                       final int quality = item.quality!;
                       final newQa = VideoQuality.fromCode(quality);
+                      if (!videoDetailController.hasVideoQuality(quality)) {
+                        SmartDialog.showToast('正在取得 ${newQa.desc}…');
+                        final ok = await videoDetailController
+                            .ensureVideoQuality(quality);
+                        if (!ok) {
+                          SmartDialog.showToast('無法取得 ${newQa.desc}，維持目前畫質');
+                          return;
+                        }
+                      }
                       videoDetailController
                         ..plPlayerController.cacheVideoQa = newQa.code
                         ..currentVideoQa.value = newQa

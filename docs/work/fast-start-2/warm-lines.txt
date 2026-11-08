@@ -1,0 +1,31 @@
+27:11-07 18:34:35.355 BTR: warm start 3
+28:11-07 18:34:35.357 BTR: warm start 4
+76:11-07 18:34:38.375 BTR: warm failed on upos-sz-mirrorbd.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+80:11-07 18:34:38.442 BTR: warm failed on upos-sz-mirrorbd.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+92:11-07 18:34:40.463 BTR: warm failed on upos-sz-mirrorhw.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+212:11-07 18:34:54.069 BTR: warm start 5
+213:11-07 18:34:54.070 BTR: warm start 6
+253:11-07 18:34:58.306 BTR: warm failed on upos-sz-mirrorali.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+259:11-07 18:34:59.065 BTR: warm failed on upos-sz-mirrorali.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+357:11-07 18:35:11.196 BTR: warm start 7
+358:11-07 18:35:11.197 BTR: warm start 8
+455:11-07 18:35:19.985 BTR: warm hit 455227 bytes
+459:11-07 18:35:20.401 BTR: warm hit 524288 bytes
+555:11-07 18:35:31.105 BTR: warm start 9
+556:11-07 18:35:31.108 BTR: warm start 10
+611:11-07 18:35:35.605 BTR: warm failed on upos-sz-mirrorhw.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+628:11-07 18:35:37.627 BTR: warm failed on upos-sz-mirrorcos.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+720:11-07 18:35:47.938 BTR: warm start 11
+721:11-07 18:35:47.939 BTR: warm start 12
+867:11-07 18:36:01.732 BTR: warm hit 524288 bytes
+870:11-07 18:36:01.961 BTR: warm hit 524288 bytes
+924:11-07 18:36:03.931 BTR: warm start 13
+925:11-07 18:36:03.932 BTR: warm start 14
+1094:11-07 18:36:20.622 BTR: warm start 15
+1095:11-07 18:36:20.623 BTR: warm start 16
+1768:11-07 18:37:23.426 BTR: warm start 21
+1769:11-07 18:37:23.426 BTR: warm start 22
+1798:11-07 18:37:25.485 BTR: warm failed on upos-sz-mirror14b.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+1799:11-07 18:37:25.486 BTR: warm failed on upos-sz-mirrorcoso1.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+1834:11-07 18:37:27.635 BTR: warm failed on upos-sz-mirrorbd.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.
+1835:11-07 18:37:27.635 BTR: warm failed on upos-sz-mirrorbos.bilivideo.com: DioException [request cancelled]: The request was manually cancelled by the user.

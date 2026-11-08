@@ -57,6 +57,41 @@ class PlayUrlModel {
   Language? language;
   List<SegmentItemModel>? clipInfoList;
 
+  /// 淺拷貝，且 dash 的影片清單是新的 List：頁面之後合併畫質時
+  /// 不會改到共用快取裡的同一個物件。
+  PlayUrlModel copyForPage() {
+    return PlayUrlModel(
+      from: from,
+      result: result,
+      message: message,
+      quality: quality,
+      format: format,
+      timeLength: timeLength,
+      acceptFormat: acceptFormat,
+      acceptDesc: acceptDesc,
+      acceptQuality: acceptQuality,
+      videoCodecid: videoCodecid,
+      seekParam: seekParam,
+      seekType: seekType,
+      dash: dash == null
+          ? null
+          : Dash(
+              duration: dash!.duration,
+              minBufferTime: dash!.minBufferTime,
+              video: dash!.video == null ? null : List.of(dash!.video!),
+              audio: dash!.audio,
+            ),
+      supportFormats: supportFormats,
+      lastPlayCid: lastPlayCid,
+    )
+      ..lastPlayTime = _lastPlayTime
+      ..durl = durl
+      ..volume = volume
+      ..curLanguage = curLanguage
+      ..language = language
+      ..clipInfoList = clipInfoList;
+  }
+
   @pragma('vm:notify-debugger-on-exception')
   int get missingVideoQualityBelowHighest {
     int best = -1;
