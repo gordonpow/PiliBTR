@@ -30,6 +30,9 @@ class _CdnStatusPanelState extends State<CdnStatusPanel> {
   final Map<String, int> _lastServed = {};
   double _totalSpeed = 0;
 
+  /// 目前是否有任何節點正在下載（BTR 時）。
+  bool _downloading = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,11 +55,13 @@ class _CdnStatusPanelState extends State<CdnStatusPanel> {
   void _sample() {
     var sum = 0.0;
     var anyBtr = false;
+    var downloading = false;
     for (final url in [_valid(widget.videoUrl), _valid(widget.audioUrl)]) {
       if (url == null) continue;
       final stats = BtrProxy.statsFor(url);
       if (stats == null) continue;
       anyBtr = true;
+      if (stats.nodes.any((n) => n.inflight > 0)) downloading = true;
       final last = _lastServed[url];
       if (last != null && stats.served >= last) {
         sum += stats.served - last;
@@ -67,6 +72,7 @@ class _CdnStatusPanelState extends State<CdnStatusPanel> {
       sum = double.tryParse(widget.cacheSpeed?.call() ?? '') ?? 0;
     }
     _totalSpeed = sum;
+    _downloading = !anyBtr || downloading;
   }
 
   static String _shortHost(String host) => host.replaceFirst(
@@ -121,7 +127,16 @@ class _CdnStatusPanelState extends State<CdnStatusPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(head),
-                Text('總網速 ${formatSpeed(_totalSpeed)}'),
+                // 目前下載：這一秒交給播放器的資料量；緩衝足夠時播放器暫停讀取，
+                // 會顯示 0，屬正常。節點速度是過去片段測得的平均，不是即時值。
+                Text(
+                  '目前下載 ${formatSpeed(_totalSpeed)}'
+                  '${_totalSpeed == 0 && !_downloading ? '（緩衝足夠，暫停下載）' : ''}',
+                ),
+                const Text(
+                  '節點速度為最近片段測得的平均',
+                  style: TextStyle(color: Colors.white60, fontSize: 10),
+                ),
                 if (video != null) ..._section('影片', video),
                 if (audio != null) ..._section('音訊', audio),
               ],
