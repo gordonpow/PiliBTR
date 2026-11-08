@@ -12,6 +12,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:path/path.dart' as path;
 
 class PlDanmakuController {
@@ -42,7 +43,18 @@ class PlDanmakuController {
         )
       : null;
 
+  // Cancels in-flight segment requests when the page closes, so they do not
+  // hold the connection while the next video loads.
+  final CancelToken _cancelToken = CancelToken();
+  bool _disposed = false;
+
+  // After a failed request, wait before requesting a segment again.
+  static const _retryDelay = Duration(seconds: 10);
+  DateTime? _retryAfter;
+
   void dispose() {
+    _disposed = true;
+    _cancelToken.cancel();
     _translateQueue?.dispose();
     _dmSegMap.clear();
     _requestedSeg.clear();
@@ -52,22 +64,30 @@ class PlDanmakuController {
     if (_isFileSource) {
       return;
     }
-    if (_requestedSeg.contains(segmentIndex)) {
+    if (_disposed || _requestedSeg.contains(segmentIndex)) {
+      return;
+    }
+    if (_retryAfter case final retryAfter?
+        when DateTime.now().isBefore(retryAfter)) {
       return;
     }
     _requestedSeg.add(segmentIndex);
     final res = await DmGrpc.dmSegMobile(
       cid: _cid,
       segmentIndex: segmentIndex + 1,
+      cancelToken: _cancelToken,
     );
+    if (_disposed) return;
 
     if (res case Success(:final response)) {
+      _retryAfter = null;
       if (response.state == 1) {
         _plPlayerController.dmState.add(_cid);
       }
       handleDanmaku(response.elems);
     } else {
       _requestedSeg.remove(segmentIndex);
+      _retryAfter = DateTime.now().add(_retryDelay);
     }
   }
 

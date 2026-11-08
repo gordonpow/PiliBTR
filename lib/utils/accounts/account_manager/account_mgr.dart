@@ -162,6 +162,8 @@ class AccountManager extends Interceptor {
   }
 
   static void toast(DioException err) {
+    // A cancelled request was cancelled on purpose (e.g. the page closed).
+    if (err.type == DioExceptionType.cancel) return;
     const skipShow = [
       'heartbeat',
       'history/report',
@@ -172,6 +174,8 @@ class AccountManager extends Interceptor {
       'hdslb.com',
       'biliimg.com',
       'site/getCoin',
+      // Danmaku segments are optional and retried automatically.
+      'DmSegMobile',
     ];
     String url = err.requestOptions.uri.toString();
     if (kDebugMode) debugPrint('🌹🌹ApiInterceptor: $url\n$err');

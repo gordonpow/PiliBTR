@@ -106,6 +106,14 @@ class _PlDanmakuState extends State<PlDanmaku> {
       return;
     }
 
+    // The player is shared: a video page under the current one keeps this
+    // listener, so skip positions that belong to another video.
+    // Local files load danmaku from disk, so the cid is not checked.
+    if (playerController.cid case final cid?
+        when !widget.isFileSource && cid != widget.cid) {
+      return;
+    }
+
     int currentPosition = position.inMilliseconds;
     currentPosition -= currentPosition % 100; //取整百的毫秒数
     if (currentPosition == latestAddedPosition) {
