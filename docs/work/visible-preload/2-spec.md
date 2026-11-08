@@ -78,3 +78,32 @@ agy（gemini-3.8-flash-high）2026-11-08，5 條全部採用：
 - 快取命中的卡片先用 `BtrProxy.isWarm` 判斷兩條串流是否已預熱，已預熱就不排入佇列。
 - `warmStreams` 加 15 秒逾時，`finally` 一律釋放併發名額。
 - 移除固定的 `_maxWarmed`：容量 = max(4, 可見卡片數 × 2 + 2)，由 `BtrProxy.setWarmCapacity` 在 `prefetchVisible` 設定，縮小時依相同規則淘汰。
+
+## 第二輪（2026-11-08）：捲動中持續預載、不限同時數
+
+使用者決定：捲動中也持續預載；同時預載數不限制。
+
+- **AC-10**：開始捲動時不再清空預載佇列（`ScrollStartNotification` 不呼叫 `clearPending`）；捲動中每 500 ms（throttle）收集一次當下可見卡片並送入 `prefetchVisible`，停止捲動後照舊再收集一次。
+- **AC-11**：每次收集時，以「目前可見」的卡片取代尚未開始的佇列（playurl 與預熱）；已不在畫面上且尚未開始的項目會被丟棄，已開始的不取消。
+- **AC-12**：預熱同時數預設不設上限（移除 `_warmConcurrency = 2`，改由 AC-16 設定）；playurl 預取的同時數也跟著放寬為「本次可見卡片數」，但保留限流退避（412／-412／-352 時暫停 5 分鐘）。
+- **AC-13**：預熱保留上限（`setWarmCapacity`）= max(4, 2 × 可見數 + 2)；超過時先淘汰「不在畫面上且沒有讀取者」最舊的預熱，絕不淘汰目前可見卡片的預熱與讀取中的（見第二輪審查修正）。
+- **AC-14**：帳號切換（`clear()`）、頁面不可見與 App 進背景（`isPaused`）仍會停止排程並清空佇列。
+- **AC-15**：`flutter analyze` 無新增錯誤或警告。
+
+風險：快速捲過的卡片也會下載開頭（每部約 1 MB），流量與 B 站 API 請求明顯增加；靠限流退避保護。
+- **AC-16**（使用者 2026-11-08 追加）：新增設定「同時預載影片數」（設定 → 首頁推薦，放在「預載入畫面上的影片」下方）：選項 不限制（預設）／2／4／6／8。值為 0 表示不限制。預熱同時數依此設定；playurl 預取同時數＝min(可見卡片數, 設定值)（不限制時＝可見卡片數）。設定搜尋找得到。
+
+### 第二輪實作偏差
+
+- 節流：`ScrollStartNotification` 啟動 500 ms 的 `Timer.periodic`，`ScrollEndNotification` 取消並走原本 300 ms debounce。
+- 排序不重建佇列：`prefetchVisible` 記錄可見 key 的畫面順序，`_nextKey` 取佇列時優先選可見者（依畫面順序），沒有可見的才取最早加入者；不可見項目因此自然排後但不刪除。
+- 預熱同時數由 AC-16 設定控制（0 不限制；`_warmActive` 保留作計數）；playurl 預取同時數 = min(可見數, 設定值)。
+- `clearPending` 仍遞增 `_generation`，但只在頁面不可見／dispose 呼叫；捲動開始不再呼叫。
+- 預熱容量 = max(4, 2×可見數+2, 目前預熱中＋已預熱數)。
+
+### 第二輪審查修正
+
+- 每次收集以目前可見卡片取代尚未開始的 `_pending` 與 `_warmPending`；已開始的不取消；playurl 完成後只有仍可見的卡片才進預熱佇列。同時數因此約略受可見數限制，預設「不限制」不變。
+- `setWarmCapacity` 改為 max(4, 2 × 可見數 + 2)，移除 `_warmed.length`；新增 `visibleOwners` 參數，預熱以卡片 key 為 owner（`warm`／`warmStreams` 加 `owner`），淘汰時跳過可見卡片與讀取中的，優先淘汰不可見最舊者。
+- `prefetchVisible` 加呼叫序號 `_callSeq`；await 後若已有較新的呼叫就返回，快取命中的預熱排隊也檢查序號，避免舊呼叫覆蓋 `_visibleOrder`。
+- 模式為「關閉」時不啟動 500 ms 捲動節流，只保留停止捲動後的 playurl 預取（最多 6 張）。

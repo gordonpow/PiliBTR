@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/utils/mobile_observer.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/play_url_cache.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
@@ -34,6 +35,7 @@ class _RcmdPageState extends State<RcmdPage>
 
 
   Timer? _debounce;
+  Timer? _scrollThrottle;
   Worker? _loadWorker;
   Worker? _navWorker;
   bool _appResumed = true;
@@ -63,6 +65,7 @@ class _RcmdPageState extends State<RcmdPage>
   @override
   void dispose() {
     _debounce?.cancel();
+    _scrollThrottle?.cancel();
     _loadWorker?.dispose();
     _navWorker?.dispose();
     if (Get.isRegistered<HomeController>()) {
@@ -106,6 +109,7 @@ class _RcmdPageState extends State<RcmdPage>
     PlayUrlCache.isPaused = !_isRcmdVisible;
     if (PlayUrlCache.isPaused) {
       _debounce?.cancel();
+      _scrollThrottle?.cancel();
       PlayUrlCache.clearPending();
     } else {
       _scheduleVisiblePrefetch();
@@ -115,25 +119,39 @@ class _RcmdPageState extends State<RcmdPage>
   bool _onScroll(ScrollNotification n) {
     if (n.depth != 0) return false;
     if (n is ScrollStartNotification) {
+      // 不清空佇列；捲動中每 500 ms 收集一次可見卡片（throttle）。
       _debounce?.cancel();
-      PlayUrlCache.clearPending();
+      _scrollThrottle?.cancel();
+      // 模式為關閉時不啟動捲動中收集（只保留停止捲動後的 playurl 預取）。
+      if (Pref.visiblePreloadMode != 0) {
+        _scrollThrottle = Timer.periodic(
+          const Duration(milliseconds: 500),
+          (_) => _collectAndPrefetch(),
+        );
+      }
     } else if (n is ScrollEndNotification) {
+      _scrollThrottle?.cancel();
       _scheduleVisiblePrefetch();
     }
     return false;
   }
 
+  void _collectAndPrefetch() {
+    if (!_isRcmdVisible) {
+      PlayUrlCache.isPaused = true;
+      return;
+    }
+    PlayUrlCache.isPaused = false;
+    final items = _collectVisible();
+    if (items.isNotEmpty) unawaited(PlayUrlCache.prefetchVisible(items));
+  }
+
   void _scheduleVisiblePrefetch() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (!_isRcmdVisible) {
-        PlayUrlCache.isPaused = true;
-        return;
-      }
-      PlayUrlCache.isPaused = false;
-      final items = _collectVisible();
-      if (items.isNotEmpty) unawaited(PlayUrlCache.prefetchVisible(items));
-    });
+    _debounce = Timer(
+      const Duration(milliseconds: 300),
+      _collectAndPrefetch,
+    );
   }
 
   /// 走訪 render tree，取畫面內（含部分可見）所有有 bvid、cid 的影片卡片。

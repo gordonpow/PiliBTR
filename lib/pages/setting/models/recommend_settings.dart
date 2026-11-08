@@ -33,6 +33,31 @@ Future<void> _showVisiblePreloadDialog(
   }
 }
 
+const _preloadConcurrencyValues = [0, 2, 4, 6, 8];
+
+String _preloadConcurrencyLabel(int v) => v == 0 ? '不限制' : '$v';
+
+Future<void> _showPreloadConcurrencyDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<int>(
+    context: context,
+    builder: (context) => SelectDialog<int>(
+      title: '同時預載影片數',
+      value: Pref.visiblePreloadConcurrency,
+      values: [
+        for (final v in _preloadConcurrencyValues)
+          (v, _preloadConcurrencyLabel(v)),
+      ],
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.visiblePreloadConcurrency, res);
+    setState();
+  }
+}
+
 List<SettingsModel> get recommendSettings => [
   NormalModel(
     title: '預載入畫面上的影片',
@@ -40,6 +65,13 @@ List<SettingsModel> get recommendSettings => [
     getSubtitle: () =>
         '當前：${_visiblePreloadLabels[Pref.visiblePreloadMode.clamp(0, 2)]}（停止捲動後預先準備畫面上所有影片，會多用流量）',
     onTap: _showVisiblePreloadDialog,
+  ),
+  NormalModel(
+    title: '同時預載影片數',
+    leading: const Icon(Icons.speed_outlined),
+    getSubtitle: () =>
+        '當前：${_preloadConcurrencyLabel(Pref.visiblePreloadConcurrency)}（同時預先準備的影片數；數字越小越省流量與請求）',
+    onTap: _showPreloadConcurrencyDialog,
   ),
   const SwitchModel(
     title: '首頁使用app端推薦',

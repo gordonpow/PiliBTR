@@ -88,18 +88,29 @@ abstract final class BtrProxy {
   static final List<_BtrSource> _warmed = [];
   static int _warmCapacity = 4;
 
+  /// Owners (card keys) whose warm bytes must not be evicted: the cards now
+  /// visible.
+  static Set<String> _protectedOwners = const {};
+
   /// Sets how many URLs may keep warm bytes: 2 per visible card (video and
-  /// audio) plus 2 for a tapped card, at least 4. Trims at once when it shrinks.
-  static void setWarmCapacity(int visibleCards) {
+  /// audio) plus 2 for a tapped card, at least 4. [visibleOwners] are the
+  /// keys of the visible cards. When over capacity, the oldest idle warm of a
+  /// card that is not visible goes first; a visible card's warm and a warm
+  /// that a serve is reading are never evicted.
+  static void setWarmCapacity(
+    int visibleCards, {
+    Set<String> visibleOwners = const {},
+  }) {
     _warmCapacity = math.max(4, visibleCards * 2 + 2);
+    _protectedOwners = visibleOwners;
     _trimWarmed();
   }
 
-  /// Frees the oldest warm bytes that no serve is reading, until the count
-  /// fits. When all are being read, nothing is freed now.
   static void _trimWarmed() {
     while (_warmed.length > _warmCapacity) {
-      final i = _warmed.indexWhere((s) => s.warmIdle);
+      final i = _warmed.indexWhere(
+        (s) => s.warmIdle && !_protectedOwners.contains(s.warmOwner),
+      );
       if (i < 0) return;
       _warmed.removeAt(i).evictWarm();
     }
@@ -112,13 +123,20 @@ abstract final class BtrProxy {
   ///
   /// The returned future completes when the warm download ends (success or
   /// failure), or at once when nothing is started.
-  static Future<void> warm(String url, {int bytes = 512 * 1024}) {
+  ///
+  /// [owner] names the card the bytes belong to (see [setWarmCapacity]).
+  static Future<void> warm(
+    String url, {
+    int bytes = 512 * 1024,
+    String? owner,
+  }) {
     if (!BtrConfig.playback || !isEligible(url)) return Future.value();
     final src = url.http2https;
     final id = _idFor(src);
     final source = _sources[id]!;
     if (source.hasWarm) return Future.value();
     if (kDebugMode) debugPrint('BTR: warm start $id');
+    source.warmOwner = owner;
     final done = source.startWarm(bytes, onRelease: () => _warmed.remove(source));
     _warmed.add(source);
     _trimWarmed();
@@ -316,6 +334,9 @@ class _BtrSource {
   Map<String, String> get _headers => _headersOrNull ?? _defaultHeaders;
 
   _Warm? _warm;
+
+  /// Key of the card that asked for the warm bytes (null for tap-down).
+  String? warmOwner;
 
   /// True when a buffer exists or its download is running. A released warm
   /// is not counted, so it can be warmed again.

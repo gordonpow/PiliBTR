@@ -259,6 +259,12 @@ abstract final class Pref {
         : VideoQuality.super8k.code,
   );
 
+  /// 同時預載影片數：0 不限制（預設），或 2／4／6／8。
+  static int get visiblePreloadConcurrency => _setting.get(
+    SettingBoxKey.visiblePreloadConcurrency,
+    defaultValue: 0,
+  );
+
   /// 預載入畫面上的影片：0 關閉、1 僅 Wi-Fi、2 一律（預設）。
   static int get visiblePreloadMode =>
       _setting.get(SettingBoxKey.visiblePreloadMode, defaultValue: 2);

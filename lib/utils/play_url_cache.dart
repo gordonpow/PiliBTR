@@ -140,8 +140,6 @@ abstract final class PlayUrlCache {
 
   // ---- 可見卡片預取（首頁推薦）----
 
-  static const _visibleConcurrency = 2;
-  static const _warmConcurrency = 2;
   static const _maxPlayUrlOnly = 6;
   static const _warmTimeout = Duration(seconds: 15);
   static const _backoffDuration = Duration(minutes: 5);
@@ -154,13 +152,27 @@ abstract final class PlayUrlCache {
   static final _pending = <String, (String, int, bool)>{};
   static final _inFlight = <String>{};
 
-  /// 預熱佇列（影片＋音訊開頭）：併發 2 部影片、去重。
+  /// 目前可見卡片的 key -> 順序（越小越前面）。佇列依此排序：可見優先，
+  /// 不在畫面上且尚未開始的項目留在佇列但排最後。
+  static var _visibleOrder = <String, int>{};
+
+  /// 最近一次收集的可見卡片數；playurl 預取的同時數即為此值（至少 1）。
+  static int _visibleLimit = 1;
+
+  /// 設定的同時預載影片數；0 為不限制。
+  static int _concurrencyCap = 0;
   static int _warmActive = 0;
+
+  /// 預熱佇列（影片＋音訊開頭）：同時數依設定（0 不限制）、去重。
   static final _warmPending = <String, (String, int)>{};
   static final _warmInFlight = <String>{};
 
-  /// clearPending／clear 時加一；playurl 完成時若世代已變，就不再加入預熱佇列。
+  /// clearPending／clear 時加一（帳號切換、頁面不可見）；捲動開始不會改變它。
+  /// playurl 完成時若世代已變，就不再加入預熱佇列。
   static int _generation = 0;
+
+  /// 每次 [prefetchVisible] 加一；較舊的呼叫在 await 後發現有新呼叫就返回。
+  static int _callSeq = 0;
 
   static bool get _inBackoff {
     final until = _backoffUntil;
@@ -170,10 +182,14 @@ abstract final class PlayUrlCache {
   /// 預取可見卡片：依設定決定是否預熱開頭。
   /// 預熱開啟（一律，或僅 Wi-Fi 且目前是 Wi-Fi，且 BTR 播放開啟）時處理所有卡片，
   /// 並在 playurl 完成後預熱影片與音訊開頭；否則只預取前 6 張的 playurl。
-  /// 併發 2、去重、412 退避；tap-down 的 [prefetch] 不受影響。
+  /// playurl 同時數為本次可見卡片數、去重、412 退避；預熱不限同時數。
+  /// 捲動中會重複呼叫：每次呼叫以「目前可見」取代尚未開始的佇列（playurl 與預熱），
+  /// 已開始的不取消；可見項目依畫面順序處理。
+  /// tap-down 的 [prefetch] 不受影響。
   static Future<void> prefetchVisible(List<(String bvid, int cid)> items) async {
     if (isPaused || _inBackoff) return;
     final generation = _generation;
+    final seq = ++_callSeq;
     final PlayUrlParams params;
     bool warmOn;
     try {
@@ -186,10 +202,28 @@ abstract final class PlayUrlCache {
       return;
     }
     if (isPaused || _inBackoff || generation != _generation) return;
-    if (warmOn) BtrProxy.setWarmCapacity(items.length);
+    if (seq != _callSeq) return;
     if (!warmOn && items.length > _maxPlayUrlOnly) {
       items = items.sublist(0, _maxPlayUrlOnly);
     }
+    _visibleOrder = {
+      for (var i = 0; i < items.length; i++) _key(items[i].$1, items[i].$2): i,
+    };
+    _visibleLimit = items.isEmpty ? 1 : items.length;
+    final cap = Pref.visiblePreloadConcurrency;
+    _concurrencyCap = cap > 0 ? cap : 0;
+    if (_concurrencyCap > 0 && _visibleLimit > _concurrencyCap) {
+      _visibleLimit = _concurrencyCap;
+    }
+    if (warmOn) {
+      BtrProxy.setWarmCapacity(
+        items.length,
+        visibleOwners: _visibleOrder.keys.toSet(),
+      );
+    }
+    // 以目前可見取代尚未開始的佇列；已開始的不取消。
+    _pending.clear();
+    _warmPending.clear();
     final now = DateTime.now();
     for (final (bvid, cid) in items) {
       final key = _key(bvid, cid);
@@ -200,7 +234,14 @@ abstract final class PlayUrlCache {
           cached.params == params) {
         // 快取命中仍要預熱開頭。
         if (warmOn) {
-          _enqueueCachedWarm(key, bvid, cid, params, cached.future).ignore();
+          _enqueueCachedWarm(
+            key,
+            bvid,
+            cid,
+            params,
+            cached.future,
+            seq,
+          ).ignore();
         }
         continue;
       }
@@ -211,7 +252,7 @@ abstract final class PlayUrlCache {
     _pumpWarm();
   }
 
-  /// 開始捲動時清空尚未發出的佇列（已發出的請求不取消）。
+  /// 頁面不可見、dispose 時清空尚未發出的佇列（已發出的請求不取消）。
   static void clearPending() {
     _generation++;
     _pending.clear();
@@ -219,11 +260,11 @@ abstract final class PlayUrlCache {
   }
 
   static void _pumpVisible() {
-    while (_active < _visibleConcurrency &&
+    while (_active < _visibleLimit &&
         _pending.isNotEmpty &&
         !isPaused &&
         !_inBackoff) {
-      final key = _pending.keys.first;
+      final key = _nextKey(_pending.keys);
       final (bvid, cid, warm) = _pending.remove(key)!;
       _active++;
       _inFlight.add(key);
@@ -248,7 +289,10 @@ abstract final class PlayUrlCache {
         params: await defaultParams(),
       );
       if (res is Error && _isRiskControl(res)) _startBackoff();
-      if (warm && res is Success && generation == _generation) {
+      if (warm &&
+          res is Success &&
+          generation == _generation &&
+          _visibleOrder.containsKey(key)) {
         _enqueueWarm(key, bvid, cid);
       }
     } catch (e) {
@@ -269,13 +313,19 @@ abstract final class PlayUrlCache {
     int cid,
     PlayUrlParams params,
     Future<LoadingState<PlayUrlModel>> future,
+    int seq,
   ) async {
     final generation = _generation;
     try {
       final data = _completed[future];
       if (data != null && await allStreamsWarm(data, qn: params.qn)) return;
     } catch (_) {}
-    if (generation != _generation || isPaused || _inBackoff) return;
+    if (generation != _generation ||
+        seq != _callSeq ||
+        isPaused ||
+        _inBackoff) {
+      return;
+    }
     _enqueueWarm(key, bvid, cid);
     _pumpWarm();
   }
@@ -285,12 +335,26 @@ abstract final class PlayUrlCache {
     _warmPending[key] = (bvid, cid);
   }
 
+  /// 佇列中下一個要處理的 key：可見的依畫面順序優先，沒有可見的就取最早加入者。
+  static String _nextKey(Iterable<String> keys) {
+    String? best;
+    var bestOrder = 1 << 30;
+    for (final k in keys) {
+      final o = _visibleOrder[k];
+      if (o != null && o < bestOrder) {
+        best = k;
+        bestOrder = o;
+      }
+    }
+    return best ?? keys.first;
+  }
+
   static void _pumpWarm() {
-    while (_warmActive < _warmConcurrency &&
-        _warmPending.isNotEmpty &&
+    while (_warmPending.isNotEmpty &&
+        (_concurrencyCap == 0 || _warmActive < _concurrencyCap) &&
         !isPaused &&
         !_inBackoff) {
-      final key = _warmPending.keys.first;
+      final key = _nextKey(_warmPending.keys);
       final (bvid, cid) = _warmPending.remove(key)!;
       _warmActive++;
       _warmInFlight.add(key);
@@ -298,7 +362,7 @@ abstract final class PlayUrlCache {
     }
   }
 
-  /// 取得（多半是快取）playurl 後預熱影片與音訊開頭，等兩者下載結束才釋放名額。
+  /// 取得（多半是快取）playurl 後預熱影片與音訊開頭，等兩者下載結束才從進行中移除。
   static Future<void> _runWarm(String key, String bvid, int cid) async {
     try {
       final params = await defaultParams();
@@ -309,6 +373,7 @@ abstract final class PlayUrlCache {
         await warmStreams(
           res.response,
           qn: params.qn,
+          owner: key,
         ).timeout(_warmTimeout, onTimeout: () {});
       }
     } catch (e) {
@@ -343,6 +408,7 @@ abstract final class PlayUrlCache {
   static void clear() {
     _entries.clear();
     _generation++;
+    _visibleOrder = {};
     _pending.clear();
     _warmPending.clear();
   }

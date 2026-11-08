@@ -262,7 +262,7 @@ class SettingTree {
           subtitle: '推薦來源、預覽、重新整理、過濾器',
           icon: Icons.explore_outlined,
           defaultFor: {.recommendSetting},
-          titles: {'顯示熱門推薦', '展示追番時間表', '預載入畫面上的影片'},
+          titles: {'顯示熱門推薦', '展示追番時間表', '預載入畫面上的影片', '同時預載影片數'},
         ),
         SettingNode(
           id: 'reply',

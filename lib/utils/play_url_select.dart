@@ -85,7 +85,11 @@ defaultSelectParams() async {
 
 /// Starts to load the head of the streams the page will play (BTR only).
 /// Does nothing when BTR playback is off. Completes when both downloads end.
-Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
+Future<void> warmStreams(
+  PlayUrlModel data, {
+  required int qn,
+  String? owner,
+}) async {
   if (!BtrConfig.playback) return;
   final params = await defaultSelectParams();
   final selected = selectStreams(
@@ -96,8 +100,9 @@ Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
   );
   if (selected == null) return;
   await Future.wait([
-    BtrProxy.warm(selected.videoUrl),
-    if (selected.audioUrl.isNotEmpty) BtrProxy.warm(selected.audioUrl),
+    BtrProxy.warm(selected.videoUrl, owner: owner),
+    if (selected.audioUrl.isNotEmpty)
+      BtrProxy.warm(selected.audioUrl, owner: owner),
   ]);
 }
 

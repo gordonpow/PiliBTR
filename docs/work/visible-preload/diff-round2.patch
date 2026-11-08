@@ -1,0 +1,495 @@
+diff --git a/lib/pages/rcmd/view.dart b/lib/pages/rcmd/view.dart
+index 3e24c9449..7b22a6ea1 100644
+--- a/lib/pages/rcmd/view.dart
++++ b/lib/pages/rcmd/view.dart
+@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/home/controller.dart';
+ import 'package:PiliPlus/pages/main/controller.dart';
+ import 'package:PiliPlus/pages/rcmd/controller.dart';
+ import 'package:PiliPlus/utils/mobile_observer.dart';
++import 'package:PiliPlus/utils/storage_pref.dart';
+ import 'package:PiliPlus/utils/play_url_cache.dart';
+ import 'package:flutter/rendering.dart';
+ import 'package:get/get.dart';
+@@ -34,6 +35,7 @@ class _RcmdPageState extends State<RcmdPage>
+ 
+ 
+   Timer? _debounce;
++  Timer? _scrollThrottle;
+   Worker? _loadWorker;
+   Worker? _navWorker;
+   bool _appResumed = true;
+@@ -63,6 +65,7 @@ class _RcmdPageState extends State<RcmdPage>
+   @override
+   void dispose() {
+     _debounce?.cancel();
++    _scrollThrottle?.cancel();
+     _loadWorker?.dispose();
+     _navWorker?.dispose();
+     if (Get.isRegistered<HomeController>()) {
+@@ -106,6 +109,7 @@ class _RcmdPageState extends State<RcmdPage>
+     PlayUrlCache.isPaused = !_isRcmdVisible;
+     if (PlayUrlCache.isPaused) {
+       _debounce?.cancel();
++      _scrollThrottle?.cancel();
+       PlayUrlCache.clearPending();
+     } else {
+       _scheduleVisiblePrefetch();
+@@ -115,25 +119,39 @@ class _RcmdPageState extends State<RcmdPage>
+   bool _onScroll(ScrollNotification n) {
+     if (n.depth != 0) return false;
+     if (n is ScrollStartNotification) {
++      // 不清空佇列；捲動中每 500 ms 收集一次可見卡片（throttle）。
+       _debounce?.cancel();
+-      PlayUrlCache.clearPending();
++      _scrollThrottle?.cancel();
++      // 模式為關閉時不啟動捲動中收集（只保留停止捲動後的 playurl 預取）。
++      if (Pref.visiblePreloadMode != 0) {
++        _scrollThrottle = Timer.periodic(
++          const Duration(milliseconds: 500),
++          (_) => _collectAndPrefetch(),
++        );
++      }
+     } else if (n is ScrollEndNotification) {
++      _scrollThrottle?.cancel();
+       _scheduleVisiblePrefetch();
+     }
+     return false;
+   }
+ 
++  void _collectAndPrefetch() {
++    if (!_isRcmdVisible) {
++      PlayUrlCache.isPaused = true;
++      return;
++    }
++    PlayUrlCache.isPaused = false;
++    final items = _collectVisible();
++    if (items.isNotEmpty) unawaited(PlayUrlCache.prefetchVisible(items));
++  }
++
+   void _scheduleVisiblePrefetch() {
+     _debounce?.cancel();
+-    _debounce = Timer(const Duration(milliseconds: 300), () {
+-      if (!_isRcmdVisible) {
+-        PlayUrlCache.isPaused = true;
+-        return;
+-      }
+-      PlayUrlCache.isPaused = false;
+-      final items = _collectVisible();
+-      if (items.isNotEmpty) unawaited(PlayUrlCache.prefetchVisible(items));
+-    });
++    _debounce = Timer(
++      const Duration(milliseconds: 300),
++      _collectAndPrefetch,
++    );
+   }
+ 
+   /// 走訪 render tree，取畫面內（含部分可見）所有有 bvid、cid 的影片卡片。
+diff --git a/lib/pages/setting/models/recommend_settings.dart b/lib/pages/setting/models/recommend_settings.dart
+index 411def45b..22df9c7cf 100644
+--- a/lib/pages/setting/models/recommend_settings.dart
++++ b/lib/pages/setting/models/recommend_settings.dart
+@@ -33,6 +33,31 @@ Future<void> _showVisiblePreloadDialog(
+   }
+ }
+ 
++const _preloadConcurrencyValues = [0, 2, 4, 6, 8];
++
++String _preloadConcurrencyLabel(int v) => v == 0 ? '不限制' : '$v';
++
++Future<void> _showPreloadConcurrencyDialog(
++  BuildContext context,
++  VoidCallback setState,
++) async {
++  final res = await showDialog<int>(
++    context: context,
++    builder: (context) => SelectDialog<int>(
++      title: '同時預載影片數',
++      value: Pref.visiblePreloadConcurrency,
++      values: [
++        for (final v in _preloadConcurrencyValues)
++          (v, _preloadConcurrencyLabel(v)),
++      ],
++    ),
++  );
++  if (res != null) {
++    await GStorage.setting.put(SettingBoxKey.visiblePreloadConcurrency, res);
++    setState();
++  }
++}
++
+ List<SettingsModel> get recommendSettings => [
+   NormalModel(
+     title: '預載入畫面上的影片',
+@@ -41,6 +66,13 @@ List<SettingsModel> get recommendSettings => [
+         '當前：${_visiblePreloadLabels[Pref.visiblePreloadMode.clamp(0, 2)]}（停止捲動後預先準備畫面上所有影片，會多用流量）',
+     onTap: _showVisiblePreloadDialog,
+   ),
++  NormalModel(
++    title: '同時預載影片數',
++    leading: const Icon(Icons.speed_outlined),
++    getSubtitle: () =>
++        '當前：${_preloadConcurrencyLabel(Pref.visiblePreloadConcurrency)}（同時預先準備的影片數；數字越小越省流量與請求）',
++    onTap: _showPreloadConcurrencyDialog,
++  ),
+   const SwitchModel(
+     title: '首頁使用app端推薦',
+     subtitle: '若web端推薦不太符合預期，可嘗試切換至app端推薦',
+diff --git a/lib/pages/setting/models/setting_tree.dart b/lib/pages/setting/models/setting_tree.dart
+index 097519f13..a289ed90f 100644
+--- a/lib/pages/setting/models/setting_tree.dart
++++ b/lib/pages/setting/models/setting_tree.dart
+@@ -262,7 +262,7 @@ class SettingTree {
+           subtitle: '推薦來源、預覽、重新整理、過濾器',
+           icon: Icons.explore_outlined,
+           defaultFor: {.recommendSetting},
+-          titles: {'顯示熱門推薦', '展示追番時間表', '預載入畫面上的影片'},
++          titles: {'顯示熱門推薦', '展示追番時間表', '預載入畫面上的影片', '同時預載影片數'},
+         ),
+         SettingNode(
+           id: 'reply',
+diff --git a/lib/services/download/btr_proxy.dart b/lib/services/download/btr_proxy.dart
+index 9b01492ca..7200b825a 100644
+--- a/lib/services/download/btr_proxy.dart
++++ b/lib/services/download/btr_proxy.dart
+@@ -88,18 +88,29 @@ abstract final class BtrProxy {
+   static final List<_BtrSource> _warmed = [];
+   static int _warmCapacity = 4;
+ 
++  /// Owners (card keys) whose warm bytes must not be evicted: the cards now
++  /// visible.
++  static Set<String> _protectedOwners = const {};
++
+   /// Sets how many URLs may keep warm bytes: 2 per visible card (video and
+-  /// audio) plus 2 for a tapped card, at least 4. Trims at once when it shrinks.
+-  static void setWarmCapacity(int visibleCards) {
++  /// audio) plus 2 for a tapped card, at least 4. [visibleOwners] are the
++  /// keys of the visible cards. When over capacity, the oldest idle warm of a
++  /// card that is not visible goes first; a visible card's warm and a warm
++  /// that a serve is reading are never evicted.
++  static void setWarmCapacity(
++    int visibleCards, {
++    Set<String> visibleOwners = const {},
++  }) {
+     _warmCapacity = math.max(4, visibleCards * 2 + 2);
++    _protectedOwners = visibleOwners;
+     _trimWarmed();
+   }
+ 
+-  /// Frees the oldest warm bytes that no serve is reading, until the count
+-  /// fits. When all are being read, nothing is freed now.
+   static void _trimWarmed() {
+     while (_warmed.length > _warmCapacity) {
+-      final i = _warmed.indexWhere((s) => s.warmIdle);
++      final i = _warmed.indexWhere(
++        (s) => s.warmIdle && !_protectedOwners.contains(s.warmOwner),
++      );
+       if (i < 0) return;
+       _warmed.removeAt(i).evictWarm();
+     }
+@@ -112,13 +123,20 @@ abstract final class BtrProxy {
+   ///
+   /// The returned future completes when the warm download ends (success or
+   /// failure), or at once when nothing is started.
+-  static Future<void> warm(String url, {int bytes = 512 * 1024}) {
++  ///
++  /// [owner] names the card the bytes belong to (see [setWarmCapacity]).
++  static Future<void> warm(
++    String url, {
++    int bytes = 512 * 1024,
++    String? owner,
++  }) {
+     if (!BtrConfig.playback || !isEligible(url)) return Future.value();
+     final src = url.http2https;
+     final id = _idFor(src);
+     final source = _sources[id]!;
+     if (source.hasWarm) return Future.value();
+     if (kDebugMode) debugPrint('BTR: warm start $id');
++    source.warmOwner = owner;
+     final done = source.startWarm(bytes, onRelease: () => _warmed.remove(source));
+     _warmed.add(source);
+     _trimWarmed();
+@@ -317,6 +335,9 @@ class _BtrSource {
+ 
+   _Warm? _warm;
+ 
++  /// Key of the card that asked for the warm bytes (null for tap-down).
++  String? warmOwner;
++
+   /// True when a buffer exists or its download is running. A released warm
+   /// is not counted, so it can be warmed again.
+   bool get hasWarm {
+diff --git a/lib/utils/play_url_cache.dart b/lib/utils/play_url_cache.dart
+index d71239487..88afbab4f 100644
+--- a/lib/utils/play_url_cache.dart
++++ b/lib/utils/play_url_cache.dart
+@@ -140,8 +140,6 @@ abstract final class PlayUrlCache {
+ 
+   // ---- 可見卡片預取（首頁推薦）----
+ 
+-  static const _visibleConcurrency = 2;
+-  static const _warmConcurrency = 2;
+   static const _maxPlayUrlOnly = 6;
+   static const _warmTimeout = Duration(seconds: 15);
+   static const _backoffDuration = Duration(minutes: 5);
+@@ -154,14 +152,28 @@ abstract final class PlayUrlCache {
+   static final _pending = <String, (String, int, bool)>{};
+   static final _inFlight = <String>{};
+ 
+-  /// 預熱佇列（影片＋音訊開頭）：併發 2 部影片、去重。
++  /// 目前可見卡片的 key -> 順序（越小越前面）。佇列依此排序：可見優先，
++  /// 不在畫面上且尚未開始的項目留在佇列但排最後。
++  static var _visibleOrder = <String, int>{};
++
++  /// 最近一次收集的可見卡片數；playurl 預取的同時數即為此值（至少 1）。
++  static int _visibleLimit = 1;
++
++  /// 設定的同時預載影片數；0 為不限制。
++  static int _concurrencyCap = 0;
+   static int _warmActive = 0;
++
++  /// 預熱佇列（影片＋音訊開頭）：同時數依設定（0 不限制）、去重。
+   static final _warmPending = <String, (String, int)>{};
+   static final _warmInFlight = <String>{};
+ 
+-  /// clearPending／clear 時加一；playurl 完成時若世代已變，就不再加入預熱佇列。
++  /// clearPending／clear 時加一（帳號切換、頁面不可見）；捲動開始不會改變它。
++  /// playurl 完成時若世代已變，就不再加入預熱佇列。
+   static int _generation = 0;
+ 
++  /// 每次 [prefetchVisible] 加一；較舊的呼叫在 await 後發現有新呼叫就返回。
++  static int _callSeq = 0;
++
+   static bool get _inBackoff {
+     final until = _backoffUntil;
+     return until != null && DateTime.now().isBefore(until);
+@@ -170,10 +182,14 @@ abstract final class PlayUrlCache {
+   /// 預取可見卡片：依設定決定是否預熱開頭。
+   /// 預熱開啟（一律，或僅 Wi-Fi 且目前是 Wi-Fi，且 BTR 播放開啟）時處理所有卡片，
+   /// 並在 playurl 完成後預熱影片與音訊開頭；否則只預取前 6 張的 playurl。
+-  /// 併發 2、去重、412 退避；tap-down 的 [prefetch] 不受影響。
++  /// playurl 同時數為本次可見卡片數、去重、412 退避；預熱不限同時數。
++  /// 捲動中會重複呼叫：每次呼叫以「目前可見」取代尚未開始的佇列（playurl 與預熱），
++  /// 已開始的不取消；可見項目依畫面順序處理。
++  /// tap-down 的 [prefetch] 不受影響。
+   static Future<void> prefetchVisible(List<(String bvid, int cid)> items) async {
+     if (isPaused || _inBackoff) return;
+     final generation = _generation;
++    final seq = ++_callSeq;
+     final PlayUrlParams params;
+     bool warmOn;
+     try {
+@@ -186,10 +202,28 @@ abstract final class PlayUrlCache {
+       return;
+     }
+     if (isPaused || _inBackoff || generation != _generation) return;
+-    if (warmOn) BtrProxy.setWarmCapacity(items.length);
++    if (seq != _callSeq) return;
+     if (!warmOn && items.length > _maxPlayUrlOnly) {
+       items = items.sublist(0, _maxPlayUrlOnly);
+     }
++    _visibleOrder = {
++      for (var i = 0; i < items.length; i++) _key(items[i].$1, items[i].$2): i,
++    };
++    _visibleLimit = items.isEmpty ? 1 : items.length;
++    final cap = Pref.visiblePreloadConcurrency;
++    _concurrencyCap = cap > 0 ? cap : 0;
++    if (_concurrencyCap > 0 && _visibleLimit > _concurrencyCap) {
++      _visibleLimit = _concurrencyCap;
++    }
++    if (warmOn) {
++      BtrProxy.setWarmCapacity(
++        items.length,
++        visibleOwners: _visibleOrder.keys.toSet(),
++      );
++    }
++    // 以目前可見取代尚未開始的佇列；已開始的不取消。
++    _pending.clear();
++    _warmPending.clear();
+     final now = DateTime.now();
+     for (final (bvid, cid) in items) {
+       final key = _key(bvid, cid);
+@@ -200,7 +234,14 @@ abstract final class PlayUrlCache {
+           cached.params == params) {
+         // 快取命中仍要預熱開頭。
+         if (warmOn) {
+-          _enqueueCachedWarm(key, bvid, cid, params, cached.future).ignore();
++          _enqueueCachedWarm(
++            key,
++            bvid,
++            cid,
++            params,
++            cached.future,
++            seq,
++          ).ignore();
+         }
+         continue;
+       }
+@@ -211,7 +252,7 @@ abstract final class PlayUrlCache {
+     _pumpWarm();
+   }
+ 
+-  /// 開始捲動時清空尚未發出的佇列（已發出的請求不取消）。
++  /// 頁面不可見、dispose 時清空尚未發出的佇列（已發出的請求不取消）。
+   static void clearPending() {
+     _generation++;
+     _pending.clear();
+@@ -219,11 +260,11 @@ abstract final class PlayUrlCache {
+   }
+ 
+   static void _pumpVisible() {
+-    while (_active < _visibleConcurrency &&
++    while (_active < _visibleLimit &&
+         _pending.isNotEmpty &&
+         !isPaused &&
+         !_inBackoff) {
+-      final key = _pending.keys.first;
++      final key = _nextKey(_pending.keys);
+       final (bvid, cid, warm) = _pending.remove(key)!;
+       _active++;
+       _inFlight.add(key);
+@@ -248,7 +289,10 @@ abstract final class PlayUrlCache {
+         params: await defaultParams(),
+       );
+       if (res is Error && _isRiskControl(res)) _startBackoff();
+-      if (warm && res is Success && generation == _generation) {
++      if (warm &&
++          res is Success &&
++          generation == _generation &&
++          _visibleOrder.containsKey(key)) {
+         _enqueueWarm(key, bvid, cid);
+       }
+     } catch (e) {
+@@ -269,13 +313,19 @@ abstract final class PlayUrlCache {
+     int cid,
+     PlayUrlParams params,
+     Future<LoadingState<PlayUrlModel>> future,
++    int seq,
+   ) async {
+     final generation = _generation;
+     try {
+       final data = _completed[future];
+       if (data != null && await allStreamsWarm(data, qn: params.qn)) return;
+     } catch (_) {}
+-    if (generation != _generation || isPaused || _inBackoff) return;
++    if (generation != _generation ||
++        seq != _callSeq ||
++        isPaused ||
++        _inBackoff) {
++      return;
++    }
+     _enqueueWarm(key, bvid, cid);
+     _pumpWarm();
+   }
+@@ -285,12 +335,26 @@ abstract final class PlayUrlCache {
+     _warmPending[key] = (bvid, cid);
+   }
+ 
++  /// 佇列中下一個要處理的 key：可見的依畫面順序優先，沒有可見的就取最早加入者。
++  static String _nextKey(Iterable<String> keys) {
++    String? best;
++    var bestOrder = 1 << 30;
++    for (final k in keys) {
++      final o = _visibleOrder[k];
++      if (o != null && o < bestOrder) {
++        best = k;
++        bestOrder = o;
++      }
++    }
++    return best ?? keys.first;
++  }
++
+   static void _pumpWarm() {
+-    while (_warmActive < _warmConcurrency &&
+-        _warmPending.isNotEmpty &&
++    while (_warmPending.isNotEmpty &&
++        (_concurrencyCap == 0 || _warmActive < _concurrencyCap) &&
+         !isPaused &&
+         !_inBackoff) {
+-      final key = _warmPending.keys.first;
++      final key = _nextKey(_warmPending.keys);
+       final (bvid, cid) = _warmPending.remove(key)!;
+       _warmActive++;
+       _warmInFlight.add(key);
+@@ -298,7 +362,7 @@ abstract final class PlayUrlCache {
+     }
+   }
+ 
+-  /// 取得（多半是快取）playurl 後預熱影片與音訊開頭，等兩者下載結束才釋放名額。
++  /// 取得（多半是快取）playurl 後預熱影片與音訊開頭，等兩者下載結束才從進行中移除。
+   static Future<void> _runWarm(String key, String bvid, int cid) async {
+     try {
+       final params = await defaultParams();
+@@ -309,6 +373,7 @@ abstract final class PlayUrlCache {
+         await warmStreams(
+           res.response,
+           qn: params.qn,
++          owner: key,
+         ).timeout(_warmTimeout, onTimeout: () {});
+       }
+     } catch (e) {
+@@ -343,6 +408,7 @@ abstract final class PlayUrlCache {
+   static void clear() {
+     _entries.clear();
+     _generation++;
++    _visibleOrder = {};
+     _pending.clear();
+     _warmPending.clear();
+   }
+diff --git a/lib/utils/play_url_select.dart b/lib/utils/play_url_select.dart
+index 0f1afa58b..9f1aa7219 100644
+--- a/lib/utils/play_url_select.dart
++++ b/lib/utils/play_url_select.dart
+@@ -85,7 +85,11 @@ defaultSelectParams() async {
+ 
+ /// Starts to load the head of the streams the page will play (BTR only).
+ /// Does nothing when BTR playback is off. Completes when both downloads end.
+-Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
++Future<void> warmStreams(
++  PlayUrlModel data, {
++  required int qn,
++  String? owner,
++}) async {
+   if (!BtrConfig.playback) return;
+   final params = await defaultSelectParams();
+   final selected = selectStreams(
+@@ -96,8 +100,9 @@ Future<void> warmStreams(PlayUrlModel data, {required int qn}) async {
+   );
+   if (selected == null) return;
+   await Future.wait([
+-    BtrProxy.warm(selected.videoUrl),
+-    if (selected.audioUrl.isNotEmpty) BtrProxy.warm(selected.audioUrl),
++    BtrProxy.warm(selected.videoUrl, owner: owner),
++    if (selected.audioUrl.isNotEmpty)
++      BtrProxy.warm(selected.audioUrl, owner: owner),
+   ]);
+ }
+ 
+diff --git a/lib/utils/storage_key.dart b/lib/utils/storage_key.dart
+index b69752aa8..d63c53b24 100644
+--- a/lib/utils/storage_key.dart
++++ b/lib/utils/storage_key.dart
+@@ -5,6 +5,7 @@ abstract final class SettingBoxKey {
+       defaultVideoQa = 'defaultVideoQa',
+       defaultVideoQaCellular = 'defaultVideoQaCellular',
+       visiblePreloadMode = 'visiblePreloadMode',
++      visiblePreloadConcurrency = 'visiblePreloadConcurrency',
+       defaultAudioQa = 'defaultAudioQa',
+       defaultAudioQaCellular = 'defaultAudioQaCellular',
+       autoPlayEnable = 'autoPlayEnable',
+diff --git a/lib/utils/storage_pref.dart b/lib/utils/storage_pref.dart
+index 46cdb8647..f4226b507 100644
+--- a/lib/utils/storage_pref.dart
++++ b/lib/utils/storage_pref.dart
+@@ -259,6 +259,12 @@ abstract final class Pref {
+         : VideoQuality.super8k.code,
+   );
+ 
++  /// 同時預載影片數：0 不限制（預設），或 2／4／6／8。
++  static int get visiblePreloadConcurrency => _setting.get(
++    SettingBoxKey.visiblePreloadConcurrency,
++    defaultValue: 0,
++  );
++
+   /// 預載入畫面上的影片：0 關閉、1 僅 Wi-Fi、2 一律（預設）。
+   static int get visiblePreloadMode =>
+       _setting.get(SettingBoxKey.visiblePreloadMode, defaultValue: 2);
