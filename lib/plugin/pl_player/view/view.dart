@@ -685,8 +685,11 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         () {
           if (videoDetailController.subtitles.isNotEmpty) {
             final val = videoDetailController.vttSubtitlesIndex.value;
+            final longPressCopy = Pref.subtitleLongPressCopy;
             final subtitleButton = PopupMenuButton<int>(
-              tooltip: '字幕',
+              // The tooltip handles long press itself and would block the
+              // copy menu below, so drop it when long press copy is on.
+              tooltip: longPressCopy ? '' : '字幕',
               requestFocus: false,
               initialValue: val,
               color: Colors.black.withValues(alpha: 0.8),
@@ -735,7 +738,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       ),
               ),
             );
-            if (!Pref.subtitleLongPressCopy) return subtitleButton;
+            if (!longPressCopy) return subtitleButton;
             // Long press copies subtitles; tap still opens the track menu.
             return GestureDetector(
               onLongPressStart: (details) async {
