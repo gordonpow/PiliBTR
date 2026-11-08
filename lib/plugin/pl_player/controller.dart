@@ -218,7 +218,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   RxBool get enableShowDanmakuAdaptive =>
       isLive ? enableShowLiveDanmaku : enableShowDanmaku;
 
-  late final bool autoPiP = Pref.autoPiP;
+  // Read each time, so a change in the settings applies without
+  // recreating the player (the mini player keeps it alive).
+  bool get autoPiP => Pref.autoPiP;
   bool get isPipMode =>
       (Platform.isAndroid && AndroidHelper.isPipMode) ||
       (PlatformUtils.isDesktop && isDesktopPip);
@@ -356,8 +358,24 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
   }
 
-  late bool _isAutoEnterPip = false;
+  bool get _isAutoEnterPip =>
+      autoPiP &&
+      ((Platform.isAndroid && DeviceUtils.sdkInt >= 31) ||
+          (Platform.isIOS && IOSPipHelper.isAvailable));
   bool get isAutoEnterPip => _isAutoEnterPip;
+
+  /// Applies the auto PiP setting to the open player after it changes.
+  void syncAutoEnterPip() {
+    if (_isAutoEnterPip) {
+      if (playerStatus.isPlaying && (_isCurrVideoPage || MiniPlayer.active)) {
+        enterPip(autoEnter: true);
+      }
+    } else if (Platform.isIOS) {
+      IOSPipHelper.disableAutoEnter();
+    } else if (Platform.isAndroid) {
+      PiliAndroidHelper.disableAutoEnterPip();
+    }
+  }
 
   static bool get _isCurrVideoPage {
     final routing = Get.routing;
@@ -399,12 +417,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }
 
   void _disableAutoEnterPip() {
-    if (_isAutoEnterPip) {
-      if (Platform.isIOS) {
-        IOSPipHelper.disableAutoEnter();
-      } else {
-        PiliAndroidHelper.disableAutoEnterPip();
-      }
+    // Android always sends it (no-op below Android 12), so a setting
+    // changed outside the switch cannot leave auto-enter on.
+    if (Platform.isAndroid) {
+      PiliAndroidHelper.disableAutoEnterPip();
+    } else if (_isAutoEnterPip && Platform.isIOS) {
+      IOSPipHelper.disableAutoEnter();
     }
   }
 
@@ -733,21 +751,19 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       enableHeart = false;
     }
 
-    if (Platform.isAndroid && autoPiP) {
-      if (DeviceUtils.sdkInt < 31) {
-        final func = Runnable.implement($Runnable(run: _onUserLeaveHint));
-        AndroidHelper$ToDart.onUserLeaveHint = func;
-        func.release();
-      } else {
-        _isAutoEnterPip = true;
-      }
-    } else if (Platform.isIOS && autoPiP && IOSPipHelper.isAvailable) {
-      _isAutoEnterPip = true;
+    // Android 11 and lower: enter PiP when the user leaves the app.
+    // [_onUserLeaveHint] checks the setting each time.
+    if (Platform.isAndroid && DeviceUtils.sdkInt < 31) {
+      final func = Runnable.implement($Runnable(run: _onUserLeaveHint));
+      AndroidHelper$ToDart.onUserLeaveHint = func;
+      func.release();
     }
   }
 
   void _onUserLeaveHint() {
-    if (playerStatus.isPlaying && (_isCurrVideoPage || MiniPlayer.active)) {
+    if (autoPiP &&
+        playerStatus.isPlaying &&
+        (_isCurrVideoPage || MiniPlayer.active)) {
       enterPip();
     }
   }

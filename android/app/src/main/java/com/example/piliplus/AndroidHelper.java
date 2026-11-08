@@ -160,6 +160,11 @@ public final class AndroidHelper {
         return false;
     }
 
+    // Last auto-enter state sent to the system. Android 12 replaces the
+    // auto-enter flag on each setPictureInPictureParams call, so
+    // updatePipActions sends it again.
+    private static volatile boolean autoEnterPip = false;
+
     public static void enterPip(long engineId, int width, int height, boolean autoEnter, boolean isLive, boolean isPlaying) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Activity activity = JniFlutterPlugin.getActivity(engineId);
@@ -169,10 +174,15 @@ public final class AndroidHelper {
             setPipActions(activity, builder, isLive, isPlaying);
             if (autoEnter) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    autoEnterPip = true;
                     builder.setAutoEnterEnabled(true);
                     activity.setPictureInPictureParams(builder.build());
                 }
             } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Keep the auto-enter state when entering PiP by hand.
+                    builder.setAutoEnterEnabled(autoEnterPip);
+                }
                 PictureInPictureParams params = builder.build();
                 activity.enterPictureInPictureMode(params);
                 activity.setPictureInPictureParams(params);
@@ -186,6 +196,9 @@ public final class AndroidHelper {
         assert activity != null;
         PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder();
         setPipActions(activity, builder, isLive, isPlaying);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(autoEnterPip);
+        }
         activity.setPictureInPictureParams(builder.build());
     }
 
@@ -208,6 +221,7 @@ public final class AndroidHelper {
 
     public static void disableAutoEnterPip(long engineId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            autoEnterPip = false;
             Activity activity = JniFlutterPlugin.getActivity(engineId);
             if (activity != null) {
                 activity.setPictureInPictureParams(new PictureInPictureParams.Builder().setAutoEnterEnabled(false).build());

@@ -14,6 +14,7 @@ import 'package:PiliPlus/pages/setting/widgets/translate_dialogs.dart';
 import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/translate/translator.dart';
@@ -398,13 +399,14 @@ List<SettingsModel> get playSettings => [
       leading: const Icon(Icons.picture_in_picture_outlined),
       setKey: SettingBoxKey.autoPiP,
       defaultVal: false,
-      onChanged: Platform.isAndroid
-          ? (val) {
-              if (val && !videoPlayerServiceHandler!.enableBackgroundPlay) {
-                SmartDialog.showToast('建議開啟背景音訊服務');
-              }
-            }
-          : null,
+      onChanged: (val) {
+        if (Platform.isAndroid &&
+            val &&
+            !videoPlayerServiceHandler!.enableBackgroundPlay) {
+          SmartDialog.showToast('建議開啟背景音訊服務');
+        }
+        PlPlayerController.instance?.syncAutoEnterPip();
+      },
     ),
   // PiP on iOS only shows the video frames, without danmaku.
   if (Platform.isAndroid)
