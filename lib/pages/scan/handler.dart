@@ -74,9 +74,50 @@ abstract final class QrScanHandler {
         ),
       ),
     );
-    if (confirmed != true) return;
-    final res = await LoginHttp.confirmTvQrcode(authCode);
-    SmartDialog.showToast(res.msg);
+    if (confirmed != true || !context.mounted) return;
+    // The scan page does not show SmartDialog toasts reliably: show the
+    // progress and the result in dialogs of this page.
+    final pending = LoginHttp.confirmTvQrcode(authCode);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _withL10n(
+        ctx,
+        const AlertDialog(
+          content: Row(
+            children: [
+              SizedBox.square(
+                dimension: 24,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+              SizedBox(width: 16),
+              Text('登入中…'),
+            ],
+          ),
+        ),
+      ),
+    );
+    final res = await pending;
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: Text(res.success ? '登入成功' : '登入失敗'),
+          content: Text(
+            res.success ? '已用目前帳號登入其他裝置。' : res.msg,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('確定'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   static Future<void> _showText(BuildContext context, String text) {

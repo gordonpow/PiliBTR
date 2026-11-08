@@ -12,6 +12,7 @@ import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:encrypt/encrypt.dart';
 
 abstract final class LoginHttp {
@@ -82,10 +83,15 @@ abstract final class LoginHttp {
         },
         options: Options(contentType: Headers.formUrlEncodedContentType),
       );
-      final ok = res.data['code'] == 0;
+      if (kDebugMode) debugPrint('confirmTvQrcode: ${res.statusCode} ${res.data}');
+      final data = res.data;
+      final code = data is Map ? data['code'] : null;
+      final ok = code == 0;
+      if (ok) return (success: true, msg: '登入成功');
+      final message = data is Map ? data['message']?.toString() ?? '' : '';
       return (
-        success: ok,
-        msg: ok ? '登入成功' : (res.data['message']?.toString() ?? '登入失敗'),
+        success: false,
+        msg: '登入失敗（$code）${message.isEmpty ? '' : '：$message'}',
       );
     } catch (e) {
       return (success: false, msg: e.toString());
