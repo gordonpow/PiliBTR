@@ -11,7 +11,43 @@ enum SubtitleFormat implements EnumWithLabel {
   const SubtitleFormat(this.label);
 }
 
+/// Format used when copying subtitles to the clipboard.
+enum SubtitleCopyFormat {
+  plain('純文字'),
+  timed('含時間文字'),
+  srt('SRT');
+
+  final String label;
+  const SubtitleCopyFormat(this.label);
+}
+
 abstract final class SubtitleUtils {
+  /// One cue per line, no times.
+  static String json2Plain(List list) =>
+      list.map((e) => e['content'].toString().trim()).join('\n');
+
+  static String _shortTime(num seconds) {
+    final t = seconds.toInt();
+    final h = t ~/ 3600;
+    final m = ((t % 3600) ~/ 60).toString().padLeft(2, '0');
+    final s = (t % 60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  /// One cue per line, prefixed with `[mm:ss]` (`[h:mm:ss]` for >= 1 hour).
+  static String json2Timed(List list) => list
+      .map(
+        (e) => '[${_shortTime(e['from'])}] ${e['content'].toString().trim()}',
+      )
+      .join('\n');
+
+  static String convert(List list, SubtitleCopyFormat format) =>
+      switch (format) {
+        SubtitleCopyFormat.plain => json2Plain(list),
+        SubtitleCopyFormat.timed => json2Timed(list),
+        SubtitleCopyFormat.srt => json2Srt(list),
+      };
+
   static String _vttTimecode(num seconds) {
     final h = (seconds ~/ 3600).toString().padLeft(2, '0');
     seconds %= 3600;

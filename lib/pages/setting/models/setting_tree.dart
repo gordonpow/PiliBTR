@@ -224,6 +224,7 @@ class SettingTree {
           icon: Icons.closed_caption_outlined,
           titles: {
             '自動啟用字幕',
+            '長按字幕按鈕複製字幕',
             '啟用拖拽字幕調整底部邊距',
             '翻譯服務',
             'DeepL 金鑰',

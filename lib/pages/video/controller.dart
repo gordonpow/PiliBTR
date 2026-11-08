@@ -1180,6 +1180,9 @@ class VideoDetailController extends GetxController
   /// Translated VTT in memory, keyed by cid + lan.
   final Map<String, String> _translatedVtt = {};
 
+  /// Translated subtitle bodies, keyed by cid + lan (used for copying).
+  final Map<String, List> _translatedBodies = {};
+
   /// Raw subtitle bodies, keyed by cid + lan (needed to translate).
   final Map<String, List> _subtitleBodies = {};
 
@@ -1248,7 +1251,7 @@ class VideoDetailController extends GetxController
       if (isClosed) return;
       subtitle = (isData: true, id: result);
       vttSubtitles[index - 1] = subtitle;
-      if (canTranslate) _subtitleBodies[key] = body;
+      _subtitleBodies[key] = body;
       // A newer setSubtitle call owns the player now.
       if (token != _subtitleToken) return;
     }
@@ -1258,6 +1261,57 @@ class VideoDetailController extends GetxController
       // Original is shown first; the translation replaces it when ready.
       _translateSubtitle(sub, key, subCid, index, token);
     }
+  }
+
+  /// Copy all subtitle tracks of the current video to the clipboard.
+  Future<void> copySubtitles(SubtitleCopyFormat format) async {
+    final subs = subtitles.toList();
+    final keys = [for (final sub in subs) _subtitleKey(sub)];
+    final total = subs.length;
+    if (total == 0) return;
+    final labels = [for (var i = 0; i < total; i++) subtitleLabel(i)];
+    SmartDialog.showToast('複製中…');
+
+    Future<List?> load(int i) async {
+      final key = keys[i];
+      if (_translatedVtt.containsKey(key)) {
+        final translated = _translatedBodies[key];
+        if (translated != null) return translated;
+      }
+      final cached = _subtitleBodies[key];
+      if (cached != null) return cached;
+      final url = subs[i].subtitleUrl;
+      if (url == null || url.isEmpty) return null;
+      try {
+        final body = await VideoHttp.getSubtitleBody(url);
+        if (body != null) _subtitleBodies[key] = body;
+        return body;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final bodies = await Future.wait([for (var i = 0; i < total; i++) load(i)]);
+    if (isClosed) return;
+
+    final sections = <String>[];
+    for (var i = 0; i < total; i++) {
+      final body = bodies[i];
+      if (body == null || body.isEmpty) continue;
+      sections.add(
+        '【${labels[i]}】\n${SubtitleUtils.convert(body, format)}',
+      );
+    }
+    if (sections.isEmpty) {
+      SmartDialog.showToast('複製字幕失敗');
+      return;
+    }
+    await Utils.copyText(sections.join('\n\n'), needToast: false);
+    if (isClosed) return;
+    final failed = total - sections.length;
+    SmartDialog.showToast(
+      '已複製 ${sections.length} 條字幕${failed > 0 ? '，$failed 條下載失敗' : ''}',
+    );
   }
 
   Future<void> _translateSubtitle(
@@ -1298,6 +1352,7 @@ class VideoDetailController extends GetxController
       final vtt = await compute<List, String>(SubtitleUtils.json2Vtt, newBody);
       if (isClosed) return;
       _translatedVtt['$subCid|${sub.lan}'] = vtt;
+      _translatedBodies['$subCid|${sub.lan}'] = newBody;
       // Replace only if nothing changed meanwhile: same cid, same track,
       // latest request.
       if (token != _subtitleToken ||

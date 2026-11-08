@@ -1,5 +1,5 @@
 {
- "version": "202611081517",
+ "version": "202611081817",
  "strings": {
   "\n\n注：被拉黑的Up可以在隱私設定-黑名單管理中解除": "\n\nNote: Blocked uploaders can be unblocked in Privacy Settings - Blocklist Management",
   "\nmid為0時使用匿名": "\nUse anonymous when mid is 0",
@@ -540,6 +540,7 @@
   "吐瓦魯": "Tuvalu",
   "向右旋轉": "Rotate right",
   "向左旋轉": "Rotate left",
+  "含時間文字": "Text with timestamps",
   "周榜": "Weekly ranking",
   "品牌合作": "Brand collaboration",
   "哥倫比亞": "Colombia",
@@ -1484,6 +1485,7 @@
   "納米比亞": "Namibia",
   "紐埃島": "Niue",
   "紐西蘭": "New Zealand",
+  "純文字": "Plain text",
   "純黑主題": "Pure black theme",
   "索引": "Index",
   "索羅門群島": "Solomon Islands",
@@ -1639,7 +1641,9 @@
   "裝置資訊": "Device info",
   "複製": "Copy",
   "複製 SC 資訊": "Copy SC info",
+  "複製中…": "Copying…",
   "複製全部": "Copy all",
+  "複製字幕失敗": "Failed to copy subtitles",
   "複製彈幕資訊": "Copy Danmaku info",
   "複製快取路徑": "Copy cache path",
   "複製成功": "Copied successfully",
@@ -1904,7 +1908,9 @@
   "鎖定": "Lock",
   "長圖": "Long image",
   "長按/右鍵顯示圖片選單": "Long press / right-click to show image menu",
+  "長按字幕按鈕複製字幕": "Long-press subtitle button to copy subtitles",
   "長按影片預覽": "Long press to preview video",
+  "長按播放器的 CC 按鈕，選擇格式後複製所有字幕": "Long-press the player's CC button, choose a format, and copy all subtitles",
   "長按清除日誌": "Long press to clear logs",
   "長評": "Long reviews",
   "開": "On",
@@ -2287,6 +2293,7 @@
   "已下載到 {0}": "Downloaded to {0}",
   "已將 {0} 複製至剪貼簿": "Copied {0} to clipboard",
   "已臨時遮蔽{0}({1})，重啟恢復": "Temporarily blocked {0}({1}), restart to restore",
+  "已複製 {0} 條字幕{1}": "Copied {0} subtitle tracks{1}",
   "已設定 ••••{0}": "Set ••••{0}",
   "已設定為 {0}，正在重新載入影片": "Set to {0}, reloading video",
   "已跳至{0}": "Jumped to {0}",
@@ -2475,6 +2482,7 @@
   "首選解碼格式：{0}，請根據裝置支援情況與需求調整": "Preferred decoding format: {0}; please adjust based on device support and needs",
   "驗證資訊錯誤：{0}\n返回內容：{1}，嘗試另一個驗證碼介面": "Verification info error: {0}\nResponse: {1}, trying another captcha interface",
   "高能觀眾({0})": "Top viewers ({0})",
+  "，{0} 條下載失敗": ", {0} failed to download",
   "，無引數時:「{0}」": ", when no arguments: \"{0}\""
  }
 }

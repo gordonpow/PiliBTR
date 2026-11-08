@@ -37,6 +37,7 @@ import 'package:PiliPlus/pages/video/post_panel/view.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/subtitle_utils.dart';
 import 'package:PiliPlus/plugin/pl_player/models/bottom_control_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/double_tap_type.dart';
@@ -684,7 +685,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         () {
           if (videoDetailController.subtitles.isNotEmpty) {
             final val = videoDetailController.vttSubtitlesIndex.value;
-            return PopupMenuButton<int>(
+            final subtitleButton = PopupMenuButton<int>(
               tooltip: '字幕',
               requestFocus: false,
               initialValue: val,
@@ -733,6 +734,41 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         color: Colors.white,
                       ),
               ),
+            );
+            if (!Pref.subtitleLongPressCopy) return subtitleButton;
+            // Long press copies subtitles; tap still opens the track menu.
+            return GestureDetector(
+              onLongPressStart: (details) async {
+                final pos = details.globalPosition;
+                final format = await showMenu<SubtitleCopyFormat>(
+                  context: context,
+                  position: RelativeRect.fromLTRB(
+                    pos.dx,
+                    pos.dy,
+                    pos.dx,
+                    pos.dy,
+                  ),
+                  color: Colors.black.withValues(alpha: 0.8),
+                  items: [
+                    for (final f in SubtitleCopyFormat.values)
+                      PopupMenuItem<SubtitleCopyFormat>(
+                        value: f,
+                        height: 35,
+                        child: Text(
+                          f.label,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+                if (format != null) {
+                  videoDetailController.copySubtitles(format);
+                }
+              },
+              child: subtitleButton,
             );
           }
           return const SizedBox.shrink();

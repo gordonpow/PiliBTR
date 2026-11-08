@@ -265,6 +265,13 @@ List<SettingsModel> get playSettings => [
     getSubtitle: () => '當前選擇偏好：${Pref.subtitlePreferenceV2.desc}',
     onTap: _showSubtitleDialog,
   ),
+  const SwitchModel(
+    title: '長按字幕按鈕複製字幕',
+    subtitle: '長按播放器的 CC 按鈕，選擇格式後複製所有字幕',
+    leading: Icon(Icons.copy_all_outlined),
+    setKey: SettingBoxKey.subtitleLongPressCopy,
+    defaultVal: false,
+  ),
   NormalModel(
     title: '翻譯服務',
     leading: const Icon(Icons.translate),
