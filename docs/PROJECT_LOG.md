@@ -31,6 +31,7 @@
 
 | Commit | 功能 |
 |---|---|
+| `a7e8338d4` | 錯誤／建議回報，經 Apps Script 寄到開發者信箱 |
 | `ee58a912d` | 快取與下載彈窗播放器可播放、全螢幕與全螢幕手勢（同主播放器） |
 | `365c23c56` | BTR 多 CDN 加速：播放與下載 |
 | `2247ef887` | App 改名 PiliBTR、新圖示、介面改繁體中文 |
@@ -324,4 +325,6 @@
 | 19:45 | 模擬器靜音；用戶回報直式影片右側綠色區塊、畫面被壓窄；快取與下載全螢幕手勢與一般影片相同 | 兩個 AVD 的 `config.ini` 設 `hw.audioOutput = no`（下次啟動生效）。截圖確認是 PiliBTRTV 播放器（platformView／SurfaceView，硬體解碼輸出的空白區），需要 BV 號與裝置型號才能重現，使用者去問用戶，尚未修改。手勢：Sonnet 在 `video_popup_player.dart` 全螢幕時加入雙擊快退／快進／播放暫停、水平拖動調進度、左側亮度／右側音量、長按倍速，依主播放器同一組 Pref 設定；analyze 無 issue，尚未實機測試、未 commit |
 | 20:10 | 開模擬器、建置並安裝 | Pixel_9_Pro_XL 以 `-no-audio` 啟動；debug APK（x64）建置成功，但 /data 只剩 400MB 裝不下。擴大 `disk.dataPartition.size` 無效（資料在 qcow2 覆蓋檔，需 wipe 才套用），設定已還原。經使用者同意移除 Firefox，並把 `sys_storage_threshold_percentage` 設 1、`sys_storage_threshold_max_bytes` 設 50MB 後安裝成功並啟動 |
 | 20:20 | 推送 | `ee58a912d`（彈窗播放器修正與全螢幕手勢）推送到 pilibtr main，未發布新版 |
-| 20:40 | 發布 | 版本 v2.2.10（2.2.10+11）：彈窗播放器修正與全螢幕手勢 |
+| 20:40 | 發布 | `6a5c7aa57` 版本 v2.2.10（2.2.10+11），release 附 3 個 APK 與 SHA256SUMS（Latest）；issue #88、#89 已關閉。手勢未實機測試 |
+| 20:55 | 新增錯誤／建議回報，傳送日誌或日誌加描述到我的信箱，區分 PiliBTR 與 PiliBTRTV | 使用者選擇沿用 PiliBTRTV 的 Google Apps Script 代寄（App 不放密碼或金鑰）。需求與規格在 `docs/work/feedback-report/`。Sonnet 實作回報頁（類型、描述、附日誌開關、成功顯示編號）、`/feedback` 路由、關於頁與日誌頁入口；新檔 analyze 0 issue（全專案 39 個 info 皆為原有）。PiliBTRTV 的 `docs/report-gmail/apps_script.gs` 改為依 `app` 欄位寫標題（預設 PiliBTRTV），`doGet` 回 `PiliBTR report` 以便確認重新部署；待使用者重新部署。未 commit、未實機測試 |
+| 21:10 | 推送 | `a7e8338d4` 推送到 pilibtr main；PiliBTRTV 的腳本與 README 另推到 PiliBTRTV。Apps Script 尚未重新部署（仍回 PiliBTRTV report） |
