@@ -31,6 +31,7 @@
 
 | Commit | 功能 |
 |---|---|
+| `370c05388` | 掃描 QR code 偶爾黑屏：自行排隊停止／啟動相機，點畫面可重新啟動 |
 | `a7e8338d4` | 錯誤／建議回報，經 Apps Script 寄到開發者信箱 |
 | `ee58a912d` | 快取與下載彈窗播放器可播放、全螢幕與全螢幕手勢（同主播放器） |
 | `365c23c56` | BTR 多 CDN 加速：播放與下載 |
@@ -328,3 +329,4 @@
 | 20:40 | 發布 | `6a5c7aa57` 版本 v2.2.10（2.2.10+11），release 附 3 個 APK 與 SHA256SUMS（Latest）；issue #88、#89 已關閉。手勢未實機測試 |
 | 20:55 | 新增錯誤／建議回報，傳送日誌或日誌加描述到我的信箱，區分 PiliBTR 與 PiliBTRTV | 使用者選擇沿用 PiliBTRTV 的 Google Apps Script 代寄（App 不放密碼或金鑰）。需求與規格在 `docs/work/feedback-report/`。Sonnet 實作回報頁（類型、描述、附日誌開關、成功顯示編號）、`/feedback` 路由、關於頁與日誌頁入口；新檔 analyze 0 issue（全專案 39 個 info 皆為原有）。PiliBTRTV 的 `docs/report-gmail/apps_script.gs` 改為依 `app` 欄位寫標題（預設 PiliBTRTV），`doGet` 回 `PiliBTR report` 以便確認重新部署；待使用者重新部署。未 commit、未實機測試 |
 | 21:10 | 推送 | `a7e8338d4` 推送到 pilibtr main；PiliBTRTV 的腳本與 README 另推到 PiliBTRTV。Apps Script 尚未重新部署（仍回 PiliBTRTV report） |
+| 21:30 | 掃 QR code 後有時還是黑屏，要重開掃描頁；改完發布 | 原因：mobile_scanner 7.5.0 生命週期處理 unawaited stop／start，快速 inactive→resumed 時平台 start 與未完成的 stop 交錯，相機停掉但狀態仍為運作中。Sonnet 改為掃描頁自行排隊停止／啟動（各 3 秒逾時）、處理完自動重啟、點畫面重新啟動；analyze 0 issue，未實機測試。`370c05388`；發布 v2.2.11（2.2.11+12），含回報功能 |
