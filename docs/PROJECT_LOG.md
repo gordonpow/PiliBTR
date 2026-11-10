@@ -31,6 +31,7 @@
 
 | Commit | 功能 |
 |---|---|
+| `ee58a912d` | 快取與下載彈窗播放器可播放、全螢幕與全螢幕手勢（同主播放器） |
 | `365c23c56` | BTR 多 CDN 加速：播放與下載 |
 | `2247ef887` | App 改名 PiliBTR、新圖示、介面改繁體中文 |
 | `1b67ba74e` | 離開影片頁時的 App 內迷你播放器；修正台灣用語與卡片溢出 |
@@ -311,3 +312,15 @@
 | 02:50 | 掃網頁版登入 QR code 後確認按鈕無法按、叫我下載 APK | h5 確認頁只能在官方 App 內使用；參考上游 PiliPlus #2933 與 BiliPai，改呼叫 web/qrcode/check → scene → confirm（access_key + 簽名）；Sonnet 實作，analyze 通過；測試版 APK 放下載資料夾 |
 | 03:15 | 測試版顯示「登入失敗（-101）：账号未登录」，相機掃過就無法再掃 | 電視確認改用 access_key 簽名；掃描器 noDuplicates 改 normal 並略過 2 秒內同一個 QR code；第二版測試 APK |
 | 03:30 | 可以了，推送 | `cc601757b`、`890923534`；版本 v2.2.9 |
+| 22:40 | PiliBTRTV 最新版網頁版掃碼，用 PiliBTR 掃描後手機全黑；開模擬器用截圖測試 | 模擬器 v2.2.9 debug 從相簿選電視截圖：check → scene → confirm 都回 code 0，顯示「登入成功」，返回掃描頁正常，無法重現黑屏。推測手機版本舊於 v2.2.9（舊版用 WebView 開 h5 頁面）或相機掃描路徑的問題，請使用者確認版本或改用相簿測試。另發現確認框未顯示登入位置（API 欄位為 `qrcode_location`），尚未修改。模擬器因記憶體不足被系統停止 |
+| 16:20（11-10） | 打包專案、簽章、對話紀錄，要在另一台電腦繼續修 | 產生 `C:\presonal_project\PiliBTR_transfer_20261110.zip`：原始碼（含 .git、未 commit 檔，排除 build 類資料夾）、`~/.android/debug.keystore`（APK 簽章）、Claude 對話紀錄與 memory、CLAUDE.md、dev-workflow／git-commit-message skill，附還原說明 |
+
+### 2026-11-10（新電腦還原）
+
+| 時間 | 請求 | 結果 |
+| --- | --- | --- |
+| 18:25 | 從搬移包還原專案並在模擬器安裝 | 解壓到 `C:\presonal_project\bilibili_bata`；`debug.keystore` 覆蓋（舊的備份為 `debug.keystore.bak-20261110`）。Flutter 另複製一份到 `C:\src\flutter` 並執行 `patch.ps1 android`（`C:\flutter` 給 PiliBTRTV 用，未修改）。注意：`C:\Users\abcz0` 本身是 git repo，在 pub cache 執行 `git apply` 會顯示成功但實際跳過；需設 `GIT_CEILING_DIRECTORIES` 為 pub cache 的 `hosted\pub.dev` 再套 `material_ui` patch。Platform 37 由 Gradle 自動下載（`android-37.0`），第二次建置可找到。debug APK（x64）已安裝到 Pixel_9_Pro_XL 模擬器並正常開啟首頁。Claude 對話紀錄合併被權限擋下，未還原 |
+| 19:20 | 快取與下載的彈窗播放器無法播放、無法全螢幕、進度條難看 | 原因：彈窗用 media_kit 預設 `VideoController`，Android 要等影片參數才掛 surface，本機檔一直黑畫面停在 00:00。`lib/common/widgets/video_popup_player.dart` 改用和主播放器相同的設定（`androidAttachSurfaceAfterVideoParameters: false`、`hwdec`、`ao`、`force-window=no`）；全螢幕改為 `Dialog.fullscreen`、橫向影片轉橫向、點畫面顯示／隱藏控制列、返回鍵先退出全螢幕並還原方向；進度條改用主播放器的 `ProgressBar`，控制列改深色；`showDialog` 設 `useSafeArea: false` 讓全螢幕蓋過瀏海區。模擬器實測：快取（EDL 影音分離）與下載 MP4 都能播放、拖曳跳轉、全螢幕與退出正常。`useSafeArea` 修正因模擬器空間不足未重裝實測。為騰空間已從 emulator-5556 移除 PiliBTRTV（使用者同意）。尚未 commit |
+| 19:45 | 模擬器靜音；用戶回報直式影片右側綠色區塊、畫面被壓窄；快取與下載全螢幕手勢與一般影片相同 | 兩個 AVD 的 `config.ini` 設 `hw.audioOutput = no`（下次啟動生效）。截圖確認是 PiliBTRTV 播放器（platformView／SurfaceView，硬體解碼輸出的空白區），需要 BV 號與裝置型號才能重現，使用者去問用戶，尚未修改。手勢：Sonnet 在 `video_popup_player.dart` 全螢幕時加入雙擊快退／快進／播放暫停、水平拖動調進度、左側亮度／右側音量、長按倍速，依主播放器同一組 Pref 設定；analyze 無 issue，尚未實機測試、未 commit |
+| 20:10 | 開模擬器、建置並安裝 | Pixel_9_Pro_XL 以 `-no-audio` 啟動；debug APK（x64）建置成功，但 /data 只剩 400MB 裝不下。擴大 `disk.dataPartition.size` 無效（資料在 qcow2 覆蓋檔，需 wipe 才套用），設定已還原。經使用者同意移除 Firefox，並把 `sys_storage_threshold_percentage` 設 1、`sys_storage_threshold_max_bytes` 設 50MB 後安裝成功並啟動 |
+| 20:20 | 推送 | `ee58a912d`（彈窗播放器修正與全螢幕手勢）推送到 pilibtr main，未發布新版 |
