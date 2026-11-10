@@ -15,6 +15,7 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:catcher_2/catcher_2.dart';
 import 'package:catcher_2/utils/log_printer.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
 
 const _snackBarDisplayDuration = Duration(seconds: 1);
@@ -110,6 +111,11 @@ class _LogsPageState extends State<LogsPage> {
       appBar: AppBar(
         title: const Text('日誌'),
         actions: [
+          IconButton(
+            tooltip: '回報錯誤',
+            onPressed: () => Get.toNamed('/feedback'),
+            icon: const Icon(Icons.mail_outline),
+          ),
           PopupMenuButton(
             itemBuilder: (_) => [
               if (kDebugMode)

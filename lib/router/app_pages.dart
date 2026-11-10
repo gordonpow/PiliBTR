@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/dynamics_topic/view.dart';
 import 'package:PiliPlus/pages/dynamics_topic_rcmd/view.dart';
 import 'package:PiliPlus/pages/fan/view.dart';
 import 'package:PiliPlus/pages/fav/view.dart';
+import 'package:PiliPlus/pages/feedback/view.dart';
 import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/view.dart';
 import 'package:PiliPlus/pages/fav_search/view.dart';
@@ -146,6 +147,8 @@ class Routes {
     GetPage(name: '/memberDynamics', page: () => const MemberDynamicsPage()),
     // 日志
     GetPage(name: '/logs', page: () => const LogsPage()),
+    // 回報錯誤／建議
+    GetPage(name: '/feedback', page: () => const FeedbackPage()),
     // 订阅
     GetPage(name: '/subscription', page: () => const SubPage()),
     // 订阅详情

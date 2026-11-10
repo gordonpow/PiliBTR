@@ -190,6 +190,12 @@ Commit Hash: ${BuildConfig.commitHash}''',
             trailing: Icon(Icons.arrow_forward, size: 16, color: outline),
           ),
           ListTile(
+            onTap: () => Get.toNamed('/feedback'),
+            leading: const Icon(Icons.mail_outline),
+            title: const Text('回報錯誤／建議'),
+            trailing: Icon(Icons.arrow_forward, size: 16, color: outline),
+          ),
+          ListTile(
             onTap: () => Get.toNamed('/logs'),
             onLongPress: LoggerUtils.clearLogs,
             onSecondaryTap: PlatformUtils.isMobile
