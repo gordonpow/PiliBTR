@@ -324,3 +324,4 @@
 | 19:45 | 模擬器靜音；用戶回報直式影片右側綠色區塊、畫面被壓窄；快取與下載全螢幕手勢與一般影片相同 | 兩個 AVD 的 `config.ini` 設 `hw.audioOutput = no`（下次啟動生效）。截圖確認是 PiliBTRTV 播放器（platformView／SurfaceView，硬體解碼輸出的空白區），需要 BV 號與裝置型號才能重現，使用者去問用戶，尚未修改。手勢：Sonnet 在 `video_popup_player.dart` 全螢幕時加入雙擊快退／快進／播放暫停、水平拖動調進度、左側亮度／右側音量、長按倍速，依主播放器同一組 Pref 設定；analyze 無 issue，尚未實機測試、未 commit |
 | 20:10 | 開模擬器、建置並安裝 | Pixel_9_Pro_XL 以 `-no-audio` 啟動；debug APK（x64）建置成功，但 /data 只剩 400MB 裝不下。擴大 `disk.dataPartition.size` 無效（資料在 qcow2 覆蓋檔，需 wipe 才套用），設定已還原。經使用者同意移除 Firefox，並把 `sys_storage_threshold_percentage` 設 1、`sys_storage_threshold_max_bytes` 設 50MB 後安裝成功並啟動 |
 | 20:20 | 推送 | `ee58a912d`（彈窗播放器修正與全螢幕手勢）推送到 pilibtr main，未發布新版 |
+| 20:40 | 發布 | 版本 v2.2.10（2.2.10+11）：彈窗播放器修正與全螢幕手勢 |
