@@ -30,9 +30,16 @@ abstract final class ZhConvert {
   // Map literals keep insertion order, which makes this an LRU cache.
   static final _cache = <String, String>{};
 
-  /// Script for the language setting ([Pref.appLanguage]).
+  /// Language setting 4 「原文」: the UI keeps its Traditional strings and
+  /// Bilibili content (titles, comments, danmaku, subtitles) is shown as
+  /// the server sends it. No conversion table is loaded.
+  static bool original = false;
+
+  /// Script for the language setting ([Pref.appLanguage]):
+  /// 0 follow system, 1 Traditional, 2 Simplified, 3 English,
+  /// 4 original (Traditional UI, no conversion).
   static ZhScript resolve(int language) => switch (language) {
-    1 => ZhScript.traditional,
+    1 || 4 => ZhScript.traditional,
     2 => ZhScript.simplified,
     3 => ZhScript.english,
     _ => systemScript,
@@ -76,13 +83,17 @@ abstract final class ZhConvert {
   /// Loads the tables for the current setting. Call once on start, after
   /// the settings storage is open.
   static Future<void> init() async {
-    script = resolve(Pref.appLanguage);
+    final language = Pref.appLanguage;
+    script = resolve(language);
+    original = language == 4;
     if (script == ZhScript.english) {
       // Awaited before runApp. Never throws; without a pack the UI is
       // Traditional Chinese.
       await I18nPack.load();
       I18nPack.maybeUpdateInBackground();
     }
+    // Original mode: without a table, convert returns the text as is.
+    if (original) return;
     try {
       final simplified = script == ZhScript.simplified;
       final raw = await rootBundle.loadString(

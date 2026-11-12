@@ -955,10 +955,12 @@ String _languageLabel(int value) => switch (value) {
   2 => '简体中文',
   // Not translated on purpose: shown as is in every language.
   3 => 'English',
+  4 => '原文（不轉換）',
   _ => '跟隨系統',
 };
 
-/// Chinese script of the app: follow the system, Traditional or Simplified.
+/// Language of the app: follow the system, Traditional, Simplified,
+/// English or original (no Traditional/Simplified conversion).
 Future<void> _showLanguageDialog(
   BuildContext context,
   VoidCallback setState,
@@ -969,7 +971,7 @@ Future<void> _showLanguageDialog(
     builder: (context) => SelectDialog<int>(
       title: '語言',
       value: old,
-      values: [for (var i = 0; i < 4; i++) (i, _languageLabel(i))],
+      values: [for (var i = 0; i < 5; i++) (i, _languageLabel(i))],
     ),
   );
   if (res != null && res != old) {
