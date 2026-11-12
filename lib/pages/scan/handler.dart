@@ -3,6 +3,7 @@ import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -27,8 +28,19 @@ abstract final class QrScanHandler {
         await _webLogin(context, uri.queryParameters['qrcode_key']!);
         return false;
       }
+      final isBili = host.contains('bilibili') || host.contains('b23.tv');
+      // http 與區網網址（例如 PiliBTRTV 的手機登入頁）在 App 內的 WebView 載不出來
+      // （Android 預設禁止明文連線），以前會開出全黑的頁面。改用瀏覽器開啟。
+      if (!isBili && (uri.scheme == 'http' || _isLocalHost(host))) {
+        await _showExternalUrl(context, uri, value);
+        return false;
+      }
       Get.back();
-      final handled = await PiliScheme.routePushFromUrl(value);
+      // selfHandle：非 bilibili 網址由這裡開 WebView，避免 routePushFromUrl 也開一個
+      final handled = await PiliScheme.routePushFromUrl(
+        value,
+        selfHandle: true,
+      );
       if (!handled) Get.to(() => WebviewPage(url: value));
       return true;
     }
@@ -247,6 +259,60 @@ abstract final class QrScanHandler {
             TextButton(
               onPressed: Get.back,
               child: const Text('關閉'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static bool _isLocalHost(String host) {
+    if (host == 'localhost' || host.endsWith('.local')) return true;
+    final p = host.split('.').map(int.tryParse).toList();
+    if (p.length != 4 || p.any((e) => e == null)) return false;
+    final a = p[0]!, b = p[1]!;
+    return a == 10 ||
+        a == 127 ||
+        (a == 192 && b == 168) ||
+        (a == 172 && b >= 16 && b <= 31) ||
+        (a == 169 && b == 254);
+  }
+
+  static Future<void> _showExternalUrl(
+    BuildContext context,
+    Uri uri,
+    String url,
+  ) {
+    // PiliBTRTV 的手機登入頁：http://<電視區網位址>/login?t=<token>
+    final tvPhoneLogin =
+        uri.path == '/login' && uri.queryParameters.containsKey('t');
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: Text(tvPhoneLogin ? 'PiliBTRTV 手機登入' : '開啟網址'),
+          content: Text(
+            tvPhoneLogin
+                ? '這是電視的「手機登入」網頁，需要用瀏覽器開啟，並和電視連在同一個 Wi-Fi。\n\n'
+                      '已登入 PiliBTR 時，也可以在電視改選「TV 掃碼」，再用這裡掃描直接登入。'
+                : '這個網址無法在 App 內開啟，要用瀏覽器開啟嗎？\n\n$url',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Utils.copyText(url),
+              child: const Text('複製網址'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                PageUtils.launchURL(url);
+              },
+              child: const Text('用瀏覽器開啟'),
             ),
           ],
         ),
