@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:PiliPlus/btr_version.dart';
+import 'package:PiliPlus/services/feedback_history.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -185,7 +186,28 @@ abstract final class FeedbackReport {
     }
   }
 
+  /// 送出回報；成功時把紀錄存到本機。
   static Future<FeedbackResult> send({
+    required FeedbackCategory category,
+    required String description,
+    required bool attachLogs,
+  }) async {
+    final result = await _send(
+      category: category,
+      description: description,
+      attachLogs: attachLogs,
+    );
+    if (result.ok) {
+      await FeedbackHistory.add(
+        id: result.id,
+        category: category.label,
+        description: description,
+      );
+    }
+    return result;
+  }
+
+  static Future<FeedbackResult> _send({
     required FeedbackCategory category,
     required String description,
     required bool attachLogs,

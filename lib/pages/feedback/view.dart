@@ -97,7 +97,16 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     final outline = ColorScheme.of(context).outline;
     return Scaffold(
-      appBar: AppBar(title: const Text('回報錯誤／建議')),
+      appBar: AppBar(
+        title: const Text('回報錯誤／建議'),
+        actions: [
+          IconButton(
+            tooltip: '回報紀錄',
+            icon: const Icon(Icons.history),
+            onPressed: () => Get.toNamed('/feedbackHistory'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: EdgeInsets.only(
           left: padding.left + 16,

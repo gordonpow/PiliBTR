@@ -186,7 +186,9 @@ abstract final class SettingBoxKey {
       blockAtOnlyReply = 'blockAtOnlyReply',
       blockReplyAtCount = 'blockReplyAtCount',
       filterIntro = 'filterIntro',
-      feedbackInstallId = 'feedbackInstallId';
+      feedbackInstallId = 'feedbackInstallId',
+      feedbackHistory = 'feedbackHistory',
+      feedbackStatusCache = 'feedbackStatusCache';
 
   static const String superChatType = 'superChatType',
       enableFullScreenSC = 'enableFullScreenSC',
