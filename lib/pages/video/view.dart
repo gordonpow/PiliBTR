@@ -1531,6 +1531,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   final ctr = videoDetailController.plPlayerController;
                   final enableShowDanmaku = ctr.enableShowDanmaku.value;
                   return IconButton(
+                    // 長按開啟彈幕設定（播放器尚未建立時不動作）
+                    onLongPress: () =>
+                        (videoDetailController.headerCtrKey.currentState
+                                as HeaderControlState?)
+                            ?.showSetDanmaku(),
                     onPressed: () {
                       final newVal = !enableShowDanmaku;
                       ctr.enableShowDanmaku.value = newVal;
