@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "reports": {
+    "8N3Y3M": {
+      "status": "resolved",
+      "note": "掃描登入 QR code 後黑屏，已在 v2.2.12 修正",
+      "updated": "2026-11-12"
+    }
+  }
+}
