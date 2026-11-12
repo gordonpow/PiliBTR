@@ -142,6 +142,13 @@
 
 發布：v2.2.9（2026-11-09，pubspec 2.2.9+10）。使用者以手機測試版確認電視與網頁登入可用。
 
+| `cd19f53fa` | 掃描 http／區網網址改用瀏覽器開啟（PiliBTRTV 手機登入頁說明），非 bilibili 網址不再開兩個 WebView |
+| `fde9dd688` | 回報紀錄與處理狀態（`report_status.json`） |
+| `8a90929ea` | 豎屏影片頁彈幕開關長按開啟彈幕設定 |
+| `4b65042b3` | 語言新增「原文（不轉換）」選項（值 4，同 TV 版） |
+
+發布：v2.2.12（2026-11-12，pubspec 2.2.12+13）。
+
 ### 已實作、尚未 commit
 
 （無）
@@ -330,3 +337,9 @@
 | 20:55 | 新增錯誤／建議回報，傳送日誌或日誌加描述到我的信箱，區分 PiliBTR 與 PiliBTRTV | 使用者選擇沿用 PiliBTRTV 的 Google Apps Script 代寄（App 不放密碼或金鑰）。需求與規格在 `docs/work/feedback-report/`。Sonnet 實作回報頁（類型、描述、附日誌開關、成功顯示編號）、`/feedback` 路由、關於頁與日誌頁入口；新檔 analyze 0 issue（全專案 39 個 info 皆為原有）。PiliBTRTV 的 `docs/report-gmail/apps_script.gs` 改為依 `app` 欄位寫標題（預設 PiliBTRTV），`doGet` 回 `PiliBTR report` 以便確認重新部署；待使用者重新部署。未 commit、未實機測試 |
 | 21:10 | 推送 | `a7e8338d4` 推送到 pilibtr main；PiliBTRTV 的腳本與 README 另推到 PiliBTRTV。Apps Script 尚未重新部署（仍回 PiliBTRTV report） |
 | 21:30 | 掃 QR code 後有時還是黑屏，要重開掃描頁；改完發布 | 原因：mobile_scanner 7.5.0 生命週期處理 unawaited stop／start，快速 inactive→resumed 時平台 start 與未完成的 stop 交錯，相機停掉但狀態仍為運作中。Sonnet 改為掃描頁自行排隊停止／啟動（各 3 秒逾時）、處理完自動重啟、點畫面重新啟動；analyze 0 issue，未實機測試。`370c05388`；發布 v2.2.11（2.2.11+12），含回報功能 |
+| 00:10（11-11） | 重新部署 Apps Script | 使用者重新部署；curl 確認網址回 `{"ok":true,"service":"PiliBTR report"}`，新版腳本已生效（未寄測試信） |
+| 02:50（11-12） | 修正回報 8N3Y3M（v2.2.11、SM-S9380、Android 17：掃 PiliBTR 登入頁 QR code 後整個畫面全黑）；新增錯誤回報紀錄（使用者選紀錄加處理狀態） | 報告日誌只有 mpv 訊息、無 Dart 例外；相簿路徑正常、相機路徑黑，判斷為相機預覽 Texture 問題。Sonnet 改為偵測到 QR code 即移除 MobileScanner、處理完丟棄並以新 key 重建 controller（模擬重開頁面），點畫面重建，`[Scan]` 診斷日誌。另一 Sonnet 做回報紀錄（本機 20 筆）與狀態（`raw.githubusercontent.com/gordonpow/PiliBTR/main/report_status.json`，同 TV 格式），關於頁與回報頁入口；新增 `report_status.json`（8N3Y3M 處理中）。analyze 0 issue；未實機測試、未 commit |
+| 03:20（11-12） | 使用者手機（SM-S9380，即回報者）開偵錯，用 v2.2.11 重現 | logcat：掃描後相機關閉、同時建立兩個 InAppWebView，畫面全黑（截圖確認連 AppBar 都沒有）。QR code 是 PiliBTRTV 登入頁「手機登入」的區網網址 `http://<電視IP>:3322/login?t=…`：PiliBTR 當一般網址，`routePushFromUrl` 對非 bilibili 網址開一次 WebView 又回 false，掃描頁再開一次；且 Android 預設禁止明文 http，WebView 全黑。先前「相機 Texture」推測錯誤，`scan/view.dart` 的重建修改已還原。修正 `handler.dart`：非 bilibili 的 http 或區網網址顯示對話框（PiliBTRTV 手機登入有專屬說明，建議改用 TV 掃碼），可複製或用瀏覽器開啟；其他網址用 `selfHandle: true` 只開一個 WebView。analyze 0 issue；arm64 release 測試 APK 放下載資料夾，手機已斷線未安裝 |
+| 2026-11-12 | 豎屏長按彈幕開關可開啟彈幕設定 | `lib/pages/video/view.dart` tab 列彈幕開關 `IconButton` 加 `onLongPress`，經 `headerCtrKey` 呼叫 `HeaderControlState.showSetDanmaku()`；短按仍切換開關。analyze 0 issue；未實機測試、未 commit |
+| 2026-11-12 | 語言新增與 TV 版相同的「原生」選項，不經過翻譯 | 參照 PiliBTRTV（值 4「原文」）：`ZhConvert.resolve` 把 4 視為繁體，`init` 在值 4 時設 `original` 並不載入繁簡表（`convert` 無表即回傳原字串）；設定 → 語言對話框加第 5 項「原文（不轉換）」。analyze 0 issue；未實機測試、未 commit |
+| 2026-11-12 | 推送並發布 | 拆成 4 個 commit，`report_status.json` 8N3Y3M 改為已解決；升版 v2.2.12（2.2.12+13），推到 pilibtr main 並發布 |
