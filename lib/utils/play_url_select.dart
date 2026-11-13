@@ -100,10 +100,32 @@ Future<void> warmStreams(
   );
   if (selected == null) return;
   await Future.wait([
-    BtrProxy.warm(selected.videoUrl, owner: owner),
+    BtrProxy.warm(
+      selected.videoUrl,
+      owner: owner,
+      bytes: warmBytes(selected.video.bandWidth, video: true),
+    ),
     if (selected.audioUrl.isNotEmpty)
-      BtrProxy.warm(selected.audioUrl, owner: owner),
+      BtrProxy.warm(
+        selected.audioUrl,
+        owner: owner,
+        bytes: warmBytes(selected.audio?.bandWidth, video: false),
+      ),
   ]);
+}
+
+/// Warm size of one stream: about [_warmSeconds] of media, so the player can
+/// show the first frame without waiting for the CDN (from Taiwan a new range
+/// takes 0.5-0.7 s to its first byte). 512 KB was too small for 1080P: the
+/// player still asked the CDN for more before the first frame.
+const _warmSeconds = 3;
+
+int warmBytes(int? bandWidth, {required bool video}) {
+  final min = video ? 512 * 1024 : 128 * 1024;
+  final max = video ? 2 * 1024 * 1024 : 512 * 1024;
+  if (bandWidth == null || bandWidth <= 0) return video ? 1024 * 1024 : 512 * 1024;
+  // Init segment and index come first: add 64 KB for them.
+  return (bandWidth ~/ 8 * _warmSeconds + 64 * 1024).clamp(min, max);
 }
 
 /// True when every stream [warmStreams] would warm already has warm bytes (or

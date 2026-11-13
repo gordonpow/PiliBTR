@@ -27,6 +27,7 @@ import 'package:PiliPlus/models/common/video/video_decode_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
+import 'package:PiliPlus/services/open_timing.dart';
 import 'package:PiliPlus/models_new/media_list/media_list.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/result.dart';
 import 'package:PiliPlus/models_new/video/video_detail/data.dart';
@@ -431,10 +432,13 @@ class VideoDetailController extends GetxController
 
   /// 開播計時（debug log 用）：從進入影片頁到第一個畫面。
   final Stopwatch _openWatch = Stopwatch()..start();
+  final _timing = OpenTimingRecord();
+  bool _timingDone = false;
 
   @override
   void onInit() {
     super.onInit();
+    OpenTiming.mark('page onInit');
     args = Get.arguments;
     videoType = args['videoType'];
     if (videoType == VideoType.pgc) {
@@ -799,9 +803,17 @@ class VideoDetailController extends GetxController
   /// page does not show a black screen while the video loads.
   late final showCoverUntilFrame = true.obs;
 
+  void _clearPendingTiming() {
+    if (identical(OpenTiming.pending, _timing)) {
+      OpenTiming.pending = null;
+      OpenTiming.pendingUrls = {};
+    }
+  }
+
   void _watchFirstFrame() {
     final videoController = plPlayerController.videoController;
     if (videoController == null) {
+      _clearPendingTiming();
       showCoverUntilFrame.value = false;
       return;
     }
@@ -809,6 +821,12 @@ class VideoDetailController extends GetxController
         .timeout(const Duration(seconds: 8))
         .then(
           (_) {
+            if (!_timingDone) {
+              _timingDone = true;
+              _timing.firstFrameMs = _openWatch.elapsedMilliseconds;
+              OpenTiming.finish(_timing);
+              OpenTiming.mark('FIRST FRAME ${_timing.summary()}');
+            }
             if (kDebugMode) {
               debugPrint(
                 'OPEN-TIME first frame ${_openWatch.elapsedMilliseconds} ms',
@@ -816,10 +834,12 @@ class VideoDetailController extends GetxController
             }
           },
           onError: (_) {
+            _timingDone = true;
             if (kDebugMode) debugPrint('OPEN-TIME first frame timeout 8 s');
           },
         )
         .whenComplete(() {
+          _clearPendingTiming();
           if (!isClosed) showCoverUntilFrame.value = false;
         });
   }
@@ -832,6 +852,13 @@ class VideoDetailController extends GetxController
     if (seek == .zero) seek = null;
     seek ??= getFirstSegment();
     plPlayerController.hbQuality = currentVideoQa.value?.code ?? 0;
+    final timingOpen = !_timingDone && !isFileSource;
+    final openStart = _openWatch.elapsedMilliseconds;
+    if (timingOpen) {
+      OpenTiming.mark('setDataSource');
+      OpenTiming.pending = _timing;
+      OpenTiming.pendingUrls = {?videoUrl, ?audioUrl};
+    }
     await plPlayerController.setDataSource(
       isFileSource
           ? FileSource(
@@ -870,8 +897,27 @@ class VideoDetailController extends GetxController
       rotate: _rotate,
     );
 
+    // pending 留到首幀（或逾時）才清：player.open 送出後才開始下載，
+    // BTR 的首 byte 通常在 open 完成之後。
+    if (timingOpen) {
+      _timing.openMs = _openWatch.elapsedMilliseconds - openStart;
+      OpenTiming.mark('setDataSource done');
+    }
     if (isClosed) return;
     _watchFirstFrame();
+    if (OpenTiming.log && timingOpen) {
+      final p = plPlayerController.videoPlayerController;
+      if (p != null) {
+        final start = p.state.position;
+        p.stream.position
+            .firstWhere((d) => d > start)
+            .timeout(const Duration(seconds: 10))
+            .then(
+              (_) => OpenTiming.mark('POSITION MOVED (real start)'),
+              onError: (_) => OpenTiming.mark('position timeout'),
+            );
+      }
+    }
 
     if (plPlayerController.enableBlock) {
       initSkip();
@@ -982,6 +1028,7 @@ class VideoDetailController extends GetxController
 
   @pragma('vm:prefer-inline')
   Future<void> _queryVideoUrl(bool fromReset, bool autoFullScreenFlag) async {
+    OpenTiming.mark('query start');
     if (plPlayerController.enableSponsorBlock && isBlock && !fromReset) {
       querySponsorBlock(bvid: bvid, cid: cid.value);
     }
@@ -998,6 +1045,7 @@ class VideoDetailController extends GetxController
       }
       preferCodecs = isWiFi ? Pref.preferCodecs : Pref.preferCodecsCellular;
     }
+    OpenTiming.mark('wifi checked');
 
     // 首播用目標畫質請求（不再固定 qn=129）；更高畫質與缺少的畫質在背景補齊。
     final firstQn = plPlayerController.cacheVideoQa!;
@@ -1008,6 +1056,31 @@ class VideoDetailController extends GetxController
         currLang.value == null &&
         epId == null &&
         (_actualVideoType ?? videoType) == VideoType.ugc;
+    final timePlayUrl = !fromReset && _timing.playUrlMs == null;
+    if (useCache && timePlayUrl) {
+      if (OpenTiming.log) {
+        final done = PlayUrlCache.completedOf(
+              bvid: bvid,
+              cid: cid.value,
+              params: (
+                qn: firstQn,
+                tryLook: plPlayerController.tryLook,
+                voiceBalance: plPlayerController.enableAudioNormalization,
+              ),
+            ) !=
+            null;
+        OpenTiming.mark('cache completed=$done');
+      }
+      _timing.playUrlCacheHit = PlayUrlCache.has(
+        bvid: bvid,
+        cid: cid.value,
+        params: (
+          qn: firstQn,
+          tryLook: plPlayerController.tryLook,
+          voiceBalance: plPlayerController.enableAudioNormalization,
+        ),
+      );
+    }
     final result = useCache
         ? await PlayUrlCache.get(
             bvid: bvid,
@@ -1022,6 +1095,10 @@ class VideoDetailController extends GetxController
         : await _getVideoUrl(firstQn);
 
     if (result case Success(:final response)) {
+      if (timePlayUrl) {
+        _timing.playUrlMs = _openWatch.elapsedMilliseconds;
+        OpenTiming.mark('playurl ok hit=${_timing.playUrlCacheHit}');
+      }
       // 用頁面自己的副本：之後合併畫質不會改到共用快取的物件。
       data = response.copyForPage();
       if (data.dash != null && firstQn > VideoQuality.high1080.code) {
@@ -1549,6 +1626,7 @@ class VideoDetailController extends GetxController
 
   @override
   void onClose() {
+    _clearPendingTiming();
     cancelUpNext();
     cid.close();
     if (isFileSource) {

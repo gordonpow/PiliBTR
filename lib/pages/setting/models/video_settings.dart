@@ -164,6 +164,13 @@ List<SettingsModel> get videoSettings => [
         '當前：${Pref.bufferSec}s。點播影片的實際緩衝為大小與時長二者的最小值（此選項即mpv的--cache-secs）。直播流該選項無效，請設定下方的直播緩衝時長',
     onTap: _showBufferSecDialog,
   ),
+  const SwitchModel(
+    title: '快速起播',
+    subtitle: '縮短開影片時的格式探測，加快首幀；若出現黑畫面或沒聲音請關閉',
+    leading: Icon(Icons.bolt_outlined),
+    setKey: SettingBoxKey.fastStart,
+    defaultVal: true,
+  ),
   NormalModel(
     title: '直播緩衝大小',
     leading: const Icon(Icons.storage_outlined),

@@ -926,6 +926,10 @@ abstract final class Pref {
   static double get bufferSec =>
       _setting.get(SettingBoxKey.bufferSec, defaultValue: 16.0);
 
+  /// 快速起播：縮短 mpv 的格式探測以加快首幀。
+  static bool get fastStart =>
+      _setting.get(SettingBoxKey.fastStart, defaultValue: true);
+
   /// 直播流前向缓冲区大小（MB），0 表示跟随 [bufferSize] 的两倍
   static double get liveBufferSize =>
       _setting.get(SettingBoxKey.liveBufferSize, defaultValue: 0.0);

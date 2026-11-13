@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
+import 'package:PiliPlus/services/open_timing.dart';
 import 'package:PiliPlus/utils/speed_format.dart';
 import 'package:flutter/material.dart';
 
@@ -137,6 +138,10 @@ class _CdnStatusPanelState extends State<CdnStatusPanel> {
                   '節點速度為最近片段測得的平均',
                   style: TextStyle(color: Colors.white60, fontSize: 10),
                 ),
+                if (OpenTiming.last case final last?)
+                  Text('開啟耗時：${last.summary()}'),
+                if (OpenTiming.averageMs case final avg?)
+                  Text('平均首幀：$avg ms（最近 ${OpenTiming.recent.length} 次）'),
                 if (video != null) ..._section('影片', video),
                 if (audio != null) ..._section('音訊', audio),
               ],

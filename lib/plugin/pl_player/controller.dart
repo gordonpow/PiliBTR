@@ -31,6 +31,8 @@ import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/danmaku_options.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/mobile_heartbeat.dart';
+import 'package:PiliPlus/services/open_timing.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -1019,6 +1021,15 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     // media_kit 在 Player.create 內會把 network-timeout 覆寫成 5（晚於
     // PlayerConfiguration.options 套用），所以要在建立後再設定，才不會比 BTR 的
     // 恢復時間（節點切換、2 秒首 byte 逾時）短而誤判開檔失敗。
+    if (OpenTiming.log && Platform.isAndroid) {
+      // 測試建置：mpv 詳細 log（含時間戳）寫到 App 外部檔案目錄，adb 可直接取出。
+      final dir = await getExternalStorageDirectory();
+      if (dir != null) {
+        player
+          ..setProperty('log-file', '${dir.path}/mpv.log')
+          ..setProperty('msg-level', 'all=v');
+      }
+    }
     player
       ..setProperty('network-timeout', '15')
       ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
@@ -1066,6 +1077,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         ...liveBuffer
       else
         ...buffer,
+      // 快速起播：fMP4 的串流資訊在 init segment，跳過 find_stream_info。
+      if (dataSource is! FileSource && !isLive && Pref.fastStart)
+        'demuxer-lavf-probe-info': 'nostreams',
       'video-rotate': ?rotate?.toString(),
     };
 
@@ -1078,6 +1092,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         audioSource = await BtrProxy.wrap(audioSource);
       }
     }
+    OpenTiming.mark('btr wrapped');
     if (audioSource case final audio? when (audio.isNotEmpty)) {
       if (onlyPlayAudio.value) {
         video = audio;
@@ -1096,6 +1111,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       ),
       play: false,
     );
+    OpenTiming.mark('player.open returned');
   }
 
   /// 這部影片（以 cid 判斷）是否停用 BTR。換影片時會重設。
@@ -1162,6 +1178,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
     // 自动播放
     if (_autoPlay) {
+      OpenTiming.mark('play');
       playIfExists();
     }
   }

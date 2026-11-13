@@ -17,6 +17,7 @@ import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/services/download/btr_cdn.dart'
     show BtrHostStats, BtrNode, BtrNodePool, btrDio, btrProbeDio;
 import 'package:PiliPlus/services/download/btr_config.dart';
+import 'package:PiliPlus/services/open_timing.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
@@ -138,6 +139,17 @@ abstract final class BtrProxy {
     if (kDebugMode) debugPrint('BTR: warm start $id');
     source.warmOwner = owner;
     final done = source.startWarm(bytes, onRelease: () => _warmed.remove(source));
+    if (OpenTiming.log) {
+      final tag = src.hashCode & 0xffff;
+      final watch = Stopwatch()..start();
+      debugPrint('WARM start $tag owner=$owner');
+      done.whenComplete(
+        () => debugPrint(
+          'WARM done $tag ${watch.elapsedMilliseconds} ms '
+          'got=${source._warm?.received}',
+        ),
+      );
+    }
     _warmed.add(source);
     _trimWarmed();
     return done;
@@ -268,9 +280,12 @@ class _Warm {
     old.complete();
   }
 
-  static const _idle = Duration(seconds: 30);
+  /// 30 s released the warm bytes of cards the user was still looking at
+  /// (emulator test: tapped 40 s after the feed loaded, warm already gone).
+  /// The LRU in `BtrProxy.setWarmCapacity` still limits the memory.
+  static const _idle = Duration(minutes: 3);
 
-  /// Releases the bytes after 30 s without use. Does nothing while a serve
+  /// Releases the bytes after [_idle] without use. Does nothing while a serve
   /// request reads them.
   void armRelease() {
     _timer?.cancel();
@@ -904,13 +919,30 @@ class _Pump {
     try {
       // Bytes from a warm-up (tap-down) go out first; the head piece and the
       // later pieces continue from `_position`.
+      if (OpenTiming.log && OpenTiming.pending != null) {
+        final w = source._warm;
+        OpenTiming.mark(
+          'proxy req ${source.url.hashCode & 0xffff} range=$start-$end '
+          'warm=${w == null ? 'none' : '${w.received}/${w.target} done=${w.done} buf=${w.buffer != null}'}',
+        );
+      }
       await _serveWarm();
+      if (OpenTiming.log && OpenTiming.pending != null && _position > start) {
+        OpenTiming.mark(
+          'proxy warm served ${source.url.hashCode & 0xffff} to $_position',
+        );
+      }
       if (_closed || _position > end) return;
       // The head piece is streamed below; later pieces start downloading now.
       final headEnd = math.min(_position + _BtrSource._firstPiece - 1, end);
       _next = headEnd + 1;
       fill();
       final headDone = await _streamHead(headEnd);
+      if (OpenTiming.log && OpenTiming.pending != null) {
+        OpenTiming.mark(
+          'proxy head done ${source.url.hashCode & 0xffff} ok=$headDone to $_position',
+        );
+      }
       if (_closed) return;
       if (!headDone) {
         // Head failed on every node: continue with one connection.
@@ -1134,6 +1166,13 @@ class _Pump {
         cancelled: true,
       );
       return null;
+    }
+    final timing = OpenTiming.pending;
+    if (timing != null &&
+        timing.headMs == null &&
+        OpenTiming.pendingUrls.any((u) => u.http2https == source.url)) {
+      timing.headMs = winner.watch.elapsedMilliseconds;
+      OpenTiming.mark('btr head first byte ${timing.headMs} ms');
     }
     if (kDebugMode) {
       debugPrint(

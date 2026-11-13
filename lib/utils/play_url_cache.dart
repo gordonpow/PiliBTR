@@ -129,6 +129,18 @@ abstract final class PlayUrlCache {
     return _completed[cached.future];
   }
 
+  /// 是否有可重用的快取（含進行中的請求）；條件同 [get]。
+  static bool has({
+    required String bvid,
+    required int cid,
+    required PlayUrlParams params,
+  }) {
+    final cached = _entries[_key(bvid, cid)];
+    return cached != null &&
+        DateTime.now().difference(cached.time) < _ttl &&
+        cached.params == params;
+  }
+
   /// tap-down 預取：用影片頁相同的參數請求並存入快取。
   static Future<void> prefetch({required String bvid, required int cid}) async {
     try {

@@ -18,6 +18,7 @@ abstract final class SettingBoxKey {
       audioOutput = 'audioOutput',
       bufferSize = 'bufferSize',
       bufferSec = 'bufferSec',
+      fastStart = 'fastStart',
       liveBufferSize = 'liveBufferSize',
       liveBufferSec = 'liveBufferSec',
       hardwareDecoding = 'hardwareDecoding',

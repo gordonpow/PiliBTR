@@ -1,5 +1,5 @@
 {
- "version": "202611081817",
+ "version": "202611131200",
  "strings": {
   "\n\n注：被拉黑的Up可以在隱私設定-黑名單管理中解除": "\n\nNote: Blocked uploaders can be unblocked in Privacy Settings - Blocklist Management",
   "\nmid為0時使用匿名": "\nUse anonymous when mid is 0",
@@ -2137,7 +2137,11 @@
   "（0即不過濾）": "(0 means no filtering)",
   "（沒有說明）": "(No description)",
   "（緩衝足夠，暫停下載）": "(Buffer full, download paused)",
-  "🔗網頁連結": "🔗Web link"
+  "🔗網頁連結": "🔗Web link",
+  "影片卡片預覽": "Video card preview",
+  "手指碰到影片卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡": "Preview on the card as soon as your finger touches it (muted by default); the preview follows your finger while scrolling",
+  "快速起播": "Fast start",
+  "縮短開影片時的格式探測，加快首幀；若出現黑畫面或沒聲音請關閉": "Shorten format probing when opening videos for a faster first frame; turn off if you get a black screen or no sound"
  },
  "templates": {
   "\n你評論狀態有點可疑，雖然無帳號翻找評論區獲取不到你的評論，但是無帳號可通過\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\n獲取你的評論，疑似評論區被戒嚴或者這是你的影片。\n\n你的評論：{3}": "\nYour comment status is suspicious. Although your comment cannot be found by browsing the comment section while logged out, it can be retrieved via\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\nwhile logged out. The comment section may be restricted or this is your own video.\n\nYour comment: {3}",
