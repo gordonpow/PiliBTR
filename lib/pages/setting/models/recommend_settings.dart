@@ -82,17 +82,10 @@ List<SettingsModel> get recommendSettings => [
     needReboot: true,
   ),
   const SwitchModel(
-    title: '長按影片預覽',
-    subtitle: '在首頁長按影片卡片，直接在卡片上預覽影片（預設靜音）',
+    title: '影片卡片預覽',
+    subtitle: '手指碰到影片卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡',
     leading: Icon(Icons.preview_outlined),
     setKey: SettingBoxKey.videoCardPreview,
-    defaultVal: true,
-  ),
-  const SwitchModel(
-    title: '滑動時預覽',
-    subtitle: '在首頁滑動時，手指停在哪張影片卡片上就預覽哪一張（需開啟長按影片預覽）',
-    leading: Icon(Icons.swipe_vertical_outlined),
-    setKey: SettingBoxKey.videoPreviewOnSwipe,
     defaultVal: true,
   ),
   SwitchModel(

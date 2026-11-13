@@ -49,7 +49,11 @@ abstract final class VideoPreview {
   /// The item of the card that plays a preview, or null.
   static final active = ValueNotifier<Object?>(null);
 
-  static void start(Object item) => active.value = item;
+  static void start(Object item) {
+    // A new preview starts: the old position is void.
+    _progress = null;
+    active.value = item;
+  }
 
   static void stop([Object? item]) {
     if (item == null || active.value == item) active.value = null;
