@@ -151,7 +151,9 @@
 
 ### 已實作、尚未 commit
 
-（無）
+- 碰到即預覽：手指按下影片／直播卡片立即預覽，滑動時跟著手指換卡（無等待），橫滑停止，長按恢復原動作，移除「滑動時預覽」開關（`swipe_preview.dart`、`card_preview.dart`、`video_preview.dart`、`recommend_settings.dart`）
+- 開影片計時：CDN 狀態面板顯示最近一次首幀與 playurl／開檔／首 byte 分段，及最近 20 次平均（`lib/services/open_timing.dart` 等）
+- 快速起播設定（預設開）：mpv `demuxer-lavf-probe-info=nostreams`（設定 → 播放「緩衝時長」下方）
 
 ### 待辦
 
@@ -343,3 +345,6 @@
 | 2026-11-12 | 豎屏長按彈幕開關可開啟彈幕設定 | `lib/pages/video/view.dart` tab 列彈幕開關 `IconButton` 加 `onLongPress`，經 `headerCtrKey` 呼叫 `HeaderControlState.showSetDanmaku()`；短按仍切換開關。analyze 0 issue；未實機測試、未 commit |
 | 2026-11-12 | 語言新增與 TV 版相同的「原生」選項，不經過翻譯 | 參照 PiliBTRTV（值 4「原文」）：`ZhConvert.resolve` 把 4 視為繁體，`init` 在值 4 時設 `original` 並不載入繁簡表（`convert` 無表即回傳原字串）；設定 → 語言對話框加第 5 項「原文（不轉換）」。analyze 0 issue；未實機測試、未 commit |
 | 2026-11-12 | 推送並發布 | 拆成 4 個 commit，`report_status.json` 8N3Y3M 改為已解決；升版 v2.2.12（2.2.12+13），推到 pilibtr main 並發布 |
+| 2026-11-13 | 1. 載入速度能否像原版 100~300 ms；2. 手指碰到影片卡就預覽，不影響上下滑動 | 1：目前只有 debug 計時，無實測；原版快在 feed 內嵌 playurl、自家播放器、大陸邊緣節點，台灣只能用海外 CDN，估計快取＋預熱可到 300~600 ms，不保證 100~300。使用者選擇：計時＋mpv 起播參數、滑動直接跟手指換卡、長按恢復原動作、直接取代現有方式。完整流程（`docs/work/touch-preview-open-time/`），Sonnet 規格審查 10 條（採用 8、不採用 2）。agy 額度用完，改由 Sonnet 子代理實作；Opus 修正 BTR 首 byte 計時時機。analyze 無新 issue；未實機測試、未 commit |
+| 2026-11-13 | 驗證載入速度，盡量做到 100~300 ms | 另開模擬器 PiliBTR_Test（emulator-5560，未登入）用 `--dart-define=btr.timing=true` 建置分段計時與 mpv log。修正：預熱量依位元率抓約 3 秒（影片 0.5~2MB、音訊 128~512KB，原固定 512KB 不夠起播）、預熱保留 30 秒改 3 分鐘、Wi-Fi 狀態 5 秒快取。修正後預熱完整命中，App＋網路部分約 100 ms；首幀仍 600~900 ms，mpv log 顯示主要是模擬器 goldfish 解碼器啟動約 320 ms＋首幀解碼約 210 ms，需真機量測確認。計時只在測試建置開啟 |
+| 2026-11-13 | 先推上去 | 補英文語言包字串（版本 202611131200），推送到 pilibtr main，未發布新版；真機量測待做 |
