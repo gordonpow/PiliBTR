@@ -15,6 +15,7 @@ import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/services/logger.dart';
+import 'package:PiliPlus/services/open_timing.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/zh_convert.dart';
 import 'package:PiliPlus/services/download/btr_config.dart';
@@ -220,6 +221,7 @@ void main() async {
       customParameters: customParameters,
     );
   } else {
+    OpenTiming.startLagProbe();
     runApp(const MyApp());
   }
 

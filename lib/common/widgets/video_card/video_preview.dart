@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:PiliPlus/grpc/dm.dart';
 import 'package:PiliPlus/http/browser_ua.dart';
@@ -11,6 +12,7 @@ import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/services/download/btr_config.dart';
 import 'package:PiliPlus/services/download/btr_proxy.dart';
+import 'package:PiliPlus/services/open_timing.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/play_url_cache.dart';
@@ -127,7 +129,10 @@ abstract final class VideoPreview {
       ),
     );
     try {
-      final controller = await VideoController.create(player);
+      final controller = await VideoController.create(
+        player,
+        configuration: _videoConfiguration,
+      );
       player
         ..setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl)
         ..setPlaylistMode(.single);
@@ -137,6 +142,23 @@ abstract final class VideoPreview {
       rethrow;
     }
   }
+
+  /// Android: MediaCodec draws into the surface itself
+  /// (`vo=mediacodec_embed`). With the default `vo=gpu`, media_kit sets
+  /// `vo=gpu` again when the video size of each new card is known, and mpv
+  /// rebuilds its GL output on the UI thread: the list stops for a moment
+  /// just when the preview starts while it scrolls. The preview streams are
+  /// H.264 (see [_pickVideo]), which MediaCodec decodes on all devices.
+  /// A test build can use the old output with
+  /// `--dart-define=btr.previewGpu=true`.
+  static VideoControllerConfiguration get _videoConfiguration =>
+      Platform.isAndroid && !const bool.fromEnvironment('btr.previewGpu')
+      ? const VideoControllerConfiguration(
+          vo: 'mediacodec_embed',
+          hwdec: 'mediacodec',
+          androidAttachSurfaceAfterVideoParameters: false,
+        )
+      : const VideoControllerConfiguration();
 
   /// Place of the playing preview: its bvid, cid and position.
   static ({String bvid, int cid, int ms})? _progress;
@@ -442,6 +464,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
       final item = Media(media);
       // Compare with the uri as Media keeps it (it can normalize it).
       _media = item.uri;
+      if (OpenTiming.log) debugPrint('PREVIEW open ${widget.bvid}');
       await player.open(item);
       if (_disposed) return;
       _opened = true;
@@ -512,6 +535,7 @@ class _InlineVideoPreviewState extends State<InlineVideoPreview>
     // The shared player renders frames of every card: show the video
     // only after this card's media plays (no frame of the previous card).
     if (!_firstFrame && position > Duration.zero) {
+      if (OpenTiming.log) debugPrint('PREVIEW first frame ${widget.bvid}');
       setState(() => _firstFrame = true);
     }
     String? text;

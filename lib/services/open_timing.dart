@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 
 /// One video open: times in ms from entering the video page.
 class OpenTimingRecord {
@@ -46,9 +50,55 @@ abstract final class OpenTiming {
     debugPrint('OPEN-TIME ${_tap.elapsedMilliseconds} $stage');
   }
 
+  /// 測試建置用：每 16 ms 排一次 Timer，兩次間隔超過 50 ms 代表 UI 執行緒
+  /// 被卡住（畫面會頓），印出 `UI-LAG <ms>`。
+  static void startLagProbe() {
+    if (!log) return;
+    final sw = Stopwatch()..start();
+    var last = 0;
+    Timer.periodic(const Duration(milliseconds: 16), (_) {
+      final now = sw.elapsedMilliseconds;
+      final gap = now - last;
+      last = now;
+      if (gap > 50) debugPrint('UI-LAG $gap');
+    });
+    // Frames whose build or raster took longer than two frames.
+    SchedulerBinding.instance.addTimingsCallback((timings) {
+      for (final t in timings) {
+        final build = t.buildDuration.inMilliseconds;
+        final raster = t.rasterDuration.inMilliseconds;
+        if (build > 32 || raster > 32) {
+          debugPrint('FRAME-SLOW build=$build raster=$raster');
+        }
+      }
+    });
+    // Touch events that arrive late in a batch: the Android main thread
+    // (which delivers them) was blocked although their times are close.
+    Duration? lastStamp;
+    var lastArrive = 0;
+    GestureBinding.instance.pointerRouter.addGlobalRoute((event) {
+      if (event is! PointerMoveEvent) {
+        lastStamp = null;
+        return;
+      }
+      final arrive = sw.elapsedMilliseconds;
+      final stamp = event.timeStamp;
+      if (lastStamp case final prev?) {
+        final late = (arrive - lastArrive) - (stamp - prev).inMilliseconds;
+        if (late > 40) debugPrint('TOUCH-LAG $late');
+      }
+      lastStamp = stamp;
+      lastArrive = arrive;
+    });
+  }
+
   /// 首幀後停止，下次沒點卡片（例如連結開啟）時從頁面建立起算。
   static void endTap() {
-    if (log) _tap..stop()..reset();
+    if (log) {
+      _tap
+        ..stop()
+        ..reset();
+    }
   }
 
   static const _maxRecent = 20;
