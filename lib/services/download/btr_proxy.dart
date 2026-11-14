@@ -138,7 +138,10 @@ abstract final class BtrProxy {
     if (source.hasWarm) return Future.value();
     if (kDebugMode) debugPrint('BTR: warm start $id');
     source.warmOwner = owner;
-    final done = source.startWarm(bytes, onRelease: () => _warmed.remove(source));
+    final done = source.startWarm(
+      bytes,
+      onRelease: () => _warmed.remove(source),
+    );
     if (OpenTiming.log) {
       final tag = src.hashCode & 0xffff;
       final watch = Stopwatch()..start();
@@ -332,6 +335,7 @@ class _BtrSource {
   /// After a failed probe the source goes direct for this long.
   static const _probeRetryAfter = Duration(seconds: 30);
   static const _headTimeout = Duration(seconds: 2);
+
   /// 預熱（tap-down）在背景進行，播放器沒有在等它；首 byte 逾時比開頭片段寬鬆，
   /// 避免 CDN 首 byte 需 1.5～2.5 秒時被提早取消（模擬器實測 11 次取消皆為此原因）。
   static const _warmTimeout = Duration(seconds: 5);
@@ -407,7 +411,7 @@ class _BtrSource {
           cancelToken: token,
         );
         if (response.statusCode != 206 ||
-            !_startsAt(response.data!, w.received)) {
+            !_rangeOk(response.data!, w.received, node)) {
           await response.data?.stream.drain<void>().catchError((_) {});
           throw Exception('bad response ${response.statusCode}');
         }
@@ -519,6 +523,26 @@ class _BtrSource {
     return m != null && int.parse(m.group(1)!) == from;
   }
 
+  /// Checks a range response of [node]: it starts at [from] and its file has
+  /// the probed size. CDN nodes can hold another encode of the same stream
+  /// (another size); pieces of two encodes give a broken stream ("Invalid
+  /// NAL unit size", dropped frames), so such a node is not used again for
+  /// this file.
+  bool _rangeOk(ResponseBody response, int from, BtrNode node) {
+    if (!_startsAt(response, from)) return false;
+    final total = _total;
+    final value = response.headers['content-range']?.firstOrNull;
+    if (total == null || value == null) return true;
+    final slash = value.lastIndexOf('/');
+    final size = slash == -1 ? null : int.tryParse(value.substring(slash + 1));
+    if (size == null || size == total) return true;
+    node.sizeMismatch = true;
+    if (kDebugMode) {
+      debugPrint('BTR: ${node.host} size $size != $total, not used');
+    }
+    return false;
+  }
+
   /// Probes once. A failed probe is sticky for [_probeRetryAfter] only.
   Future<void> _ensureProbed() {
     if (_total != null) return Future.value();
@@ -626,7 +650,8 @@ class _BtrSource {
           ),
           cancelToken: cancel,
         );
-        if (response.statusCode != 206 || !_startsAt(response.data!, from)) {
+        if (response.statusCode != 206 ||
+            !_rangeOk(response.data!, from, node)) {
           await response.data?.stream.drain<void>().catchError((_) {});
           throw Exception('bad response ${response.statusCode}');
         }
@@ -826,7 +851,7 @@ class _HeadReq {
       cancelToken: token,
     );
     if (response.statusCode != 206 ||
-        !_BtrSource._startsAt(response.data!, _from)) {
+        !source._rangeOk(response.data!, _from, node)) {
       await response.data?.stream.drain<void>().catchError((_) {});
       throw Exception('bad response ${response.statusCode}');
     }

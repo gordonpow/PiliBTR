@@ -132,6 +132,11 @@ class BtrNode {
   bool banned = false;
   int inflight = 0;
 
+  /// The node serves a file of another size (another encode of the same
+  /// stream). Its bytes must not be mixed with the other nodes' bytes, so it
+  /// is never used again for this file (not reset with [banned]).
+  bool sizeMismatch = false;
+
   /// Total bytes received from this node.
   int bytes = 0;
 
@@ -207,7 +212,8 @@ class BtrNodePool {
   void recordHostFailure(BtrNode node) =>
       BtrHostStats.recordFailure(node.host, canBan: node != nodes.first);
 
-  bool _isUsable(BtrNode n) => !n.banned && !BtrHostStats.isBanned(n.host);
+  bool _isUsable(BtrNode n) =>
+      !n.sizeMismatch && !n.banned && !BtrHostStats.isBanned(n.host);
 
   /// Up to [probeCount] nodes for a probe: known fast ones first. Uses the
   /// original URL when every node is banned.
