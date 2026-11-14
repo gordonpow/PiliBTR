@@ -1,0 +1,1178 @@
+diff --git a/lib/main.dart b/lib/main.dart
+index da623fa..ec82ef9 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -21,6 +21,9 @@ import 'services/translate/content_translator.dart';
+ import 'utils/frame_monitor.dart';
+ import 'utils/zh_convert.dart';
+ 
++/// 全域 navigator key（投放詢問框等非 widget 程式碼用）
++final appNavigatorKey = GlobalKey<NavigatorState>();
++
+ Future<void> main() async {
+   // 整個啟動流程放在同一個 zone，未捕捉的非同步錯誤會寫入 log
+   await runZonedGuarded(_main, LogService.recordError);
+@@ -113,6 +116,7 @@ class BiliTvApp extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     return MaterialApp(
++      navigatorKey: appNavigatorKey,
+       title: 'BiliTV',
+       debugShowCheckedModeBanner: false,
+       theme: ThemeData(
+diff --git a/lib/models/video.dart b/lib/models/video.dart
+index 267ecff..5c35810 100644
+--- a/lib/models/video.dart
++++ b/lib/models/video.dart
+@@ -31,6 +31,10 @@ class Video {
+   final int aid; // 影片 aid (0 表示未知，可由 bvid 換算)
+   final String historyKid; // 觀看歷史刪除用 kid (如 archive_123)，非歷史項目為空
+ 
++  /// 投放用：強制起播位置（毫秒）與強制集數；不寫入 toJson／快取
++  final int? forceStartMs;
++  final int? forceEpId;
++
+   Video({
+     required this.bvid,
+     required this.title,
+@@ -56,6 +60,8 @@ class Video {
+     this.epIndexText = '',
+     this.aid = 0,
+     this.historyKid = '',
++    this.forceStartMs,
++    this.forceEpId,
+   }) : badge = _filterBadge(badge);
+ 
+   static String _filterBadge(String badge) {
+diff --git a/lib/screens/home/settings/tabs/plugins_settings.dart b/lib/screens/home/settings/tabs/plugins_settings.dart
+index a998dbf..122668a 100644
+--- a/lib/screens/home/settings/tabs/plugins_settings.dart
++++ b/lib/screens/home/settings/tabs/plugins_settings.dart
+@@ -4,6 +4,8 @@ import 'package:bili_tv_app/core/plugin/plugin_manager.dart';
+ import 'package:bili_tv_app/core/plugin/plugin_store.dart';
+ import 'package:bili_tv_app/core/focus/focus_navigation.dart';
+ import 'package:bili_tv_app/services/local_server.dart';
++import 'package:bili_tv_app/screens/home/settings/cast_settings_page.dart';
++import 'package:bili_tv_app/screens/home/settings/widgets/setting_action_row.dart';
+ 
+ /// 外掛設定頁
+ class PluginsSettingsTab extends StatefulWidget {
+@@ -56,6 +58,19 @@ class _PluginsSettingsTabState extends State<PluginsSettingsTab> {
+             ],
+           ),
+         ),
++        // 投放配對
++        SettingActionRow(
++          label: '投放配對',
++          value: '讓手機一鍵投放影片到這台電視',
++          buttonLabel: '開啟',
++          isFirst: true,
++          onMoveUp: widget.onMoveUp,
++          sidebarFocusNode: widget.sidebarFocusNode,
++          onTap: () => Navigator.of(
++            context,
++          ).push(MaterialPageRoute(builder: (_) => const CastSettingsPage())),
++        ),
++        const SizedBox(height: 12),
+         // 外掛列表
+         ..._pluginManager.plugins.asMap().entries.map((entry) {
+           final index = entry.key;
+@@ -63,7 +78,7 @@ class _PluginsSettingsTabState extends State<PluginsSettingsTab> {
+           return _PluginCard(
+             plugin: plugin,
+             onToggle: _togglePlugin,
+-            isFirst: index == 0,
++            isFirst: false,
+             isLast: index == _pluginManager.plugins.length - 1,
+             onMoveUp: widget.onMoveUp,
+             sidebarFocusNode: widget.sidebarFocusNode,
+diff --git a/lib/screens/player/mixins/player_action_mixin.dart b/lib/screens/player/mixins/player_action_mixin.dart
+index b3d0e75..d673da3 100644
+--- a/lib/screens/player/mixins/player_action_mixin.dart
++++ b/lib/screens/player/mixins/player_action_mixin.dart
+@@ -75,6 +75,9 @@ mixin PlayerActionMixin on PlayerStateMixin {
+     await prefs.setBool('hide_bottom_danmaku', hideBottomDanmaku);
+   }
+ 
++  /// 本頁最後一次寫入 LocalServer 的 MPD token（dispose 時用 clearMpdContentIf）
++  int _mpdToken = 0;
++
+   Future<void> initializePlayer() async {
+     final startupWatch = Stopwatch()..start();
+     // 換片：先重設音軌，避免舊 controller 殘留的錯誤事件以舊音軌觸發退回
+@@ -323,7 +326,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+           final mpdContent = await MpdGenerator.generate(playInfo['dashData']);
+ 
+           // 使用全域性 LocalServer 提供 MPD 內容 (純記憶體)
+-          LocalServer.instance.setMpdContent(mpdContent);
++          _mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+           playUrl = LocalServer.instance.mpdUrl;
+         } else {
+           // 回退到直接 URL (mp4/flv)
+@@ -478,10 +481,16 @@ mixin PlayerActionMixin on PlayerStateMixin {
+           historyProgress = widget.video.progress;
+         }
+ 
++        // 投放：指定位置優先於所有紀錄，且不套用片尾判斷
++        final forcedMs = widget.video.forceStartMs;
++        if (forcedMs != null) historyProgress = forcedMs ~/ 1000;
++
+         if (historyProgress > 0) {
+           // 🔥 如果進度接近影片總時長（最後5秒內），說明影片已播完，從頭開始
+           final videoDuration = videoController!.value.duration.inSeconds;
+-          if (videoDuration > 0 && historyProgress >= videoDuration - 5) {
++          if (forcedMs == null &&
++              videoDuration > 0 &&
++              historyProgress >= videoDuration - 5) {
+             debugPrint(
+               '🎬 [Resume] Video was completed (progress $historyProgress >= duration $videoDuration - 5), starting from beginning',
+             );
+@@ -489,7 +498,9 @@ mixin PlayerActionMixin on PlayerStateMixin {
+           } else {
+             initialProgress = historyProgress;
+ 
+-            final seekPos = Duration(seconds: historyProgress);
++            final seekPos = forcedMs != null
++                ? Duration(milliseconds: forcedMs)
++                : Duration(seconds: historyProgress);
+             await videoController!.seekTo(seekPos);
+             resetDanmakuIndex(seekPos);
+ 
+@@ -542,6 +553,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+     warmPlayback = null;
+     // 按 OK 時暖機還在準備：等它完成後接手（比從頭再準備一次快）
+     if (prepared == null &&
++        widget.video.forceStartMs == null &&
+         CardPreviewService.instance.isPendingFor(widget.video.bvid)) {
+       prepared = vetWarmPlayback(
+         await CardPreviewService.instance.waitAndTake(widget.video.bvid),
+@@ -591,6 +603,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+         qn: currentQuality,
+         videoInfo: videoInfo,
+         seed: leftover,
++        startCid: widget.startCid,
+         isCancelled: () => !mounted,
+         onStep: mark,
+         onDecoderFallback: () => showZhToast(
+@@ -637,6 +650,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+     final playInfo = p.playInfo;
+     final controller = p.controller;
+     videoController = controller;
++    if (p.mpdToken != 0) _mpdToken = p.mpdToken;
+ 
+     setState(() {
+       cid = p.cid;
+@@ -720,9 +734,12 @@ mixin PlayerActionMixin on PlayerStateMixin {
+     });
+ 
+     // 續播：prepare 已 seek 好。暖機接手時以目前位置為準。
++    final forcedMs = widget.video.forceStartMs;
+     final startPos = fromWarm
+         ? controller.value.position
+-        : Duration(seconds: p.resumeSeconds);
++        : (forcedMs != null
++              ? Duration(milliseconds: forcedMs)
++              : Duration(seconds: p.resumeSeconds));
+     if (p.resumeSeconds > 0) initialProgress = p.resumeSeconds;
+     resetDanmakuIndex(startPos);
+     final startSec = startPos.inSeconds;
+@@ -781,13 +798,20 @@ mixin PlayerActionMixin on PlayerStateMixin {
+       return false;
+     }
+ 
+-    // 起始集：伺服器觀看紀錄 > 本地快取 > 列表帶入的 ep > 第一集
+-    final lastEpId = season['lastEpId'] as int? ?? 0;
+-    var startIdx = lastEpId > 0
+-        ? eps.indexWhere((e) => e['ep_id'] == lastEpId)
++    // 起始集：投放指定集（forceEpId）> 伺服器觀看紀錄 > 本地快取 > 列表帶入的 ep > 第一集
++    final forceEpId = widget.video.forceEpId ?? 0;
++    var startIdx = forceEpId > 0
++        ? eps.indexWhere((e) => e['ep_id'] == forceEpId)
+         : -1;
+-    var resume = startIdx != -1 ? (season['lastTime'] as int? ?? 0) : 0;
+-    if (startIdx == -1 && cachedRecord != null) {
++    final forced = startIdx != -1;
++    final lastEpId = season['lastEpId'] as int? ?? 0;
++    if (!forced && lastEpId > 0) {
++      startIdx = eps.indexWhere((e) => e['ep_id'] == lastEpId);
++    }
++    var resume = (!forced && startIdx != -1)
++        ? (season['lastTime'] as int? ?? 0)
++        : 0;
++    if (!forced && startIdx == -1 && cachedRecord != null) {
+       startIdx = eps.indexWhere((e) => e['cid'] == cachedRecord.cid);
+       if (startIdx != -1) resume = cachedRecord.progress;
+     }
+@@ -1161,7 +1185,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+       String? playUrl;
+       if (playInfo['dashData'] != null) {
+         final mpdContent = await MpdGenerator.generate(playInfo['dashData']);
+-        LocalServer.instance.setMpdContent(mpdContent);
++        _mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+         playUrl = LocalServer.instance.mpdUrl;
+       } else {
+         final rawUrl = playInfo['url'] as String? ?? '';
+@@ -1569,7 +1593,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+       if (playInfo['dashData'] != null) {
+         final mpdContent = await MpdGenerator.generate(playInfo['dashData']);
+         if (!alive()) return;
+-        LocalServer.instance.setMpdContent(mpdContent);
++        _mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+         playUrl = LocalServer.instance.mpdUrl;
+       } else {
+         final rawUrl = playInfo['url'] as String? ?? '';
+@@ -2023,7 +2047,8 @@ mixin PlayerActionMixin on PlayerStateMixin {
+ 
+     await videoController?.dispose();
+     videoController = null;
+-    LocalServer.instance.clearMpdContent();
++    // 只清自己寫入的 MPD，避免 pushReplacement 時清掉新頁剛寫入的內容
++    LocalServer.instance.clearMpdContentIf(_mpdToken);
+   }
+ 
+   /// 獲取線上觀看人數
+@@ -3109,7 +3134,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+       if (playInfo['dashData'] != null) {
+         final mpdContent = await MpdGenerator.generate(playInfo['dashData']);
+ 
+-        LocalServer.instance.setMpdContent(mpdContent);
++        _mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+         playUrl = LocalServer.instance.mpdUrl;
+       } else {
+         final rawUrl = playInfo['url'] as String? ?? '';
+@@ -3352,7 +3377,7 @@ mixin PlayerActionMixin on PlayerStateMixin {
+       if (playInfo['dashData'] != null) {
+         final mpdContent = await MpdGenerator.generate(playInfo['dashData']);
+ 
+-        LocalServer.instance.setMpdContent(mpdContent);
++        _mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+         playUrl = LocalServer.instance.mpdUrl;
+       } else {
+         final rawUrl = playInfo['url'] as String? ?? '';
+diff --git a/lib/screens/player/player_screen.dart b/lib/screens/player/player_screen.dart
+index 3fb66f7..41fe3d9 100644
+--- a/lib/screens/player/player_screen.dart
++++ b/lib/screens/player/player_screen.dart
+@@ -58,12 +58,15 @@ class _PlayerScreenState extends State<PlayerScreen>
+     // 第一個 await 之前同步接手暖機播放器；沒有就釋放卡片預覽的解碼器。
+     // 兩種畫面模式都接手暖機播放器；原生模式遇到 4K／HDR／杜比或直式影片
+     // 才拒絕（見 CardPreviewService.warmRejectReason），改走冷啟動並沿用其資料。
+-    warmPlayback = vetWarmPlayback(
+-      CardPreviewService.instance.take(widget.video.bvid),
+-    );
++    // 投放（forceStartMs）不接手暖機播放器
++    final forced = widget.video.forceStartMs != null;
++    warmPlayback = forced
++        ? null
++        : vetWarmPlayback(CardPreviewService.instance.take(widget.video.bvid));
+     // 暖機還在準備且已保留給本頁時不要停掉它，initializePlayer 會等它完成
+     if (warmPlayback == null &&
+-        !CardPreviewService.instance.isPendingFor(widget.video.bvid)) {
++        (forced ||
++            !CardPreviewService.instance.isPendingFor(widget.video.bvid))) {
+       CardPreviewService.instance.stopAll();
+     }
+     SystemChannels.textInput.invokeMethod('TextInput.hide');
+diff --git a/lib/services/local_server.dart b/lib/services/local_server.dart
+index 91da65b..a4896ca 100644
+--- a/lib/services/local_server.dart
++++ b/lib/services/local_server.dart
+@@ -3,6 +3,7 @@ import 'dart:convert';
+ import 'dart:io';
+ import 'package:flutter/foundation.dart';
+ import 'package:flutter/services.dart' show rootBundle;
++import 'cast/cast_service.dart';
+ import '../plugins/ad_filter_plugin.dart';
+ import '../plugins/danmaku_enhance_plugin.dart';
+ import '../core/plugin/plugin_manager.dart';
+@@ -45,6 +46,36 @@ class LocalServer {
+   /// 重新抓取區網 IP（登入頁開啟時呼叫，網路可能在啟動後才連上）
+   Future<void> refreshAddress() async {
+     _localIp = await _getLocalIp();
++    _localIps = await _listPrivateIps();
++  }
++
++  List<String> _localIps = const [];
++
++  /// 所有私有 IPv4 位址（投放配對頁用；需先呼叫 [start] 或 [refreshAddress]）
++  List<String> get localIps => List.unmodifiable(_localIps);
++
++  static Future<List<String>> _listPrivateIps() async {
++    final out = <String>[];
++    try {
++      final interfaces = await NetworkInterface.list(
++        type: InternetAddressType.IPv4,
++        includeLoopback: false,
++      );
++      for (final i in interfaces) {
++        for (final a in i.addresses) {
++          final b = a.rawAddress;
++          if (b.length != 4) continue;
++          final isPrivate =
++              b[0] == 10 ||
++              (b[0] == 172 && b[1] >= 16 && b[1] <= 31) ||
++              (b[0] == 192 && b[1] == 168);
++          if (isPrivate && !out.contains(a.address)) out.add(a.address);
++        }
++      }
++    } catch (e) {
++      debugPrint('Error listing private IPs: $e');
++    }
++    return out;
+   }
+ 
+   /// 獲取 MPD 播放地址
+@@ -57,6 +88,7 @@ class LocalServer {
+     try {
+       // 獲取本地 IP（使用 NetworkInterface）
+       _localIp = await _getLocalIp();
++      _localIps = await _listPrivateIps();
+ 
+       // 繫結到所有網路介面；預設埠被其他程式佔用時改用後面的埠，
+       // 都失敗就讓系統分配（否則播放用的本機 MPD 也會無法使用）
+@@ -125,8 +157,17 @@ class LocalServer {
+   }
+ 
+   /// 設定當前 MPD 內容
+-  void setMpdContent(String content) {
++  /// 回傳遞增 token，供 [clearMpdContentIf] 判斷內容是否仍是自己寫入的
++  int setMpdContent(String content) {
+     _currentMpdContent = content;
++    return ++_mpdTokenSeq;
++  }
++
++  int _mpdTokenSeq = 0;
++
++  /// 只在 [token] 仍是目前內容的 token 時才清除（避免舊頁清掉新頁的 MPD）
++  void clearMpdContentIf(int token) {
++    if (token == _mpdTokenSeq) _currentMpdContent = null;
+   }
+ 
+   /// 清除 MPD 內容
+@@ -142,6 +183,11 @@ class LocalServer {
+       await _handleLoginGuideImage(request);
+       return;
+     }
++    // 一鍵投放：不加 CORS 標頭，也不放行 OPTIONS
++    if (reqPath.startsWith('/api/cast/')) {
++      await CastService.instance.handle(request);
++      return;
++    }
+     // 手機登入：不加 CORS 標頭，也不放行 OPTIONS
+     if (reqPath == '/login' || reqPath.startsWith('/api/login/')) {
+       await _handlePhoneLogin(request);
+diff --git a/lib/services/playback_preparer.dart b/lib/services/playback_preparer.dart
+index 5a39ee6..c72109d 100644
+--- a/lib/services/playback_preparer.dart
++++ b/lib/services/playback_preparer.dart
+@@ -27,6 +27,7 @@ class PreparedPlayback {
+     required this.playInfo,
+     required this.resumeSeconds,
+     this.requestedQn = 0,
++    this.mpdToken = 0,
+   });
+ 
+   final String bvid;
+@@ -41,6 +42,9 @@ class PreparedPlayback {
+   /// 取得 [playInfo] 時請求的 qn（可能與 playInfo 的實際畫質不同）；
+   /// 冷啟動沿用時必須與當時請求的 qn 相同才有效。
+   final int requestedQn;
++
++  /// 寫入 LocalServer 的 MPD token（沒有寫入為 0），供 clearMpdContentIf 使用
++  final int mpdToken;
+ }
+ 
+ /// prepare 的結果；playback 為 null 時看其他欄位
+@@ -80,6 +84,8 @@ class PlaybackPreparer {
+   /// [onHdrFallback] 非暖機時 HDR 解碼失敗、改以較低非 HDR 畫質重試後呼叫（由呼叫端 toast）。
+   /// [onDecoderFallback] 非暖機時解碼器失敗、已改用 AVC 後呼叫（由呼叫端 toast）。
+   /// [isCancelled] 在寫入 LocalServer 前與建立 controller 後檢查。
++  /// [startCid] > 0 且在分 P 清單內時優先使用（合集換片、投放指定分 P）。
++  /// [video.forceStartMs] 有值時，起播位置以它為準（投放）。
+   /// [seed] 是被棄用的暖機結果：只讀它的 playInfo，且 cid 與請求 qn 都相同才沿用。
+   static Future<PrepareOutcome> prepare(
+     Video video, {
+@@ -87,6 +93,7 @@ class PlaybackPreparer {
+     bool warm = false,
+     Map<String, dynamic>? videoInfo,
+     PreparedPlayback? seed,
++    int startCid = 0,
+     bool Function()? isCancelled,
+     void Function(String step)? onStep,
+     void Function()? onDecoderFallback,
+@@ -169,7 +176,12 @@ class PlaybackPreparer {
+     if (videoInfo != null) {
+       final pages = videoInfo['pages'] ?? [];
+       final server = serverProgress;
+-      if (server != null) {
++      if (startCid > 0 &&
++          pages is List &&
++          pages.any((p) => p is Map && p['cid'] == startCid)) {
++        cid = startCid;
++        debugPrint('🎬 [Init] Using startCid: $cid');
++      } else if (server != null) {
+         final inPages =
+             pages is List &&
+             pages.any((p) => p is Map && p['cid'] == server.cid);
+@@ -277,12 +289,13 @@ class PlaybackPreparer {
+       final maxRetries = warm ? 1 : 3;
+       const retryDelay = Duration(milliseconds: 1500);
+       VideoPlayerController? controller;
++      var mpdToken = 0;
+ 
+       for (int attempt = 1; attempt <= maxRetries; attempt++) {
+         try {
+           // setMpdContent 與建立 controller／initialize 之間不得有其他 await
+           if (mpdContent != null) {
+-            LocalServer.instance.setMpdContent(mpdContent);
++            mpdToken = LocalServer.instance.setMpdContent(mpdContent);
+             playUrl = LocalServer.instance.mpdUrl;
+           }
+           if (playUrl == null || playUrl.isEmpty) break;
+@@ -383,22 +396,32 @@ class PlaybackPreparer {
+         listProgress: video.progress,
+         listViewAt: video.viewAt,
+       );
+-      final historyProgress = resume.seconds;
++      final forcedMs = video.forceStartMs;
++      final historyProgress = forcedMs != null
++          ? forcedMs ~/ 1000
++          : resume.seconds;
+       debugPrint(
+         '🎬 [Resume] source=${resume.source} progress=$historyProgress',
+       );
+ 
+       var resumeSeconds = 0;
+-      if (historyProgress > 0) {
++      if (historyProgress > 0 || (forcedMs != null && forcedMs > 0)) {
+         final duration = controller.value.duration.inSeconds;
+-        if (duration > 0 && historyProgress >= duration - 5) {
++        // 投放指定位置時不套用「接近片尾就從頭播」
++        if (forcedMs == null &&
++            duration > 0 &&
++            historyProgress >= duration - 5) {
+           debugPrint(
+             '🎬 [Resume] Video was completed (progress $historyProgress >= duration $duration - 5), starting from beginning',
+           );
+         } else {
+           resumeSeconds = historyProgress;
+           try {
+-            await controller.seekTo(Duration(seconds: historyProgress));
++            await controller.seekTo(
++              forcedMs != null
++                  ? Duration(milliseconds: forcedMs)
++                  : Duration(seconds: historyProgress),
++            );
+           } catch (_) {
+             // seek 失敗：從頭播放
+             resumeSeconds = 0;
+@@ -419,6 +442,7 @@ class PlaybackPreparer {
+           playInfo: playInfo,
+           resumeSeconds: resumeSeconds,
+           requestedQn: qn,
++          mpdToken: mpdToken,
+         ),
+       );
+     }
+diff --git a/lib/services/cast/cast_service.dart b/lib/services/cast/cast_service.dart
+new file mode 100644
+index 0000000..0c3adee
+--- /dev/null
++++ b/lib/services/cast/cast_service.dart
+@@ -0,0 +1,457 @@
++import 'dart:async';
++import 'dart:convert';
++import 'dart:io';
++import 'dart:math';
++
++import 'package:bili_tv_app/main.dart' show appNavigatorKey;
++import 'package:bili_tv_app/services/local_server.dart';
++import 'package:bili_tv_app/services/settings_service.dart';
++import 'package:bili_tv_app/widgets/zh_material.dart';
++import 'package:flutter/services.dart';
++
++import 'cast_playback.dart';
++
++/// 已配對的手機
++class CastPairedDevice {
++  final String deviceId;
++  final String deviceName;
++  final String token;
++  final int pairedAt;
++
++  const CastPairedDevice({
++    required this.deviceId,
++    required this.deviceName,
++    required this.token,
++    required this.pairedAt,
++  });
++
++  Map<String, dynamic> toJson() => {
++    'deviceId': deviceId,
++    'deviceName': deviceName,
++    'token': token,
++    'pairedAt': pairedAt,
++  };
++}
++
++class _CastResult {
++  final bool ok;
++  final String? token;
++  final DateTime at;
++  _CastResult(this.ok, this.token) : at = DateTime.now();
++}
++
++/// 一鍵投放：電視端的 HTTP 路由、配對與詢問框（協定 v1）
++class CastService {
++  CastService._();
++  static final CastService instance = CastService._();
++
++  static const _tvIdKey = 'cast_tv_id';
++  static const _pairedKey = 'cast_paired';
++  static const _channel = MethodChannel('com.bili.tv/update');
++
++  static const _askTimeout = Duration(seconds: 30);
++  static const _denyCooldown = Duration(seconds: 60);
++  static const _ipWindow = Duration(minutes: 10);
++  static const _ipMaxPrompts = 3;
++  static const _resultKeep = Duration(seconds: 60);
++  static const _maxBody = 8 * 1024;
++
++  /// 已配對清單變動時通知（設定頁用）
++  final ValueNotifier<int> pairedChanged = ValueNotifier(0);
++
++  String? _tvName;
++  String? _pendingId;
++  BuildContext? _dialogContext;
++  final Map<String, _CastResult> _results = {};
++  final Map<String, DateTime> _deniedAt = {};
++  final Map<String, List<DateTime>> _ipPrompts = {};
++
++  // ---------- TV 身分 ----------
++
++  /// 電視 id（第一次使用時產生 UUID）
++  String get tvId {
++    final prefs = SettingsService.prefs;
++    var id = prefs.getString(_tvIdKey);
++    if (id == null || id.isEmpty) {
++      id = _newUuid();
++      prefs.setString(_tvIdKey, id);
++    }
++    return id;
++  }
++
++  /// 電視名稱：「製造商 型號」
++  Future<String> tvName() async {
++    final cached = _tvName;
++    if (cached != null) return cached;
++    var name = 'Android TV';
++    try {
++      final info = await _channel.invokeMethod<Map<dynamic, dynamic>>(
++        'getDeviceInfo',
++      );
++      if (info != null) {
++        final n = '${info['manufacturer'] ?? ''} ${info['model'] ?? ''}'.trim();
++        if (n.isNotEmpty) name = n;
++      }
++    } catch (_) {}
++    return _tvName = name;
++  }
++
++  static String _newUuid() {
++    final r = Random.secure();
++    final b = List<int>.generate(16, (_) => r.nextInt(256));
++    b[6] = (b[6] & 0x0f) | 0x40;
++    b[8] = (b[8] & 0x3f) | 0x80;
++    String h(int from, int to) => b
++        .sublist(from, to)
++        .map((e) => e.toRadixString(16).padLeft(2, '0'))
++        .join();
++    return '${h(0, 4)}-${h(4, 6)}-${h(6, 8)}-${h(8, 10)}-${h(10, 16)}';
++  }
++
++  static String _randomToken(int length) {
++    const chars =
++        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
++    final r = Random.secure();
++    return String.fromCharCodes(
++      List.generate(length, (_) => chars.codeUnitAt(r.nextInt(chars.length))),
++    );
++  }
++
++  // ---------- 已配對清單 ----------
++
++  List<CastPairedDevice> pairedList() {
++    try {
++      final raw = SettingsService.prefs.getString(_pairedKey);
++      if (raw == null || raw.isEmpty) return [];
++      final decoded = jsonDecode(raw);
++      if (decoded is! List) return [];
++      final out = <CastPairedDevice>[];
++      for (final e in decoded) {
++        if (e is! Map) continue;
++        final id = e['deviceId'];
++        final name = e['deviceName'];
++        final token = e['token'];
++        final at = e['pairedAt'];
++        if (id is String && name is String && token is String && at is int) {
++          out.add(
++            CastPairedDevice(
++              deviceId: id,
++              deviceName: name,
++              token: token,
++              pairedAt: at,
++            ),
++          );
++        }
++      }
++      return out;
++    } catch (_) {
++      return [];
++    }
++  }
++
++  Future<void> _savePaired(List<CastPairedDevice> list) async {
++    await SettingsService.prefs.setString(
++      _pairedKey,
++      jsonEncode(list.map((e) => e.toJson()).toList()),
++    );
++    pairedChanged.value++;
++  }
++
++  Future<void> addPaired(CastPairedDevice d) async {
++    final list = pairedList()..removeWhere((e) => e.deviceId == d.deviceId);
++    list.add(d);
++    await _savePaired(list);
++  }
++
++  Future<void> removePaired(String deviceId) async {
++    final list = pairedList()..removeWhere((e) => e.deviceId == deviceId);
++    await _savePaired(list);
++  }
++
++  /// constant-time 比對
++  static bool _tokenEquals(String a, String b) {
++    final x = utf8.encode(a);
++    final y = utf8.encode(b);
++    var diff = x.length ^ y.length;
++    final n = max(x.length, y.length);
++    for (var i = 0; i < n; i++) {
++      diff |= (i < x.length ? x[i] : 0) ^ (i < y.length ? y[i] : 0);
++    }
++    return diff == 0;
++  }
++
++  // ---------- HTTP ----------
++
++  /// 處理 /api/cast/*；回傳是否已處理
++  Future<bool> handle(HttpRequest request) async {
++    final path = request.uri.path;
++    if (!path.startsWith('/api/cast/')) return false;
++    final res = request.response;
++    try {
++      final method = request.method;
++      if (path == '/api/cast/info' && method == 'GET') {
++        await _send(res, 200, {
++          'app': 'PiliBTRTV',
++          'v': 1,
++          'id': tvId,
++          'name': await tvName(),
++          'port': LocalServer.instance.port,
++        });
++      } else if (path == '/api/cast/play' && method == 'POST') {
++        await _handlePlay(request);
++      } else if (path == '/api/cast/result' && method == 'GET') {
++        await _handleResult(request);
++      } else if (path == '/api/cast/info' ||
++          path == '/api/cast/play' ||
++          path == '/api/cast/result') {
++        await _send(res, 405, {'ok': false, 'reason': 'method_not_allowed'});
++      } else {
++        await _send(res, 404, {'ok': false, 'reason': 'not_found'});
++      }
++    } catch (_) {
++      await _send(res, 500, {'ok': false, 'reason': 'server_error'});
++    }
++    return true;
++  }
++
++  Future<void> _handlePlay(HttpRequest request) async {
++    final res = request.response;
++    if (request.headers.contentType?.mimeType != 'application/json') {
++      await _send(res, 415, {'ok': false, 'reason': 'unsupported_media_type'});
++      return;
++    }
++    if (appNavigatorKey.currentState == null) {
++      await _send(res, 503, {'ok': false, 'reason': 'not_ready'});
++      return;
++    }
++    final body = await _readJson(request);
++    if (body == null) {
++      await _send(res, 400, {'ok': false, 'reason': 'bad_request'});
++      return;
++    }
++
++    final deviceId = body['deviceId'];
++    final rawName = body['deviceName'];
++    final bvid = body['bvid'];
++    final epId = _asInt(body['epId']);
++    if (deviceId is! String ||
++        deviceId.isEmpty ||
++        deviceId.length > 64 ||
++        rawName is! String ||
++        rawName.trim().isEmpty ||
++        ((bvid is! String || bvid.isEmpty) && epId == null)) {
++      await _send(res, 400, {'ok': false, 'reason': 'bad_request'});
++      return;
++    }
++    // 移除控制字元並截到 40 字
++    final deviceName = _truncate(
++      rawName.replaceAll(RegExp(r'[\x00-\x1f\x7f]'), ' ').trim(),
++      40,
++    );
++    final title = body['title'];
++    final cast = CastRequest(
++      bvid: bvid is String && bvid.isNotEmpty ? bvid : null,
++      aid: _asInt(body['aid']),
++      cid: _asInt(body['cid']),
++      epId: epId,
++      seasonId: _asInt(body['seasonId']),
++      positionMs: max(0, _asInt(body['positionMs']) ?? 0),
++      title: title is String ? _truncate(title, 200) : '',
++    );
++
++    final token = body['token'];
++    if (token is String && token.isNotEmpty) {
++      final paired = pairedList().where((e) => e.deviceId == deviceId);
++      if (paired.isNotEmpty && _tokenEquals(paired.first.token, token)) {
++        await _send(res, 200, {'ok': true});
++        _startPlayback(cast);
++      } else {
++        await _send(res, 403, {'ok': false, 'reason': 'bad_token'});
++      }
++      return;
++    }
++
++    // 沒有 token：需要在電視上詢問
++    final now = DateTime.now();
++    if (_pendingId != null) {
++      await _send(res, 409, {'ok': false, 'reason': 'busy'});
++      return;
++    }
++    final denied = _deniedAt[deviceId];
++    if (denied != null && now.difference(denied) < _denyCooldown) {
++      await _send(res, 429, {'ok': false, 'reason': 'too_many'});
++      return;
++    }
++    final ip = request.connectionInfo?.remoteAddress.address ?? '?';
++    final times = (_ipPrompts[ip] ?? [])
++      ..removeWhere((t) => now.difference(t) >= _ipWindow);
++    if (times.length >= _ipMaxPrompts) {
++      _ipPrompts[ip] = times;
++      await _send(res, 429, {'ok': false, 'reason': 'too_many'});
++      return;
++    }
++    times.add(now);
++    _ipPrompts[ip] = times;
++    _ipPrompts.removeWhere(
++      (_, v) => v.isEmpty || now.difference(v.last) >= _ipWindow,
++    );
++
++    final reqId = _randomToken(16);
++    _pendingId = reqId;
++    await _send(res, 202, {'ok': true, 'pending': true, 'reqId': reqId});
++    unawaited(_runPrompt(reqId, deviceId, deviceName, ip, cast));
++  }
++
++  Future<void> _handleResult(HttpRequest request) async {
++    final res = request.response;
++    final now = DateTime.now();
++    _results.removeWhere((_, v) => now.difference(v.at) >= _resultKeep);
++    final id = request.uri.queryParameters['id'];
++    if (id == null || id.isEmpty) {
++      await _send(res, 404, {'ok': false, 'reason': 'not_found'});
++    } else if (id == _pendingId) {
++      await _send(res, 200, {'pending': true});
++    } else {
++      final r = _results[id];
++      if (r == null) {
++        await _send(res, 404, {'ok': false, 'reason': 'not_found'});
++      } else if (r.ok) {
++        await _send(res, 200, {'ok': true, 'token': r.token});
++      } else {
++        await _send(res, 403, {'ok': false, 'reason': 'denied'});
++      }
++    }
++  }
++
++  // ---------- 詢問框 ----------
++
++  Future<void> _runPrompt(
++    String reqId,
++    String deviceId,
++    String deviceName,
++    String ip,
++    CastRequest cast,
++  ) async {
++    var allowed = false;
++    Timer? timer;
++    try {
++      final ctx = appNavigatorKey.currentState?.overlay?.context;
++      if (ctx != null) {
++        timer = Timer(_askTimeout, _closeDialog);
++        final r = await showDialog<bool>(
++          context: ctx,
++          barrierDismissible: false,
++          builder: (c) {
++            _dialogContext = c;
++            return AlertDialog(
++              backgroundColor: const Color(0xFF2A2A2A),
++              title: const Text('投放影片'),
++              content: Text('允許 $deviceName（$ip）投放影片到這台電視？'),
++              actions: [
++                TextButton(
++                  onPressed: () => Navigator.of(c).pop(true),
++                  child: const Text('允許'),
++                ),
++                // 預設焦點在拒絕
++                TextButton(
++                  autofocus: true,
++                  onPressed: () => Navigator.of(c).pop(false),
++                  child: const Text('拒絕'),
++                ),
++              ],
++            );
++          },
++        );
++        allowed = r == true;
++      }
++    } catch (_) {
++      allowed = false;
++    } finally {
++      timer?.cancel();
++      _dialogContext = null;
++    }
++
++    String? token;
++    if (allowed) {
++      token = _randomToken(32);
++      try {
++        await addPaired(
++          CastPairedDevice(
++            deviceId: deviceId,
++            deviceName: deviceName,
++            token: token,
++            pairedAt: DateTime.now().millisecondsSinceEpoch,
++          ),
++        );
++      } catch (_) {}
++      _results[reqId] = _CastResult(true, token);
++    } else {
++      _results[reqId] = _CastResult(false, null);
++      _deniedAt[deviceId] = DateTime.now();
++    }
++    _pendingId = null;
++    if (allowed) _startPlayback(cast);
++  }
++
++  /// 逾時關閉詢問框（結果記為拒絕）
++  void _closeDialog() {
++    final c = _dialogContext;
++    if (c == null || !c.mounted) return;
++    final route = ModalRoute.of(c);
++    if (route == null || !route.isActive) return;
++    if (route.isCurrent) {
++      Navigator.of(c).pop(false);
++    } else {
++      route.navigator?.removeRoute(route);
++    }
++  }
++
++  void _startPlayback(CastRequest cast) {
++    CastPlayback.open(cast).catchError((Object e) {
++      debugPrint('cast open failed: $e');
++    });
++  }
++
++  // ---------- 工具 ----------
++
++  Future<void> _send(
++    HttpResponse res,
++    int code,
++    Map<String, dynamic> body,
++  ) async {
++    try {
++      res.statusCode = code;
++      res.headers.contentType = ContentType.json;
++      res.headers.set('Cache-Control', 'no-store');
++      res.write(jsonEncode(body));
++      await res.close();
++    } catch (_) {
++      // 手機已斷線
++    }
++  }
++
++  Future<Map<String, dynamic>?> _readJson(HttpRequest request) async {
++    if (request.contentLength > _maxBody) return null;
++    final bytes = <int>[];
++    try {
++      await for (final chunk in request) {
++        bytes.addAll(chunk);
++        if (bytes.length > _maxBody) return null;
++      }
++      final decoded = jsonDecode(utf8.decode(bytes));
++      return decoded is Map<String, dynamic> ? decoded : null;
++    } catch (_) {
++      return null;
++    }
++  }
++
++  static int? _asInt(Object? v) {
++    if (v is int) return v;
++    if (v is num) return v.toInt();
++    if (v is String) return int.tryParse(v);
++    return null;
++  }
++
++  static String _truncate(String s, int n) =>
++      s.runes.length <= n ? s : String.fromCharCodes(s.runes.take(n));
++}
+diff --git a/lib/services/cast/cast_playback.dart b/lib/services/cast/cast_playback.dart
+new file mode 100644
+index 0000000..7fdeaf7
+--- /dev/null
++++ b/lib/services/cast/cast_playback.dart
+@@ -0,0 +1,71 @@
++import '../../main.dart' show appNavigatorKey;
++import '../../models/video.dart';
++import '../../screens/player/player_route.dart';
++import '../../screens/player/player_screen.dart';
++
++/// 手機投放過來的播放請求
++class CastRequest {
++  final String? bvid;
++  final int? aid;
++  final int? cid;
++  final int? epId;
++  final int? seasonId;
++  final int positionMs;
++  final String title;
++
++  const CastRequest({
++    this.bvid,
++    this.aid,
++    this.cid,
++    this.epId,
++    this.seasonId,
++    required this.positionMs,
++    this.title = '',
++  });
++}
++
++/// 依投放請求開啟播放頁
++abstract final class CastPlayback {
++  static bool _opening = false;
++
++  static Future<void> open(CastRequest r) async {
++    if (_opening) return; // 開頁進行中，忽略重入
++    final nav = appNavigatorKey.currentState;
++    if (nav == null) return;
++    _opening = true;
++    try {
++      final epId = r.epId ?? 0;
++      final isPgc = epId > 0;
++      final positionMs = r.positionMs < 0 ? 0 : r.positionMs;
++      final video = isPgc
++          ? Video(
++              bvid: '',
++              title: r.title,
++              pic: '',
++              seasonId: r.seasonId ?? 0,
++              epId: epId,
++              forceEpId: epId,
++              forceStartMs: positionMs,
++            )
++          : Video(
++              bvid: r.bvid ?? '',
++              title: r.title,
++              pic: '',
++              aid: r.aid ?? 0,
++              forceStartMs: positionMs,
++            );
++      final route = PlayerRoute(video: video, startCid: isPgc ? 0 : (r.cid ?? 0));
++
++      if (PlayerScreen.activeCount > 0) {
++        // 先退回最上層的播放頁（關掉其上的選單、面板），再整頁換掉
++        nav.popUntil((x) => x is PlayerRoute || x.isFirst);
++        nav.pushReplacement(route);
++      } else {
++        nav.push(route);
++      }
++    } finally {
++      // 轉場結束前維持旗標，避免連續投放造成重複進頁
++      Future.delayed(const Duration(milliseconds: 800), () => _opening = false);
++    }
++  }
++}
+diff --git a/lib/screens/home/settings/cast_settings_page.dart b/lib/screens/home/settings/cast_settings_page.dart
+new file mode 100644
+index 0000000..4868d2b
+--- /dev/null
++++ b/lib/screens/home/settings/cast_settings_page.dart
+@@ -0,0 +1,156 @@
++import 'package:bili_tv_app/services/cast/cast_service.dart';
++import 'package:bili_tv_app/services/local_server.dart';
++import 'package:bili_tv_app/widgets/zh_material.dart';
++import 'package:qr_flutter/qr_flutter.dart';
++
++import 'widgets/setting_action_row.dart';
++
++/// 投放配對頁：顯示 QR code 與已配對的手機
++class CastSettingsPage extends StatefulWidget {
++  const CastSettingsPage({super.key});
++
++  @override
++  State<CastSettingsPage> createState() => _CastSettingsPageState();
++}
++
++class _CastSettingsPageState extends State<CastSettingsPage> {
++  List<String> _ips = LocalServer.instance.localIps;
++  String _name = '';
++  String _id = '';
++  bool _loading = true;
++
++  @override
++  void initState() {
++    super.initState();
++    CastService.instance.pairedChanged.addListener(_onPaired);
++    _load();
++  }
++
++  @override
++  void dispose() {
++    CastService.instance.pairedChanged.removeListener(_onPaired);
++    super.dispose();
++  }
++
++  void _onPaired() {
++    if (mounted) setState(() {});
++  }
++
++  Future<void> _load() async {
++    // IP 可能在啟動後才變動，開頁時重新抓取
++    await LocalServer.instance.refreshAddress();
++    final name = await CastService.instance.tvName();
++    if (!mounted) return;
++    setState(() {
++      _ips = LocalServer.instance.localIps;
++      _name = name;
++      _id = CastService.instance.tvId;
++      _loading = false;
++    });
++  }
++
++  String _qrData(String ip) =>
++      'pilibtrtv://cast?host=$ip&port=${LocalServer.instance.port}'
++      '&id=$_id&name=${Uri.encodeComponent(_name)}';
++
++  String _fmt(int ms) {
++    final t = DateTime.fromMillisecondsSinceEpoch(ms);
++    String two(int n) => n.toString().padLeft(2, '0');
++    return '${t.year}-${two(t.month)}-${two(t.day)} '
++        '${two(t.hour)}:${two(t.minute)}';
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final paired = CastService.instance.pairedList();
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text('投放配對'),
++        backgroundColor: Colors.transparent,
++      ),
++      body: ListView(
++        padding: const EdgeInsets.all(20),
++        children: [
++          const Text(
++            '用手機 App 掃描 QR code，即可一鍵投放影片到這台電視。',
++            style: TextStyle(color: Colors.white70, fontSize: 14),
++          ),
++          const SizedBox(height: 16),
++          if (_loading)
++            const Center(child: CircularProgressIndicator())
++          else if (_ips.isEmpty)
++            const Text(
++              '未連上區網',
++              style: TextStyle(color: Colors.orange, fontSize: 16),
++            )
++          else
++            Wrap(
++              spacing: 24,
++              runSpacing: 16,
++              children: [for (final ip in _ips) _qrCard(ip)],
++            ),
++          const SizedBox(height: 24),
++          const Text(
++            '已配對的手機',
++            style: TextStyle(
++              color: Colors.white,
++              fontSize: 16,
++              fontWeight: FontWeight.bold,
++            ),
++          ),
++          const SizedBox(height: 8),
++          if (paired.isEmpty)
++            const Padding(
++              padding: EdgeInsets.all(8),
++              child: Text(
++                '尚無已配對的手機',
++                style: TextStyle(color: Colors.white38, fontSize: 13),
++              ),
++            )
++          else
++            for (var i = 0; i < paired.length; i++)
++              SettingActionRow(
++                key: ValueKey(paired[i].deviceId),
++                label: paired[i].deviceName,
++                value: '配對時間 ${_fmt(paired[i].pairedAt)}',
++                buttonLabel: '移除',
++                autofocus: i == 0,
++                isFirst: i == 0,
++                isLast: i == paired.length - 1,
++                onTap: () =>
++                    CastService.instance.removePaired(paired[i].deviceId),
++              ),
++        ],
++      ),
++    );
++  }
++
++  Widget _qrCard(String ip) {
++    return Column(
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        Container(
++          padding: const EdgeInsets.all(10),
++          decoration: BoxDecoration(
++            color: Colors.white,
++            borderRadius: BorderRadius.circular(12),
++          ),
++          child: QrImageView(
++            data: _qrData(ip),
++            size: 180,
++            backgroundColor: Colors.white,
++          ),
++        ),
++        const SizedBox(height: 8),
++        Text(
++          '$ip:${LocalServer.instance.port}',
++          style: const TextStyle(color: Colors.white, fontSize: 16),
++        ),
++        Text(
++          _name,
++          style: const TextStyle(color: Colors.white54, fontSize: 13),
++        ),
++      ],
++    );
++  }
++}

@@ -1,0 +1,851 @@
+diff --git a/lib/pages/scan/handler.dart b/lib/pages/scan/handler.dart
+index 33ce2cb0d..14b4533ca 100644
+--- a/lib/pages/scan/handler.dart
++++ b/lib/pages/scan/handler.dart
+@@ -1,6 +1,7 @@
+ import 'package:PiliPlus/http/login.dart';
+ import 'package:PiliPlus/pages/mine/controller.dart';
+ import 'package:PiliPlus/pages/webview/view.dart';
++import 'package:PiliPlus/services/cast/tv_cast.dart';
+ import 'package:PiliPlus/utils/accounts.dart';
+ import 'package:PiliPlus/utils/app_scheme.dart';
+ import 'package:PiliPlus/utils/page_utils.dart';
+@@ -14,6 +15,10 @@ abstract final class QrScanHandler {
+   /// 回傳 true 表示已離開掃描頁
+   static Future<bool> handle(BuildContext context, String value) async {
+     final uri = Uri.tryParse(value);
++    if (uri != null && uri.scheme == 'pilibtrtv' && uri.host == 'cast') {
++      await _castTv(context, uri);
++      return false;
++    }
+     if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+       final host = uri.host;
+       final authCode = uri.queryParameters['auth_code'];
+@@ -49,6 +54,48 @@ abstract final class QrScanHandler {
+     return false;
+   }
+ 
++  static Future<void> _castTv(BuildContext context, Uri uri) async {
++    final q = uri.queryParameters;
++    final host = q['host'];
++    final port = int.tryParse(q['port'] ?? '') ?? TvCast.defaultPort;
++    final id = q['id'];
++    if (host == null ||
++        host.isEmpty ||
++        id == null ||
++        id.isEmpty ||
++        port < 1 ||
++        port > 65535) {
++      SmartDialog.showToast('不是有效的投放 QR code');
++      return;
++    }
++    SmartDialog.showLoading();
++    final tv = await TvCast.probe(host, port);
++    SmartDialog.dismiss();
++    if (tv == null || tv.id != id) {
++      SmartDialog.showToast('找不到 PiliBTRTV');
++      return;
++    }
++    final name = (q['name'] ?? '').isNotEmpty ? q['name']! : tv.name;
++    tv.name = name;
++    TvCast.upsert(tv);
++    if (!context.mounted) return;
++    await showDialog<void>(
++      context: context,
++      builder: (ctx) => _withL10n(
++        ctx,
++        AlertDialog(
++          title: Text('已加入電視 $name'),
++          actions: [
++            TextButton(
++              onPressed: () => Navigator.of(ctx).pop(),
++              child: const Text('確定'),
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++
+   static Future<void> _tvLogin(BuildContext context, String authCode) async {
+     if (!Accounts.main.isLogin) {
+       SmartDialog.showToast('請先登入');
+diff --git a/lib/pages/video/controller.dart b/lib/pages/video/controller.dart
+index 45d2ce7ed..bbb4d3dcb 100644
+--- a/lib/pages/video/controller.dart
++++ b/lib/pages/video/controller.dart
+@@ -46,7 +46,9 @@ import 'package:PiliPlus/pages/video/medialist/view.dart';
+ import 'package:PiliPlus/pages/video/note/view.dart';
+ import 'package:PiliPlus/pages/video/post_panel/view.dart';
+ import 'package:PiliPlus/pages/video/send_danmaku/view.dart';
++import 'package:PiliPlus/pages/video/widgets/cast_sheet.dart';
+ import 'package:PiliPlus/pages/video/widgets/header_control.dart';
++import 'package:PiliPlus/services/cast/tv_cast.dart';
+ import 'package:PiliPlus/plugin/pl_player/controller.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
+ import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
+@@ -1946,8 +1948,44 @@ class VideoDetailController extends GetxController
+     );
+   }
+ 
++  String? _currentTitle() {
++    try {
++      if (isUgc) {
++        return Get.find<UgcIntroController>(
++          tag: heroTag,
++        ).videoDetail.value.title;
++      } else {
++        return Get.find<PgcIntroController>(
++          tag: heroTag,
++        ).videoDetail.value.title;
++      }
++    } catch (_) {
++      return null;
++    }
++  }
++
++  /// 投放：先選 PiliBTRTV 電視，也可改走 DLNA。
++  void onCast() {
++    final context = Get.context;
++    if (context == null) return;
++    CastSheet.show(
++      context,
++      capture: () => CastPayload(
++        bvid: bvid,
++        aid: aid,
++        cid: cid.value,
++        epId: isUgc ? null : epId,
++        seasonId: isUgc ? null : seasonId,
++        positionMs: plPlayerController.positionInMilliseconds,
++        title: _currentTitle(),
++      ),
++      onDlna: _castDlna,
++      onCasted: plPlayerController.pause,
++    );
++  }
++
+   @pragma('vm:notify-debugger-on-exception')
+-  Future<void> onCast() async {
++  Future<void> _castDlna() async {
+     SmartDialog.showLoading();
+     final res = await VideoHttp.tvPlayUrl(
+       cid: cid.value,
+diff --git a/lib/utils/storage_key.dart b/lib/utils/storage_key.dart
+index 351922497..455c7e065 100644
+--- a/lib/utils/storage_key.dart
++++ b/lib/utils/storage_key.dart
+@@ -298,7 +298,9 @@ abstract final class LocalCacheKey {
+       mixinKey = 'mixinKey',
+       timeStamp = 'timeStamp',
+       settingsSearchHistory = 'settingsSearchHistory',
+-      exportRecords = 'exportRecords';
++      exportRecords = 'exportRecords',
++      castTvs = 'castTvs',
++      castDeviceId = 'castDeviceId';
+ }
+ 
+ abstract final class VideoBoxKey {
+diff --git a/lib/services/cast/tv_cast.dart b/lib/services/cast/tv_cast.dart
+new file mode 100644
+index 000000000..61201e78e
+--- /dev/null
++++ b/lib/services/cast/tv_cast.dart
+@@ -0,0 +1,408 @@
++import 'dart:async';
++import 'dart:io';
++
++import 'package:PiliPlus/utils/storage.dart';
++import 'package:PiliPlus/utils/storage_key.dart';
++import 'package:device_info_plus/device_info_plus.dart';
++import 'package:dio/dio.dart';
++import 'package:flutter/foundation.dart';
++import 'package:uuid/uuid.dart';
++
++/// 投放結果。
++enum CastResult {
++  ok,
++  denied,
++  busy,
++  tooMany,
++  notReady,
++  network,
++  cancelled,
++  error,
++}
++
++class TvDevice {
++  TvDevice({
++    required this.id,
++    required this.name,
++    required this.host,
++    this.port = 3322,
++    this.token,
++  });
++
++  final String id;
++  String name;
++  String host;
++  int port;
++  String? token;
++
++  Map<String, dynamic> toJson() => {
++    'id': id,
++    'name': name,
++    'host': host,
++    'port': port,
++    'token': token,
++  };
++
++  static TvDevice? fromJson(Object? m) {
++    if (m is! Map) return null;
++    final id = m['id'];
++    final name = m['name'];
++    final host = m['host'];
++    final port = m['port'];
++    final token = m['token'];
++    if (id is! String || name is! String || host is! String) return null;
++    return TvDevice(
++      id: id,
++      name: name,
++      host: host,
++      port: port is int ? port : 3322,
++      token: token is String && token.isNotEmpty ? token : null,
++    );
++  }
++}
++
++class CastPayload {
++  const CastPayload({
++    this.bvid,
++    this.aid,
++    this.cid,
++    this.epId,
++    this.seasonId,
++    required this.positionMs,
++    this.title,
++  });
++
++  final String? bvid;
++  final int? aid;
++  final int? cid;
++  final int? epId;
++  final int? seasonId;
++  final int positionMs;
++  final String? title;
++}
++
++abstract final class TvCast {
++  static const int defaultPort = 3322;
++  static const _app = 'PiliBTRTV';
++
++  // 不帶 cookie、不帶帳號攔截器的專用 Dio。
++  static final Dio _dio = Dio(
++    BaseOptions(
++      connectTimeout: const Duration(seconds: 3),
++      receiveTimeout: const Duration(seconds: 5),
++      validateStatus: (_) => true,
++    ),
++  );
++
++  // ---- 儲存 ----
++
++  static List<TvDevice> loadKnown() {
++    try {
++      final raw = GStorage.localCache.get(LocalCacheKey.castTvs);
++      if (raw is! List) return [];
++      return [
++        for (final e in raw) ?TvDevice.fromJson(e),
++      ];
++    } catch (e) {
++      debugPrint('投放：讀取已知電視失敗 $e');
++      return [];
++    }
++  }
++
++  static void _saveKnown(List<TvDevice> list) {
++    GStorage.localCache.put(
++      LocalCacheKey.castTvs,
++      list.map((e) => e.toJson()).toList(),
++    );
++  }
++
++  /// 新增或更新（以 id 比對）已知電視，保留原有 token。
++  static void upsert(TvDevice tv) {
++    final list = loadKnown();
++    final i = list.indexWhere((e) => e.id == tv.id);
++    if (i >= 0) {
++      tv.token ??= list[i].token;
++      list[i] = tv;
++    } else {
++      list.add(tv);
++    }
++    _saveKnown(list);
++  }
++
++  /// 更新（或清除）某台電視的 token。
++  static void upsertToken(TvDevice tv, String? token) {
++    tv.token = token;
++    final list = loadKnown();
++    final i = list.indexWhere((e) => e.id == tv.id);
++    if (i >= 0) {
++      list[i].token = token;
++    } else {
++      list.add(tv);
++    }
++    _saveKnown(list);
++  }
++
++  static String get deviceId {
++    final v = GStorage.localCache.get(LocalCacheKey.castDeviceId);
++    if (v is String && v.isNotEmpty) return v;
++    final id = const Uuid().v4();
++    GStorage.localCache.put(LocalCacheKey.castDeviceId, id);
++    return id;
++  }
++
++  static String? _deviceName;
++  static Future<String> getDeviceName() async {
++    if (_deviceName case final n?) return n;
++    try {
++      if (Platform.isAndroid) {
++        final info = await DeviceInfoPlugin().androidInfo;
++        return _deviceName = '${info.manufacturer} ${info.model}';
++      }
++    } catch (e) {
++      debugPrint('投放：取得裝置名稱失敗 $e');
++    }
++    return _deviceName = Platform.operatingSystem;
++  }
++
++  // ---- 探索 ----
++
++  static String _url(String host, int port, String path) =>
++      'http://${host.contains(':') ? '[$host]' : host}:$port$path';
++
++  static TvDevice? _parseInfo(Object? data, String host, int port) {
++    if (data is! Map || data['app'] != _app) return null;
++    final id = data['id'];
++    final name = data['name'];
++    if (id is! String || id.isEmpty) return null;
++    return TvDevice(
++      id: id,
++      name: name is String && name.isNotEmpty ? name : host,
++      host: host,
++      port: port,
++    );
++  }
++
++  static Future<TvDevice?> _info(
++    String host,
++    int port,
++    Duration timeout,
++    CancelToken? cancel,
++  ) async {
++    try {
++      final res = await _dio.get(
++        _url(host, port, '/api/cast/info'),
++        options: Options(
++          sendTimeout: timeout,
++          receiveTimeout: timeout,
++          responseType: ResponseType.json,
++        ),
++        cancelToken: cancel,
++      );
++      if (res.statusCode != 200) return null;
++      return _parseInfo(res.data, host, port);
++    } catch (_) {
++      return null;
++    }
++  }
++
++  /// 手動輸入或 QR code：3 秒逾時。
++  static Future<TvDevice?> probe(String host, int port) async {
++    final cancel = CancelToken();
++    final timer = Timer(const Duration(seconds: 3), cancel.cancel);
++    try {
++      return await _info(host, port, const Duration(seconds: 3), cancel);
++    } finally {
++      timer.cancel();
++    }
++  }
++
++  static bool _isPrivate(InternetAddress a) {
++    final b = a.rawAddress;
++    if (b.length != 4) return false;
++    return b[0] == 10 ||
++        (b[0] == 172 && b[1] >= 16 && b[1] <= 31) ||
++        (b[0] == 192 && b[1] == 168);
++  }
++
++  /// 邊找邊回傳；3 秒後結束。
++  static Stream<TvDevice> discover() {
++    final controller = StreamController<TvDevice>();
++    final cancel = CancelToken();
++    final seen = <String>{};
++    final known = loadKnown();
++    var closed = false;
++
++    void found(TvDevice tv) {
++      if (closed || !seen.add(tv.id)) return;
++      final i = known.indexWhere((e) => e.id == tv.id);
++      if (i >= 0) {
++        tv.token = known[i].token;
++        if (known[i].host != tv.host || known[i].port != tv.port) {
++          // 已知電視的 IP 或埠變了，更新
++          upsert(tv);
++        }
++      }
++      controller.add(tv);
++    }
++
++    Future<void> run() async {
++      const timeout = Duration(milliseconds: 500);
++      final selfIps = <String>{};
++      final subnets = <String>{};
++      try {
++        for (final itf in await NetworkInterface.list(
++          type: InternetAddressType.IPv4,
++        )) {
++          for (final a in itf.addresses) {
++            if (!_isPrivate(a)) continue;
++            selfIps.add(a.address);
++            subnets.add(a.address.substring(0, a.address.lastIndexOf('.')));
++          }
++        }
++      } catch (e) {
++        debugPrint('投放：列出網卡失敗 $e');
++      }
++      final jobs = <String>[
++        for (final s in subnets)
++          for (var i = 1; i <= 254; i++)
++            if (!selfIps.contains('$s.$i')) '$s.$i',
++      ];
++      var next = 0;
++      Future<void> worker() async {
++        while (!closed && next < jobs.length) {
++          final ip = jobs[next++];
++          final r = await _info(ip, defaultPort, timeout, cancel);
++          if (r != null) found(r);
++        }
++      }
++
++      await Future.wait([
++        // 已知電視直接探測（不受 /24 與預設埠限制）
++        for (final tv in known)
++          _info(tv.host, tv.port, const Duration(seconds: 3), cancel).then((r) {
++            if (r != null) found(r);
++          }),
++        for (var i = 0; i < 64; i++) worker(),
++      ]);
++    }
++
++    final timer = Timer(const Duration(seconds: 3), () {
++      closed = true;
++      cancel.cancel();
++      if (!controller.isClosed) controller.close();
++    });
++    controller.onCancel = () {
++      closed = true;
++      timer.cancel();
++      cancel.cancel();
++    };
++    run();
++    return controller.stream;
++  }
++
++  // ---- 投放 ----
++
++  /// [onPending]：電視端開始詢問（收到 202）時呼叫。
++  static Future<CastResult> play(
++    TvDevice tv,
++    CastPayload p, {
++    CancelToken? cancel,
++    VoidCallback? onPending,
++  }) async {
++    final deviceName = await getDeviceName();
++    final deviceId = TvCast.deviceId;
++    var token = tv.token;
++    var retried = false;
++    final options = Options(contentType: Headers.jsonContentType);
++    try {
++      while (true) {
++        final res = await _dio.post(
++          _url(tv.host, tv.port, '/api/cast/play'),
++          data: {
++            'v': 1,
++            'deviceId': deviceId,
++            'deviceName': deviceName,
++            'token': ?token,
++            'bvid': p.bvid,
++            'aid': p.aid,
++            'cid': p.cid,
++            'epId': p.epId,
++            'seasonId': p.seasonId,
++            'positionMs': p.positionMs,
++            'title': p.title,
++          },
++          options: options,
++          cancelToken: cancel,
++        );
++        final data = res.data;
++        final reason = data is Map ? data['reason'] : null;
++        switch (res.statusCode) {
++          case 200:
++            return CastResult.ok;
++          case 202:
++            final reqId = data is Map ? data['reqId'] : null;
++            if (reqId is! String) return CastResult.error;
++            onPending?.call();
++            return await _poll(tv, reqId, cancel);
++          case 403:
++            if (reason == 'bad_token' && token != null && !retried) {
++              retried = true;
++              token = null;
++              upsertToken(tv, null);
++              continue;
++            }
++            return CastResult.denied;
++          case 409:
++            return CastResult.busy;
++          case 429:
++            return CastResult.tooMany;
++          case 503:
++            return CastResult.notReady;
++          default:
++            return CastResult.error;
++        }
++      }
++    } on DioException catch (e) {
++      if (CancelToken.isCancel(e)) return CastResult.cancelled;
++      return CastResult.network;
++    } catch (_) {
++      return CastResult.network;
++    }
++  }
++
++  static Future<CastResult> _poll(
++    TvDevice tv,
++    String reqId,
++    CancelToken? cancel,
++  ) async {
++    final deadline = DateTime.now().add(const Duration(seconds: 35));
++    while (DateTime.now().isBefore(deadline)) {
++      await Future.delayed(const Duration(seconds: 1));
++      if (cancel?.isCancelled ?? false) return CastResult.cancelled;
++      final res = await _dio.get(
++        _url(tv.host, tv.port, '/api/cast/result'),
++        queryParameters: {'id': reqId},
++        cancelToken: cancel,
++      );
++      final data = res.data;
++      switch (res.statusCode) {
++        case 200:
++          if (data is Map && data['pending'] == true) continue;
++          if (data is Map && data['ok'] == true) {
++            if (data['token'] case final String t when t.isNotEmpty) {
++              upsertToken(tv, t);
++            }
++            return CastResult.ok;
++          }
++          return CastResult.error;
++        case 403:
++          return CastResult.denied;
++        case 503:
++          return CastResult.notReady;
++        default:
++          return CastResult.error;
++      }
++    }
++    return CastResult.denied;
++  }
++}
+diff --git a/lib/pages/video/widgets/cast_sheet.dart b/lib/pages/video/widgets/cast_sheet.dart
+new file mode 100644
+index 000000000..34b49f7e8
+--- /dev/null
++++ b/lib/pages/video/widgets/cast_sheet.dart
+@@ -0,0 +1,284 @@
++import 'dart:async';
++
++import 'package:PiliPlus/services/cast/tv_cast.dart';
++import 'package:dio/dio.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
++import 'package:get/get.dart';
++
++/// 「投放到」選單：PiliBTRTV 電視、掃描 QR code、輸入 IP、DLNA。
++abstract final class CastSheet {
++  /// [capture] 在使用者選了電視的當下同步呼叫，取得要送出的資料。
++  /// [onDlna] 執行原本的 DLNA 流程。[onCasted] 投放成功後呼叫（用來暫停）。
++  static Future<void> show(
++    BuildContext context, {
++    required CastPayload Function() capture,
++    required VoidCallback onDlna,
++    required VoidCallback onCasted,
++  }) {
++    return showModalBottomSheet<void>(
++      context: context,
++      useSafeArea: true,
++      isScrollControlled: true,
++      builder: (sheetContext) => _CastSheetBody(
++        onSelect: (tv) {
++          // 同步取值，之後使用者再拖進度也不影響
++          final payload = capture();
++          Navigator.of(sheetContext).pop();
++          _send(context, tv, payload, onCasted);
++        },
++        onDlna: () {
++          Navigator.of(sheetContext).pop();
++          onDlna();
++        },
++      ),
++    );
++  }
++
++  static Future<void> _send(
++    BuildContext context,
++    TvDevice tv,
++    CastPayload payload,
++    VoidCallback onCasted,
++  ) async {
++    final cancel = CancelToken();
++    final message = ValueNotifier<String>('正在連線…');
++    var dialogOpen = true;
++    showDialog<void>(
++      context: context,
++      barrierDismissible: false,
++      builder: (ctx) => PopScope(
++        canPop: false,
++        child: AlertDialog(
++          content: Row(
++            children: [
++              const SizedBox(
++                width: 24,
++                height: 24,
++                child: CircularProgressIndicator(strokeWidth: 2.5),
++              ),
++              const SizedBox(width: 16),
++              Expanded(
++                child: ValueListenableBuilder<String>(
++                  valueListenable: message,
++                  builder: (_, v, _) => Text(v),
++                ),
++              ),
++            ],
++          ),
++          actions: [
++            TextButton(
++              onPressed: cancel.cancel,
++              child: const Text('取消'),
++            ),
++          ],
++        ),
++      ),
++    ).whenComplete(() => dialogOpen = false);
++
++    final res = await TvCast.play(
++      tv,
++      payload,
++      cancel: cancel,
++      onPending: () => message.value = '請在電視上按允許',
++    );
++    message.dispose();
++    if (dialogOpen && context.mounted) {
++      Navigator.of(context, rootNavigator: true).pop();
++    }
++    switch (res) {
++      case CastResult.ok:
++        onCasted();
++        SmartDialog.showToast('已投放到 ${tv.name}');
++      case CastResult.denied:
++        SmartDialog.showToast('電視拒絕投放');
++      case CastResult.busy:
++        SmartDialog.showToast('電視正在等待其他手機的允許');
++      case CastResult.tooMany:
++        SmartDialog.showToast('請稍後再試');
++      case CastResult.notReady:
++        SmartDialog.showToast('電視尚未就緒');
++      case CastResult.network:
++      case CastResult.error:
++        SmartDialog.showToast('無法連線到 ${tv.name}');
++      case CastResult.cancelled:
++        break;
++    }
++  }
++}
++
++class _CastSheetBody extends StatefulWidget {
++  const _CastSheetBody({required this.onSelect, required this.onDlna});
++
++  final ValueChanged<TvDevice> onSelect;
++  final VoidCallback onDlna;
++
++  @override
++  State<_CastSheetBody> createState() => _CastSheetBodyState();
++}
++
++class _CastSheetBodyState extends State<_CastSheetBody> {
++  final List<TvDevice> _tvs = [];
++  StreamSubscription<TvDevice>? _sub;
++  bool _discovering = false;
++
++  @override
++  void initState() {
++    super.initState();
++    _discover();
++  }
++
++  @override
++  void dispose() {
++    _sub?.cancel();
++    super.dispose();
++  }
++
++  void _discover() {
++    _sub?.cancel();
++    _tvs.clear();
++    setState(() => _discovering = true);
++    _sub = TvCast.discover().listen(
++      (tv) {
++        if (!mounted) return;
++        setState(() {
++          final i = _tvs.indexWhere((e) => e.id == tv.id);
++          if (i >= 0) {
++            _tvs[i] = tv;
++          } else {
++            _tvs.add(tv);
++          }
++        });
++      },
++      onDone: () {
++        if (mounted) setState(() => _discovering = false);
++      },
++    );
++  }
++
++  Future<void> _scan() async {
++    await Get.toNamed('/scan');
++    if (mounted) _discover();
++  }
++
++  Future<void> _inputIp() async {
++    final text = await showDialog<String>(
++      context: context,
++      builder: (ctx) {
++        final controller = TextEditingController();
++        return AlertDialog(
++          title: const Text('輸入 IP'),
++          content: TextField(
++            controller: controller,
++            autofocus: true,
++            keyboardType: TextInputType.url,
++            decoration: const InputDecoration(hintText: '192.168.1.10:3322'),
++            onSubmitted: (v) => Navigator.of(ctx).pop(v),
++          ),
++          actions: [
++            TextButton(
++              onPressed: () => Navigator.of(ctx).pop(),
++              child: const Text('取消'),
++            ),
++            TextButton(
++              onPressed: () => Navigator.of(ctx).pop(controller.text),
++              child: const Text('確定'),
++            ),
++          ],
++        );
++      },
++    );
++    if (text == null || text.trim().isEmpty) return;
++    var host = text.trim();
++    var port = TvCast.defaultPort;
++    final idx = host.lastIndexOf(':');
++    if (idx > 0 && !host.contains('::')) {
++      final p = int.tryParse(host.substring(idx + 1));
++      if (p == null || p < 1 || p > 65535) {
++        SmartDialog.showToast('找不到 PiliBTRTV');
++        return;
++      }
++      port = p;
++      host = host.substring(0, idx);
++    }
++    SmartDialog.showLoading();
++    final tv = await TvCast.probe(host, port);
++    SmartDialog.dismiss();
++    if (tv == null) {
++      SmartDialog.showToast('找不到 PiliBTRTV');
++      return;
++    }
++    TvCast.upsert(tv);
++    // 重新取得（帶入已存的 token）
++    final saved = TvCast.loadKnown().where((e) => e.id == tv.id).firstOrNull;
++    if (!mounted) return;
++    setState(() {
++      final t = saved ?? tv;
++      final i = _tvs.indexWhere((e) => e.id == t.id);
++      if (i >= 0) {
++        _tvs[i] = t;
++      } else {
++        _tvs.add(t);
++      }
++    });
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final theme = Theme.of(context);
++    return SafeArea(
++      child: SingleChildScrollView(
++        child: Column(
++          mainAxisSize: MainAxisSize.min,
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Padding(
++              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
++              child: Row(
++                children: [
++                  Text('投放到', style: theme.textTheme.titleMedium),
++                  const SizedBox(width: 12),
++                  if (_discovering)
++                    const SizedBox(
++                      width: 16,
++                      height: 16,
++                      child: CircularProgressIndicator(strokeWidth: 2),
++                    ),
++                ],
++              ),
++            ),
++            for (final tv in _tvs)
++              ListTile(
++                leading: const Icon(Icons.tv),
++                title: Text(tv.name),
++                subtitle: Text('${tv.host}:${tv.port}'),
++                onTap: () => widget.onSelect(tv),
++              ),
++            if (_tvs.isEmpty && !_discovering)
++              const ListTile(
++                enabled: false,
++                leading: Icon(Icons.tv_off),
++                title: Text('找不到電視'),
++              ),
++            const Divider(height: 1),
++            ListTile(
++              leading: const Icon(Icons.qr_code_scanner),
++              title: const Text('掃描 QR code'),
++              onTap: _scan,
++            ),
++            ListTile(
++              leading: const Icon(Icons.keyboard),
++              title: const Text('輸入 IP'),
++              onTap: _inputIp,
++            ),
++            ListTile(
++              leading: const Icon(Icons.cast),
++              title: const Text('DLNA 裝置'),
++              onTap: widget.onDlna,
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++}
