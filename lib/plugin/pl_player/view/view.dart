@@ -1100,6 +1100,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         return;
       }
       if (dx > 3 * dy) {
+        if (!plPlayerController.enableSlideSeek) return;
         _onHorizontalDragStart();
         _gestureType = .horizontal;
       } else if (dy > 3 * dx) {
@@ -1519,6 +1520,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       final dx = pan.dx.abs();
       final dy = pan.dy.abs();
       if (dx > 3 * dy) {
+        if (!plPlayerController.enableSlideSeek) return;
         _onHorizontalDragStart();
         _gestureType = .horizontal;
       } else if (dy > 3 * dx) {

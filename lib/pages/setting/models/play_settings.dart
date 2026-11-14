@@ -111,6 +111,13 @@ List<SettingsModel> get playSettings => [
     defaultVal: true,
   ),
   const SwitchModel(
+    title: '左右滑動調整進度',
+    subtitle: '關閉後在播放畫面左右滑動不會跳轉進度',
+    leading: Icon(MdiIcons.panHorizontal),
+    setKey: SettingBoxKey.enableSlideSeek,
+    defaultVal: true,
+  ),
+  const SwitchModel(
     title: '滾輪調節音量',
     leading: Icon(Icons.mouse_outlined),
     setKey: SettingBoxKey.enableScrollVolume,

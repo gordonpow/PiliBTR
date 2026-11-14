@@ -146,10 +146,11 @@ class SettingTree {
         SettingNode(
           id: 'behavior',
           title: '播放行為',
-          subtitle: '自動播放、倍速、播放順序、進度條、影片頁',
+          subtitle: '影片卡片預覽、自動播放、倍速、播放順序、進度條、影片頁',
           icon: Icons.slow_motion_video_outlined,
           defaultFor: {.playSetting},
-          titles: {'番劇片頭/片尾跳過型別', '空降助手'},
+          // 影片卡片預覽影響所有清單與直播，放在這裡比首頁推薦好找。
+          titles: {'番劇片頭/片尾跳過型別', '空降助手', '影片卡片預覽'},
         ),
         SettingNode(
           id: 'gesture',
@@ -159,6 +160,7 @@ class SettingTree {
           titles: {
             '雙擊快退/快進',
             '左右側滑動調節亮度/音量',
+            '左右滑動調整進度',
             '滾輪調節音量',
             '調節系統亮度',
             '中間滑動進入/退出全螢幕',
@@ -268,7 +270,7 @@ class SettingTree {
         SettingNode(
           id: 'recommend',
           title: '首頁推薦',
-          subtitle: '推薦來源、預覽、重新整理、過濾器',
+          subtitle: '推薦來源、重新整理、過濾器',
           icon: Icons.explore_outlined,
           defaultFor: {.recommendSetting},
           titles: {'顯示熱門推薦', '展示追番時間表', '預載入畫面上的影片', '同時預載影片數'},

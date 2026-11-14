@@ -622,6 +622,9 @@ abstract final class Pref {
   static bool get enableSlideFS =>
       _setting.get(SettingBoxKey.enableSlideFS, defaultValue: true);
 
+  static bool get enableSlideSeek =>
+      _setting.get(SettingBoxKey.enableSlideSeek, defaultValue: true);
+
   static int get retryCount =>
       _setting.get(SettingBoxKey.retryCount, defaultValue: 2);
 

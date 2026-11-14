@@ -83,7 +83,7 @@ List<SettingsModel> get recommendSettings => [
   ),
   const SwitchModel(
     title: '影片卡片預覽',
-    subtitle: '手指碰到影片卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡',
+    subtitle: '手指碰到影片或直播卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡；關閉後所有清單都不預覽',
     leading: Icon(Icons.preview_outlined),
     setKey: SettingBoxKey.videoCardPreview,
     defaultVal: true,

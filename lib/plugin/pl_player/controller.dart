@@ -483,6 +483,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   late final darkVideoPage = Pref.darkVideoPage;
   late final enableSlideVolumeBrightness = Pref.enableSlideVolumeBrightness;
   late final enableSlideFS = Pref.enableSlideFS;
+  late final enableSlideSeek = Pref.enableSlideSeek;
   late final enableScrollVolume = Pref.enableScrollVolume;
   late final enableDragSubtitle = Pref.enableDragSubtitle;
   late final fastForBackwardInSeconds = Pref.fastForBackwardDuration;
@@ -682,6 +683,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       portraitUpMode();
     }
   }
+
   late final checkIsAutoRotate = Platform.isAndroid && mode != .gravity;
   StreamSubscription<OrientationParams>? _orientationListener;
 
@@ -1813,9 +1815,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
           if (orientation == null && !videoPageHorizontal && _isLandscape) {
             _userExitedFS = true;
           }
-          if (orientation == null &&
-              mode == .none &&
-              !_fsChangedOrientation) {
+          if (orientation == null && mode == .none && !_fsChangedOrientation) {
             return;
           }
           _fsChangedOrientation = false;

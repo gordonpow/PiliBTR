@@ -1,5 +1,5 @@
 {
- "version": "202611141200",
+ "version": "202611141500",
  "strings": {
   "\n\n注：被拉黑的Up可以在隱私設定-黑名單管理中解除": "\n\nNote: Blocked uploaders can be unblocked in Privacy Settings - Blocklist Management",
   "\nmid為0時使用匿名": "\nUse anonymous when mid is 0",
@@ -688,6 +688,8 @@
   "左側抽屜": "Left drawer",
   "左側雙擊快退/右側雙擊快進，關閉則雙擊均為暫停/播放": "Double-tap left to rewind / right to fast-forward; when disabled, double-tap to pause/play",
   "左右側滑動調節亮度/音量": "Swipe left/right edge to adjust brightness/volume",
+  "左右滑動調整進度": "Swipe left/right to seek",
+  "關閉後在播放畫面左右滑動不會跳轉進度": "When off, swiping left/right on the player does not seek",
   "已": "Already",
   "已三連": "Liked·Coined·Favorited",
   "已下載（中文 → 英文）": "Downloaded (Chinese → English)",
@@ -2153,7 +2155,10 @@
   "電視正在等待其他手機的允許": "The TV is waiting for another phone's approval",
   "請稍後再試": "Please try again later",
   "電視尚未就緒": "The TV is not ready yet",
-  "不是有效的投放 QR code": "Not a valid cast QR code"
+  "不是有效的投放 QR code": "Not a valid cast QR code",
+  "影片卡片預覽、自動播放、倍速、播放順序、進度條、影片頁": "Video card preview, autoplay, playback speed, play order, progress bar, video page",
+  "推薦來源、重新整理、過濾器": "Recommendation sources, refresh, filters",
+  "手指碰到影片或直播卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡；關閉後所有清單都不預覽": "Preview on a video or live card as soon as your finger touches it (muted by default); the preview follows your finger while scrolling. Turn off to stop previews in all lists"
  },
  "templates": {
   "\n你評論狀態有點可疑，雖然無帳號翻找評論區獲取不到你的評論，但是無帳號可通過\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\n獲取你的評論，疑似評論區被戒嚴或者這是你的影片。\n\n你的評論：{3}": "\nYour comment status is suspicious. Although your comment cannot be found by browsing the comment section while logged out, it can be retrieved via\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\nwhile logged out. The comment section may be restricted or this is your own video.\n\nYour comment: {3}",
