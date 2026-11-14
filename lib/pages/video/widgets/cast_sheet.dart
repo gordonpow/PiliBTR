@@ -16,11 +16,22 @@ abstract final class CastSheet {
     required VoidCallback onDlna,
     required VoidCallback onCasted,
   }) {
-    // 按鈕的 context 會隨播放器控制列隱藏而失效；之後的對話框改用根
-    // Navigator 的 overlay context（在 Navigator 之下，且不會被卸載）。
-    final host = Navigator.of(context, rootNavigator: true).overlay!.context;
+    // 按鈕的 context 會隨播放器控制列隱藏而失效（按下按鈕的同時控制列
+    // 可能就開始隱藏），用它開選單會丟例外，release 版看起來就是「沒反應」。
+    // 和播放器其他選單一樣改用 GetX 根 Navigator 的 overlay context
+    // （在 Navigator 之下，且不會被卸載）；按鈕 context 只在根 Navigator
+    // 不存在時備用。
+    final BuildContext host;
+    try {
+      host =
+          Get.key.currentState?.overlay?.context ??
+          Navigator.of(context, rootNavigator: true).overlay!.context;
+    } catch (e) {
+      SmartDialog.showToast('無法開啟投放選單：$e');
+      return Future.value();
+    }
     return showModalBottomSheet<void>(
-      context: context,
+      context: host,
       useSafeArea: true,
       isScrollControlled: true,
       builder: (sheetContext) => _CastSheetBody(
