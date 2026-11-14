@@ -88,6 +88,10 @@ class CardPreview {
           item: item,
           enabled: !suspended,
           onPrefetch: prefetch,
+          prefetchKey: switch (cid) {
+            final cid? when bvid.isNotEmpty => (bvid, cid),
+            _ => null,
+          },
           child: child,
         )
       : child;

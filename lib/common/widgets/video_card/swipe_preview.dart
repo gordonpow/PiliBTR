@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/video_card/video_preview.dart';
 import 'package:PiliPlus/common/widgets/zh_material.dart';
+import 'package:PiliPlus/utils/visible_prefetch.dart';
 import 'package:flutter/gestures.dart';
 
 /// A video card that plays a preview as soon as a finger touches it. It
@@ -12,7 +13,12 @@ class SwipePreviewTarget extends StatefulWidget {
     required this.onPrefetch,
     required this.child,
     this.enabled = true,
+    this.prefetchKey,
   });
+
+  /// Bvid and cid for [VisiblePrefetch] while the card is on screen; null
+  /// for cards without a cid (they prefetch only on touch).
+  final (String, int)? prefetchKey;
 
   /// False while the list cannot preview (multi-select, sort mode).
   final bool enabled;
@@ -28,19 +34,63 @@ class SwipePreviewTarget extends StatefulWidget {
   State<SwipePreviewTarget> createState() => _SwipePreviewTargetState();
 }
 
-class _SwipePreviewTargetState extends State<SwipePreviewTarget> {
+class _SwipePreviewTargetState extends State<SwipePreviewTarget>
+    implements VisibleCard {
   /// The nearest detector above this card, if any.
   _SwipePreviewDetectorState? _detector;
+
+  /// The list of this card: its scrolling state starts [VisiblePrefetch].
+  ScrollPosition? _position;
 
   @override
   void initState() {
     super.initState();
     _detector = context.findAncestorStateOfType<_SwipePreviewDetectorState>();
     _detector?._targets.add(this);
+    VisiblePrefetch.add(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Depend on the route and the tab: when the page comes back on top or
+    // the tab shows again, collect the visible cards again.
+    ModalRoute.of(context);
+    TickerMode.valuesOf(context);
+    final position = Scrollable.maybeOf(context)?.position;
+    if (!identical(position, _position)) {
+      _position?.isScrollingNotifier.removeListener(_onScrolling);
+      _position = position;
+      position?.isScrollingNotifier.addListener(_onScrolling);
+    }
+    VisiblePrefetch.schedule();
+  }
+
+  void _onScrolling() {
+    final position = _position;
+    if (position == null) return;
+    VisiblePrefetch.onScrolling(
+      position,
+      position.isScrollingNotifier.value,
+    );
+  }
+
+  @override
+  (String, int)? get prefetchKey => widget.enabled ? widget.prefetchKey : null;
+
+  @override
+  Rect? get visibleRect {
+    if (!mounted) return null;
+    if (ModalRoute.of(context)?.isCurrent == false) return null;
+    if (!TickerMode.valuesOf(context).enabled) return null;
+    return _globalRect;
   }
 
   @override
   void dispose() {
+    _position?.isScrollingNotifier.removeListener(_onScrolling);
+    _position = null;
+    VisiblePrefetch.remove(this);
     _detector?._targets.remove(this);
     _detector = null;
     super.dispose();
