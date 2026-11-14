@@ -160,7 +160,31 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
       spaceSetting = data.setting;
     }
     loadingState.value = response;
+    _syncWebRelation();
     return true;
+  }
+
+  // 僅有 cookie 登入（無 access_key）時，app API 會視為未登入而回傳未關注，
+  // 改用 web API（帶 cookie）校正關注狀態；失敗時保留 app API 的結果。
+  Future<void> _syncWebRelation() async {
+    if (!account.isLogin || mid == account.mid) return;
+    final targetMid = mid;
+    final res = await UserHttp.userRelation(targetMid);
+    if (isClosed || targetMid != mid) return;
+    if (res case Success(:final response)) {
+      // 已拉黑或被拉黑時維持原狀態
+      if (relation.value == 128 || relation.value == -1) return;
+      final attribute = response.attribute;
+      if (attribute == null) return;
+      if (attribute == 128) {
+        relation.value = 128;
+      } else if (attribute == 0 || attribute == -1) {
+        relation.value = 0;
+      } else {
+        // 與影片頁相同：特別關注對應 -10
+        relation.value = response.special == 1 ? -10 : attribute;
+      }
+    }
   }
 
   @override
