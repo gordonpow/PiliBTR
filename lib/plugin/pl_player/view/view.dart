@@ -336,7 +336,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         -1 / kDefaultMouseScrollToScaleFactor,
       ),
       trackpadScrollCausesScale: false,
-    );
+    )..canClaimMiniSwipe = () => _canSwipeToMini;
   }
 
   @override
