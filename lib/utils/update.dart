@@ -155,12 +155,26 @@ abstract final class Update {
       return;
     }
     final abis = (await DeviceInfoPlugin().androidInfo).supportedAbis;
-    ({String name, String url})? asset;
-    for (final abi in abis) {
-      asset = info.assets.firstWhereOrNull(
-        (e) => e.name.contains(abi) && e.name.endsWith('.apk'),
-      );
-      if (asset != null) break;
+    ({String name, String url})? pick(UpdateInfo i) {
+      for (final abi in abis) {
+        final a = i.assets.firstWhereOrNull(
+          (e) => e.name.contains(abi) && e.name.endsWith('.apk'),
+        );
+        if (a != null) return a;
+      }
+      return null;
+    }
+
+    var asset = pick(info);
+    if (asset == null) {
+      // A check made right after the release was created can see it
+      // before its APKs are uploaded: check again for the asset list.
+      await check();
+      final fresh = available.value;
+      if (fresh != null) {
+        info = fresh;
+        asset = pick(fresh);
+      }
     }
     if (asset == null) {
       SmartDialog.showToast('找不到適用此裝置的安裝檔');
