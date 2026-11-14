@@ -1670,7 +1670,7 @@ class HeaderControlState extends State<HeaderControl>
                       child: IconButton(
                         tooltip: '投放',
                         style: btnStyle,
-                        onPressed: videoDetailCtr.onCast,
+                        onPressed: () => videoDetailCtr.onCast(context),
                         icon: const Icon(
                           Icons.cast,
                           size: 19,

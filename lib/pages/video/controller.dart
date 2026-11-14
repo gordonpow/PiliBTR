@@ -46,7 +46,9 @@ import 'package:PiliPlus/pages/video/medialist/view.dart';
 import 'package:PiliPlus/pages/video/note/view.dart';
 import 'package:PiliPlus/pages/video/post_panel/view.dart';
 import 'package:PiliPlus/pages/video/send_danmaku/view.dart';
+import 'package:PiliPlus/pages/video/widgets/cast_sheet.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
+import 'package:PiliPlus/services/cast/tv_cast.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
@@ -1946,8 +1948,46 @@ class VideoDetailController extends GetxController
     );
   }
 
+  String? _currentTitle() {
+    try {
+      if (isUgc) {
+        return Get.find<UgcIntroController>(
+          tag: heroTag,
+        ).videoDetail.value.title;
+      } else {
+        return Get.find<PgcIntroController>(
+          tag: heroTag,
+        ).videoDetail.value.title;
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 投放：先選 PiliBTRTV 電視，也可改走 DLNA。
+  /// [context] 要在 Navigator 之下（例如按鈕的 context）；`Get.context` 是
+  /// Navigator 本身的 context，用它開 bottom sheet 會找不到 Navigator。
+  void onCast([BuildContext? context]) {
+    context ??= Get.overlayContext;
+    if (context == null) return;
+    CastSheet.show(
+      context,
+      capture: () => CastPayload(
+        bvid: bvid,
+        aid: aid,
+        cid: cid.value,
+        epId: isUgc ? null : epId,
+        seasonId: isUgc ? null : seasonId,
+        positionMs: plPlayerController.positionInMilliseconds,
+        title: _currentTitle(),
+      ),
+      onDlna: _castDlna,
+      onCasted: plPlayerController.pause,
+    );
+  }
+
   @pragma('vm:notify-debugger-on-exception')
-  Future<void> onCast() async {
+  Future<void> _castDlna() async {
     SmartDialog.showLoading();
     final res = await VideoHttp.tvPlayUrl(
       cid: cid.value,

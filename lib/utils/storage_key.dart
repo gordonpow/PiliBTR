@@ -298,7 +298,9 @@ abstract final class LocalCacheKey {
       mixinKey = 'mixinKey',
       timeStamp = 'timeStamp',
       settingsSearchHistory = 'settingsSearchHistory',
-      exportRecords = 'exportRecords';
+      exportRecords = 'exportRecords',
+      castTvs = 'castTvs',
+      castDeviceId = 'castDeviceId';
 }
 
 abstract final class VideoBoxKey {

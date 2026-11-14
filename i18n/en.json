@@ -1,5 +1,5 @@
 {
- "version": "202611131200",
+ "version": "202611141200",
  "strings": {
   "\n\n注：被拉黑的Up可以在隱私設定-黑名單管理中解除": "\n\nNote: Blocked uploaders can be unblocked in Privacy Settings - Blocklist Management",
   "\nmid為0時使用匿名": "\nUse anonymous when mid is 0",
@@ -2141,7 +2141,19 @@
   "影片卡片預覽": "Video card preview",
   "手指碰到影片卡片就直接在卡片上預覽（預設靜音），滑動時跟著手指換卡": "Preview on the card as soon as your finger touches it (muted by default); the preview follows your finger while scrolling",
   "快速起播": "Fast start",
-  "縮短開影片時的格式探測，加快首幀；若出現黑畫面或沒聲音請關閉": "Shorten format probing when opening videos for a faster first frame; turn off if you get a black screen or no sound"
+  "縮短開影片時的格式探測，加快首幀；若出現黑畫面或沒聲音請關閉": "Shorten format probing when opening videos for a faster first frame; turn off if you get a black screen or no sound",
+  "投放到": "Cast to",
+  "找不到電視": "No TV found",
+  "輸入 IP": "Enter IP",
+  "DLNA 裝置": "DLNA device",
+  "找不到 PiliBTRTV": "PiliBTRTV not found",
+  "正在連線…": "Connecting...",
+  "請在電視上按允許": "Press Allow on the TV",
+  "電視拒絕投放": "The TV declined the cast",
+  "電視正在等待其他手機的允許": "The TV is waiting for another phone's approval",
+  "請稍後再試": "Please try again later",
+  "電視尚未就緒": "The TV is not ready yet",
+  "不是有效的投放 QR code": "Not a valid cast QR code"
  },
  "templates": {
   "\n你評論狀態有點可疑，雖然無帳號翻找評論區獲取不到你的評論，但是無帳號可通過\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\n獲取你的評論，疑似評論區被戒嚴或者這是你的影片。\n\n你的評論：{3}": "\nYour comment status is suspicious. Although your comment cannot be found by browsing the comment section while logged out, it can be retrieved via\nhttps://api.bilibili.com/x/v2/reply/reply?oid={0}&pn=1&ps=20&root={1}&type={2}\nwhile logged out. The comment section may be restricted or this is your own video.\n\nYour comment: {3}",
@@ -2487,6 +2499,9 @@
   "驗證資訊錯誤：{0}\n返回內容：{1}，嘗試另一個驗證碼介面": "Verification info error: {0}\nResponse: {1}, trying another captcha interface",
   "高能觀眾({0})": "Top viewers ({0})",
   "，{0} 條下載失敗": ", {0} failed to download",
-  "，無引數時:「{0}」": ", when no arguments: \"{0}\""
+  "，無引數時:「{0}」": ", when no arguments: \"{0}\"",
+  "已投放到 {0}": "Cast to {0}",
+  "無法連線到 {0}": "Cannot connect to {0}",
+  "已加入電視 {0}": "Added TV {0}"
  }
 }

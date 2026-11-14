@@ -1,6 +1,7 @@
 import 'package:PiliPlus/http/login.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
+import 'package:PiliPlus/services/cast/tv_cast.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -14,6 +15,10 @@ abstract final class QrScanHandler {
   /// 回傳 true 表示已離開掃描頁
   static Future<bool> handle(BuildContext context, String value) async {
     final uri = Uri.tryParse(value);
+    if (uri != null && uri.scheme == 'pilibtrtv' && uri.host == 'cast') {
+      await _castTv(context, uri);
+      return false;
+    }
     if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
       final host = uri.host;
       final authCode = uri.queryParameters['auth_code'];
@@ -47,6 +52,48 @@ abstract final class QrScanHandler {
 
     await _showText(context, value);
     return false;
+  }
+
+  static Future<void> _castTv(BuildContext context, Uri uri) async {
+    final q = uri.queryParameters;
+    final host = q['host'];
+    final port = int.tryParse(q['port'] ?? '') ?? TvCast.defaultPort;
+    final id = q['id'];
+    if (host == null ||
+        host.isEmpty ||
+        id == null ||
+        id.isEmpty ||
+        port < 1 ||
+        port > 65535) {
+      SmartDialog.showToast('不是有效的投放 QR code');
+      return;
+    }
+    SmartDialog.showLoading();
+    final tv = await TvCast.probe(host, port);
+    SmartDialog.dismiss();
+    if (tv == null || tv.id != id) {
+      SmartDialog.showToast('找不到 PiliBTRTV');
+      return;
+    }
+    final name = (q['name'] ?? '').isNotEmpty ? q['name']! : tv.name;
+    tv.name = name;
+    TvCast.upsert(tv);
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _withL10n(
+        ctx,
+        AlertDialog(
+          title: Text('已加入電視 $name'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('確定'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   static Future<void> _tvLogin(BuildContext context, String authCode) async {
