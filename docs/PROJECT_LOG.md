@@ -361,3 +361,5 @@
 | 2026-11-14 | 發布 | `348ac905c` 版本 v2.2.16（2.2.16+17），推送並發布 Release（Latest），issue 105 已關閉 |
 | 2026-11-14 | 一鍵投放怎麼用；掃 QR 顯示「已加入電視」但按投放沒反應、電視沒跳允許 | 電視模擬器（btr.26）用 curl 送投放請求，電視正常跳出允許，電視端沒問題；手機是投放選單沒開、請求沒送出。推測：選單用播放器控制列按鈕的 context 開，控制列隱藏時 context 失效、例外被吞。`5bb847b41` 改用 GetX 根 Navigator 的 overlay context（同播放器其他選單），失敗時 toast 錯誤。手機模擬器影片卡載入、叫不出控制列，未驗證 |
 | 2026-11-14 | 發布 | `79c63a8a1` 版本 v2.2.17（2.2.17+18），先建草稿、上傳 APK 後再公開 |
+| 2026-11-15 | v2.2.17 按投放仍然什麼都沒顯示 | debug 版 log：`No MaterialLocalizations found`。真正原因：`cast_sheet.dart` 直接 import `flutter/material`，App 其餘 525 個檔案用 `zh_material`（material_ui），只提供 material_ui 的 MaterialLocalizations（掃描頁以前同一原因）。v2.2.17 的推測錯誤。`deeebb690` 改 import `zh_material`。模擬器驗證：投放選單出現、輸入 IP 找到電視模擬器、手機顯示「請在電視上按允許」、電視跳出允許、允許後電視播放同一集。另：先前模擬器「點不到上方按鈕」是因為截圖到點擊之間控制列已自動隱藏、點到彈幕 |
+| 2026-11-15 | 發布 | `3bd3eb7ae` 版本 v2.2.18（2.2.18+19） |
