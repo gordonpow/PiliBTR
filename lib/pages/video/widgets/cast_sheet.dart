@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:PiliPlus/services/cast/tv_cast.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:PiliPlus/common/widgets/zh_material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
