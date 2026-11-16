@@ -367,3 +367,4 @@
 | 2026-11-15 | v2.2.17 按投放仍然什麼都沒顯示 | debug 版 log：`No MaterialLocalizations found`。真正原因：`cast_sheet.dart` 直接 import `flutter/material`，App 其餘 525 個檔案用 `zh_material`（material_ui），只提供 material_ui 的 MaterialLocalizations（掃描頁以前同一原因）。v2.2.17 的推測錯誤。`deeebb690` 改 import `zh_material`。模擬器驗證：投放選單出現、輸入 IP 找到電視模擬器、手機顯示「請在電視上按允許」、電視跳出允許、允許後電視播放同一集。另：先前模擬器「點不到上方按鈕」是因為截圖到點擊之間控制列已自動隱藏、點到彈幕 |
 | 2026-11-15 | 發布 | `3bd3eb7ae` 版本 v2.2.18（2.2.18+19） |
 | 2026-11-16 | 看回報 EEBAPR（功能建議）並實作：全螢幕橫向畫面邊界、音調調整 | 使用者選四邊各自調、半音 ±12、邊界永久／音調每部影片重設、播放器選單＋設定頁。音調改用 mpv 內建 `format` out-srate＋`scaletempo`（ffmpeg 只編了 aresample／dynaudnorm／loudnorm／equalizer／alimiter）。Sonnet diff 審查採用：讀回比對取樣率、失敗後強制重設、開新影片前先清濾鏡、拖動放開才套用、scale 用 48000/rate、面板可捲動、邊界 clamp；未採用：cid 為 null 時也重設（本地檔案無換畫質需求）。analyze 0 issue；未 commit、未實機測試（音調的 A/V 同步與音量標準化同時開啟的情況待驗證） |
+| 2026-11-16 | 推送並發布 | `e847115d3`（畫面邊界、音調）、`bfcc690a2`（文件）、`560ad8dba` 版本 v2.2.19（2.2.19+20），先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #108、#109 已關閉。未經實機驗證 |
