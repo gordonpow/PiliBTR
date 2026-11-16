@@ -155,6 +155,9 @@
 - 開影片計時：CDN 狀態面板顯示最近一次首幀與 playurl／開檔／首 byte 分段，及最近 20 次平均（`lib/services/open_timing.dart` 等）
 - 快速起播設定（預設開）：mpv `demuxer-lavf-probe-info=nostreams`（設定 → 播放「緩衝時長」下方）
 
+- 全螢幕畫面邊界：全螢幕橫向時影片四邊各自內縮 0–20%，播放器設定選單（即時預覽）與 設定 → 播放 都可調，永久保存（`screen_margin_panel.dart`、`view.dart`、`Pref.fullScreenMargin`）
+- 音調：播放器設定選單 -12～+12 半音，不改速度，換影片回到原調。mpv `af`＝`format=srate=48000:out-srate=N`＋`scaletempo=scale`（這版 libmpv 沒有 asetrate／atempo／rubberband）（`controller.dart` `setPitch`）
+
 ### 待辦
 
 - 決定：豎屏快速連滑可能錯片（F-3，未重現）是否修。
@@ -363,3 +366,4 @@
 | 2026-11-14 | 發布 | `79c63a8a1` 版本 v2.2.17（2.2.17+18），先建草稿、上傳 APK 後再公開 |
 | 2026-11-15 | v2.2.17 按投放仍然什麼都沒顯示 | debug 版 log：`No MaterialLocalizations found`。真正原因：`cast_sheet.dart` 直接 import `flutter/material`，App 其餘 525 個檔案用 `zh_material`（material_ui），只提供 material_ui 的 MaterialLocalizations（掃描頁以前同一原因）。v2.2.17 的推測錯誤。`deeebb690` 改 import `zh_material`。模擬器驗證：投放選單出現、輸入 IP 找到電視模擬器、手機顯示「請在電視上按允許」、電視跳出允許、允許後電視播放同一集。另：先前模擬器「點不到上方按鈕」是因為截圖到點擊之間控制列已自動隱藏、點到彈幕 |
 | 2026-11-15 | 發布 | `3bd3eb7ae` 版本 v2.2.18（2.2.18+19） |
+| 2026-11-16 | 看回報 EEBAPR（功能建議）並實作：全螢幕橫向畫面邊界、音調調整 | 使用者選四邊各自調、半音 ±12、邊界永久／音調每部影片重設、播放器選單＋設定頁。音調改用 mpv 內建 `format` out-srate＋`scaletempo`（ffmpeg 只編了 aresample／dynaudnorm／loudnorm／equalizer／alimiter）。Sonnet diff 審查採用：讀回比對取樣率、失敗後強制重設、開新影片前先清濾鏡、拖動放開才套用、scale 用 48000/rate、面板可捲動、邊界 clamp；未採用：cid 為 null 時也重設（本地檔案無換畫質需求）。analyze 0 issue；未 commit、未實機測試（音調的 A/V 同步與音量標準化同時開啟的情況待驗證） |
