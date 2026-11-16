@@ -1,7 +1,7 @@
 import 'dart:async' show StreamSubscription, Timer;
 import 'dart:convert' show ascii, utf8;
 import 'dart:io' show Platform;
-import 'dart:math' show max, min;
+import 'dart:math' show max, min, pow;
 import 'dart:ui' as ui;
 
 import 'package:PiliPlus/common/assets.dart';
@@ -480,6 +480,77 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   // settings
   late final showFSActionItem = Pref.showFSActionItem;
   late final enableShrinkVideoSize = Pref.enableShrinkVideoSize;
+
+  /// 全螢幕橫向時影片畫面與螢幕邊緣的距離（左、上、右、下），
+  /// 單位是螢幕寬（左右）或高（上下）的百分比。永久保存。
+  late final RxList<double> fullScreenMargin = Pref.fullScreenMargin.obs;
+
+  /// 音調（半音，-12 ～ 12）。只對目前這部影片有效，換影片時重設為 0。
+  final RxInt pitchSemitones = 0.obs;
+  String? _appliedAf;
+  Player? _afPlayer;
+
+  /// 設定音調並立即套用。播放器不接受濾鏡時回到原調並回傳 false。
+  bool setPitch(int semitones) {
+    pitchSemitones.value = semitones.clamp(-12, 12);
+    if (_applyPitch()) return true;
+    pitchSemitones.value = 0;
+    _applyPitch();
+    return false;
+  }
+
+  /// 用 mpv 內建濾鏡升降調，不改變播放速度：
+  /// 1. `format=srate=48000:out-srate=N`：先轉成 48000 Hz，再只改取樣率標記為
+  ///    N = 48000 × 比例，聲音的音高與速度都變成「比例」倍。
+  /// 2. `scaletempo=scale=1/比例`：把速度補回原本的速度，音高不變。
+  /// 播放倍速仍由 mpv 傳給 scaletempo（tempo 模式），所以倍速功能照常運作，
+  /// mpv 也不會再自動插入 scaletempo2。
+  /// （這版 libmpv 的 ffmpeg 沒有 asetrate／atempo／rubberband，不能用 lavfi。）
+  bool _applyPitch() {
+    final player = _videoPlayerController;
+    if (player == null) return true;
+    final n = pitchSemitones.value;
+    final String af;
+    if (n == 0) {
+      af = '';
+    } else {
+      final ratio = pow(2, n / 12).toDouble();
+      final rate = (48000 * ratio).round();
+      // 用取整後的 rate 反推，讓速度補償與實際取樣率完全一致。
+      final scale = (48000 / rate).toStringAsFixed(6);
+      af =
+          '@btrpitch:format=srate=48000:out-srate=$rate,'
+          '@btrtempo:scaletempo=scale=$scale';
+    }
+    // 同一個播放器已是相同設定時不重設，避免音訊鏈重建造成短暫中斷。
+    if (identical(_afPlayer, player) && _appliedAf == af) return true;
+    // 新的播放器沒有任何濾鏡；音調為 0 時不需要設定。
+    if (!identical(_afPlayer, player) && af.isEmpty) {
+      _afPlayer = player;
+      _appliedAf = af;
+      return true;
+    }
+    try {
+      player.setProperty('af', af);
+      // setProperty 不回報錯誤；讀回 af 確認 mpv 有接受這組濾鏡。
+      // 失敗時 mpv 會保留舊的 af，所以要比對這次的取樣率，不能只看標籤。
+      final now = player.getProperty('af');
+      final ok = af.isEmpty
+          ? !now.contains('btrpitch')
+          : now.contains(
+              'out-srate=${af.split('out-srate=')[1].split(',')[0]}',
+            );
+      _afPlayer = player;
+      // 失敗時目前的濾鏡狀態不確定，下次一定重新設定。
+      _appliedAf = ok ? af : null;
+      return ok;
+    } catch (e) {
+      if (kDebugMode) debugPrint('set pitch failed: $e');
+      _appliedAf = null;
+      return false;
+    }
+  }
+
   late final darkVideoPage = Pref.darkVideoPage;
   late final enableSlideVolumeBrightness = Pref.enableSlideVolumeBrightness;
   late final enableSlideFS = Pref.enableSlideFS;
@@ -866,6 +937,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       // 換影片時重設「停用 BTR」旗標
       // （refreshPlayer 重試不會經過這裡，所以重試期間旗標會保留）
       _btrDisabledCid = null;
+      // 換影片時音調回到原調（同一部影片換畫質、重開時保留）
+      if (cid == null || cid != this.cid) {
+        pitchSemitones.value = 0;
+        // 在開新影片前就清掉舊濾鏡，避免新影片開頭以舊音調播放。
+        _applyPitch();
+      }
       this.cid = cid;
       _epid = epid;
       _seasonId = seasonId;
@@ -895,6 +972,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         buffered.value = state.buffer.inSeconds;
         dataStatus.value = .loaded;
         await _initializePlayer();
+        _applyPitch();
         onInit?.call();
         return;
       }
@@ -919,6 +997,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       }
 
       await _initializePlayer();
+      _applyPitch();
       onInit?.call();
     } catch (err, stackTrace) {
       dataStatus.value = DataStatus.error;

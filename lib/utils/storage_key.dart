@@ -134,6 +134,7 @@ abstract final class SettingBoxKey {
       slideDismissReplyPage = 'slideDismissReplyPage',
       showFSActionItem = 'showFSActionItem',
       enableShrinkVideoSize = 'enableShrinkVideoSize',
+      fullScreenMargin = 'fullScreenMargin',
       showDynActionBar = 'showDynActionBar',
       darkVideoPage = 'darkVideoPage',
       enableSlideVolumeBrightness = 'enableSlideVolumeBrightness',

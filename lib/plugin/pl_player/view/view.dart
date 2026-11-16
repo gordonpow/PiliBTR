@@ -2314,7 +2314,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               child: Obx(
                 () {
                   final videoFit = plPlayerController.videoFit.value;
-                  return Transform.flip(
+                  Widget video = Transform.flip(
                     flipX: plPlayerController.flipX.value,
                     flipY: plPlayerController.flipY.value,
                     child: FittedBox(
@@ -2327,6 +2327,26 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       ),
                     ),
                   );
+                  // 全螢幕橫向時依使用者設定的畫面邊界內縮（避開挖孔、圓角）。
+                  if (plPlayerController.isFullScreen.value &&
+                      maxWidth > maxHeight) {
+                    final m = [
+                      for (final e in plPlayerController.fullScreenMargin)
+                        e.clamp(0.0, 20.0),
+                    ];
+                    if (m.any((e) => e > 0)) {
+                      video = Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          maxWidth * m[0] / 100,
+                          maxHeight * m[1] / 100,
+                          maxWidth * m[2] / 100,
+                          maxHeight * m[3] / 100,
+                        ),
+                        child: video,
+                      );
+                    }
+                  }
+                  return video;
                 },
               ),
             ),

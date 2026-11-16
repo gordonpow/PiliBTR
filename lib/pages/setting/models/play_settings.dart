@@ -16,6 +16,7 @@ import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
+import 'package:PiliPlus/plugin/pl_player/widgets/screen_margin_panel.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/translate/translator.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -450,6 +451,15 @@ List<SettingsModel> get playSettings => [
     getSubtitle: () => '當前全螢幕方向：${Pref.fullScreenMode.desc}',
     onTap: _showFullScreenModeDialog,
   ),
+  if (PlatformUtils.isMobile)
+    NormalModel(
+      title: '全螢幕畫面邊界',
+      leading: const Icon(Icons.fit_screen_outlined),
+      getSubtitle: () =>
+          '全螢幕橫向時畫面與螢幕邊緣的距離：'
+          '${ScreenMarginPanel.describe(Pref.fullScreenMargin)}',
+      onTap: _showScreenMarginDialog,
+    ),
   PopupModel(
     title: '底部進度條展示',
     leading: const Icon(Icons.border_bottom_outlined),
@@ -560,6 +570,27 @@ Future<void> _showFullScreenModeDialog(
     await GStorage.setting.put(SettingBoxKey.fullScreenMode, res.index);
     setState();
   }
+}
+
+Future<void> _showScreenMarginDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('全螢幕畫面邊界'),
+      contentPadding: const .only(top: 16, left: 8, right: 8),
+      content: const ScreenMarginPanel(),
+      actions: [
+        TextButton(
+          onPressed: Navigator.of(context).pop,
+          child: const Text('完成'),
+        ),
+      ],
+    ),
+  );
+  setState();
 }
 
 Future<void> _showAngleDegreesDialog(

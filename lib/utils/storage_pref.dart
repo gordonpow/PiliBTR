@@ -605,6 +605,15 @@ abstract final class Pref {
   static bool get enableShrinkVideoSize =>
       _setting.get(SettingBoxKey.enableShrinkVideoSize, defaultValue: true);
 
+  /// 全螢幕橫向時影片畫面的邊界（左、上、右、下，百分比）。
+  static List<double> get fullScreenMargin {
+    final value = _setting.get(SettingBoxKey.fullScreenMargin);
+    if (value is List && value.length == 4) {
+      return [for (final e in value) (e as num).toDouble()];
+    }
+    return [0, 0, 0, 0];
+  }
+
   static bool get showDynActionBar =>
       _setting.get(SettingBoxKey.showDynActionBar, defaultValue: true);
 

@@ -34,6 +34,7 @@ import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/widgets/screen_margin_panel.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService, ShutdownPanel;
 import 'package:PiliPlus/pages/setting/widgets/cdn_settings_dialog.dart';
@@ -479,6 +480,36 @@ class HeaderControlState extends State<HeaderControl>
                   descPosType: .subtitle,
                   descStyle: subTitleStyle,
                 ),
+                ListTile(
+                  dense: true,
+                  onTap: () {
+                    Get.back();
+                    showPitchSheet();
+                  },
+                  leading: const Icon(Icons.graphic_eq, size: 20),
+                  title: const Text('音調', style: titleStyle),
+                  subtitle: Text(
+                    '當前：${_pitchLabel(plPlayerController.pitchSemitones.value)}'
+                    '（換影片時回到原調）',
+                    style: subTitleStyle,
+                  ),
+                ),
+                if (PlatformUtils.isMobile)
+                  ListTile(
+                    dense: true,
+                    onTap: () {
+                      Get.back();
+                      showScreenMarginSheet();
+                    },
+                    leading: const Icon(Icons.fit_screen_outlined, size: 20),
+                    title: const Text('全螢幕畫面邊界', style: titleStyle),
+                    subtitle: Text(
+                      ScreenMarginPanel.describe(
+                        plPlayerController.fullScreenMargin,
+                      ),
+                      style: subTitleStyle,
+                    ),
+                  ),
                 if (!isFileSource)
                   ListTile(
                     dense: true,
@@ -858,6 +889,131 @@ class HeaderControlState extends State<HeaderControl>
   }
 
   /// 选择音质
+  static String _pitchLabel(int semitones) => switch (semitones) {
+    0 => '原調',
+    > 0 => '升 $semitones 個半音',
+    _ => '降 ${-semitones} 個半音',
+  };
+
+  /// 音調：-12 ～ +12 個半音，不改變播放速度。
+  void showPitchSheet() {
+    // 拖動中只更新畫面，放開時才套用，避免每一格都重建音訊鏈。
+    int? dragging;
+    showBottomSheet(
+      (context, setState) {
+        final theme = Theme.of(context);
+        final pitch = dragging ?? plPlayerController.pitchSemitones.value;
+        void set(int value) {
+          dragging = null;
+          if (!plPlayerController.setPitch(value)) {
+            SmartDialog.showToast('播放器不支援音調調整');
+          }
+          setState(() {});
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Material(
+            clipBehavior: Clip.hardEdge,
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 45,
+                    child: Center(
+                      child: Text(
+                        '音調：${_pitchLabel(pitch)}',
+                        style: titleStyle,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: '降半音',
+                        onPressed: pitch > -12 ? () => set(pitch - 1) : null,
+                        icon: const Icon(Icons.remove),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: pitch.toDouble(),
+                          min: -12,
+                          max: 12,
+                          divisions: 24,
+                          label: pitch > 0 ? '+$pitch' : '$pitch',
+                          onChanged: (value) =>
+                              setState(() => dragging = value.round()),
+                          onChangeEnd: (value) => set(value.round()),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: '升半音',
+                        onPressed: pitch < 12 ? () => set(pitch + 1) : null,
+                        icon: const Icon(Icons.add),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '不改變播放速度；換影片時回到原調',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: pitch == 0 ? null : () => set(0),
+                        child: const Text('回到原調'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 全螢幕橫向畫面邊界：拖動時即時預覽。
+  void showScreenMarginSheet() {
+    showBottomSheet(
+      (context, setState) {
+        final theme = Theme.of(context);
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Material(
+            clipBehavior: Clip.hardEdge,
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            child: const SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(8, 0, 12, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 45,
+                    child: Center(
+                      child: Text('全螢幕畫面邊界', style: titleStyle),
+                    ),
+                  ),
+                  ScreenMarginPanel(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void showSetAudioQa() {
     final AudioQuality currentAudioQa = videoDetailCtr.currentAudioQa!;
     final List<AudioItem> audio = videoInfo.dash!.audio!;
