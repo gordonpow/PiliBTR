@@ -158,6 +158,7 @@
 - 全螢幕畫面邊界：全螢幕橫向時影片四邊各自內縮 0–20%，播放器設定選單（即時預覽）與 設定 → 播放 都可調，永久保存（`screen_margin_panel.dart`、`view.dart`、`Pref.fullScreenMargin`）
 - 音調：播放器設定選單 -12～+12 半音，不改速度，換影片回到原調。mpv `af`＝`format=srate=48000:out-srate=N`＋`scaletempo=scale`（這版 libmpv 沒有 asetrate／atempo／rubberband）（`controller.dart` `setPitch`）
 - `f4967cb3d`（v2.2.20 已發布）預設音訊輸出改為 `opensles,audiotrack,aaudio`（舊預設值視為未自訂），設定說明加註 AAudio 問題，回報內容加上 `current-ao`／`hwdec-current`（回報 LJHE6A，issue #112）
+- 小視窗點回去開目前播放的影片：清單接續播放到下一部後縮小，展開時不再跳回第一部（`VideoDetailController.currentArgs`，回報 TTWRU4）
 
 ### 待辦
 
@@ -371,3 +372,4 @@
 | 2026-11-16 | 推送並發布 | `e847115d3`（畫面邊界、音調）、`bfcc690a2`（文件）、`560ad8dba` 版本 v2.2.19（2.2.19+20），先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #108、#109 已關閉。未經實機驗證 |
 | 2026-11-17 | 修回報 LJHE6A（v2.2.19、SM-S9470、Android 17）：拖動進度後畫面卡住 | 使用者補充：畫面永久停住、聲音繼續；開發者手機正常。模擬器（API 36）seek 只有網路造成的 3–10 秒緩衝，強制 AAudio 也未重現。v2.2.19 的改動（音調、畫面邊界）與此無關。推測同上游 PiliPlus #2544（三星 S 系列 AAudio 跳轉後畫面卡死）：`f4967cb3d` 預設 ao 改 `opensles,audiotrack,aaudio`、舊預設值視為未自訂、設定說明加註、回報加上 current-ao／hwdec-current。analyze 通過；未推送、未實機驗證。GitHub issue #112（開著，等驗證）。另一份 3HNRD3（v2.2.18，續播未記憶位置）本次未處理 |
 | 2026-11-17 | 發布並回覆回報者 | `767b827cf` 版本 v2.2.20（2.2.20+21），`report_status.json` LJHE6A 標為已解決；推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #112 已關閉。未實機驗證 |
+| 2026-11-17 | 修回報 TTWRU4（v2.2.19、SM-M346B2、Android 16）：清單播 A 接續到 B，在 B 縮小成小視窗再點回去會跳回 A | 原因：`MiniPlayer.show` 存的是頁面路由參數 `videoDetailController.args`（開頁時 A 的 bvid／cid），切換分 P、選集、清單項目只改 controller 欄位不改 args，`MiniPlayer.expand` 用舊 args 開頁。新增 `VideoDetailController.currentArgs()`：以目前的 bvid、aid、cid、epId、seasonId（番劇取 `pgcIntroController.seasonId`）、cover、isVertical、本地檔案 entry 覆寫，接續播放清單的 `oid` 改為目前 aid；`video/view.dart` 縮小時改傳它。日誌中的 `Invalid NAL unit size` 與本問題無關。analyze 通過；未做獨立審查（低風險）；未 commit、未實機驗證 |
