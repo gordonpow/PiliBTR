@@ -437,6 +437,26 @@ class VideoDetailController extends GetxController
   final _timing = OpenTimingRecord();
   bool _timingDone = false;
 
+  /// Route arguments for opening this page again at the video that plays
+  /// now. [args] keep the values of the first video: switching to another
+  /// part, episode or list item only changes the fields below.
+  Map<String, dynamic> currentArgs({int? seasonId}) {
+    final result = Map<String, dynamic>.from(args)
+      ..['bvid'] = bvid
+      ..['aid'] = aid
+      ..['cid'] = cid.value
+      ..['cover'] = cover.value
+      ..['isVertical'] = isVertical.value
+      ..remove('progress');
+    if (epId != null) result['epId'] = epId;
+    if ((seasonId ?? this.seasonId) case final id?) result['seasonId'] = id;
+    if (isFileSource) result['entry'] = entry;
+    // A continued play-all list loads around [oid]: keep the current video
+    // in the first page of the list.
+    if (result['isContinuePlaying'] == true) result['oid'] = aid;
+    return result;
+  }
+
   @override
   void onInit() {
     super.onInit();

@@ -451,7 +451,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           plPlayerController != null &&
           MiniPlayer.show(
             ctr: plPlayerController!,
-            args: videoDetailController.args,
+            // The current video, not the first one of the list.
+            args: videoDetailController.currentArgs(
+              seasonId:
+                  videoDetailController.isFileSource ||
+                      videoDetailController.isUgc
+                  ? null
+                  : pgcIntroController.seasonId,
+            ),
             heroTag: heroTag,
             wasPlaying: _miniWasPlaying,
           )) {
