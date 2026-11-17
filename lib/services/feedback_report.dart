@@ -4,10 +4,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:PiliPlus/btr_version.dart';
+import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/services/feedback_history.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:catcher_2/model/report.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
@@ -153,6 +155,24 @@ abstract final class FeedbackReport {
     return (Platform.operatingSystem, Platform.operatingSystemVersion);
   }
 
+  /// 播放相關設定，以及目前播放器實際使用的音訊輸出與解碼器
+  /// （沒有播放器時顯示 -），用來判斷「畫面卡住、聲音繼續」這類問題。
+  static String playerSummary() {
+    final player = PlPlayerController.instance?.videoPlayerController;
+    String prop(String name) {
+      try {
+        final value = player?.getProperty(name);
+        return value == null || value.isEmpty ? '-' : value;
+      } catch (_) {
+        return '-';
+      }
+    }
+
+    final hwdec = Pref.enableHA ? Pref.hardwareDecoding : '關閉';
+    return '音訊輸出：${Pref.audioOutput}（使用中：${prop('current-ao')}）\n'
+        '硬體解碼：$hwdec（使用中：${prop('hwdec-current')}）';
+  }
+
   /// 讀取日誌並轉成可讀文字（由新到舊）；沒有日誌時 count 為 0。
   static Future<FeedbackLogs> readLogs() async {
     try {
@@ -232,6 +252,7 @@ abstract final class FeedbackReport {
         ..writeln('版本：$btrVersion')
         ..writeln('裝置：$device')
         ..writeln('Android：$android')
+        ..writeln(playerSummary())
         ..writeln('時間：${DateTime.now().toIso8601String()}')
         ..writeln('類型：${category.label}')
         ..writeln('描述：${desc.isEmpty ? '（未填寫）' : desc}')

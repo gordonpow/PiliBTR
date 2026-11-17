@@ -147,7 +147,8 @@ List<SettingsModel> get videoSettings => [
     NormalModel(
       title: '音訊輸出裝置',
       leading: const Icon(Icons.speaker_outlined),
-      getSubtitle: () => '當前：${Pref.audioOutput}',
+      getSubtitle: () =>
+          '當前：${Pref.audioOutput}。部分裝置使用 AAudio 時，跳轉進度後畫面會卡住、聲音繼續，遇到時請把 AAudio 移到最後或取消',
       onTap: _showAudioOutputDialog,
     ),
   NormalModel(

@@ -978,10 +978,16 @@ abstract final class Pref {
     return buffer;
   }
 
-  static String get audioOutput => _setting.get(
-    SettingBoxKey.audioOutput,
-    defaultValue: AudioOutput.defaultValue,
-  );
+  static String get audioOutput {
+    final String value = _setting.get(
+      SettingBoxKey.audioOutput,
+      defaultValue: AudioOutput.defaultValue,
+    );
+    // 舊預設值（AAudio 在 AudioTrack 前）視為未自訂，改用新預設。
+    return value == AudioOutput.oldDefaultValue
+        ? AudioOutput.defaultValue
+        : value;
+  }
 
   static bool get enableAi =>
       _setting.get(SettingBoxKey.enableAi, defaultValue: false);
