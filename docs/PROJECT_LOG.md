@@ -157,6 +157,7 @@
 
 - 全螢幕畫面邊界：全螢幕橫向時影片四邊各自內縮 0–20%，播放器設定選單（即時預覽）與 設定 → 播放 都可調，永久保存（`screen_margin_panel.dart`、`view.dart`、`Pref.fullScreenMargin`）
 - 音調：播放器設定選單 -12～+12 半音，不改速度，換影片回到原調。mpv `af`＝`format=srate=48000:out-srate=N`＋`scaletempo=scale`（這版 libmpv 沒有 asetrate／atempo／rubberband）（`controller.dart` `setPitch`）
+- `f4967cb3d`（已 commit、未推送、未發布）預設音訊輸出改為 `opensles,audiotrack,aaudio`（舊預設值視為未自訂），設定說明加註 AAudio 問題，回報內容加上 `current-ao`／`hwdec-current`（回報 LJHE6A，issue #112）
 
 ### 待辦
 
@@ -368,3 +369,4 @@
 | 2026-11-15 | 發布 | `3bd3eb7ae` 版本 v2.2.18（2.2.18+19） |
 | 2026-11-16 | 看回報 EEBAPR（功能建議）並實作：全螢幕橫向畫面邊界、音調調整 | 使用者選四邊各自調、半音 ±12、邊界永久／音調每部影片重設、播放器選單＋設定頁。音調改用 mpv 內建 `format` out-srate＋`scaletempo`（ffmpeg 只編了 aresample／dynaudnorm／loudnorm／equalizer／alimiter）。Sonnet diff 審查採用：讀回比對取樣率、失敗後強制重設、開新影片前先清濾鏡、拖動放開才套用、scale 用 48000/rate、面板可捲動、邊界 clamp；未採用：cid 為 null 時也重設（本地檔案無換畫質需求）。analyze 0 issue；未 commit、未實機測試（音調的 A/V 同步與音量標準化同時開啟的情況待驗證） |
 | 2026-11-16 | 推送並發布 | `e847115d3`（畫面邊界、音調）、`bfcc690a2`（文件）、`560ad8dba` 版本 v2.2.19（2.2.19+20），先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #108、#109 已關閉。未經實機驗證 |
+| 2026-11-17 | 修回報 LJHE6A（v2.2.19、SM-S9470、Android 17）：拖動進度後畫面卡住 | 使用者補充：畫面永久停住、聲音繼續；開發者手機正常。模擬器（API 36）seek 只有網路造成的 3–10 秒緩衝，強制 AAudio 也未重現。v2.2.19 的改動（音調、畫面邊界）與此無關。推測同上游 PiliPlus #2544（三星 S 系列 AAudio 跳轉後畫面卡死）：`f4967cb3d` 預設 ao 改 `opensles,audiotrack,aaudio`、舊預設值視為未自訂、設定說明加註、回報加上 current-ao／hwdec-current。analyze 通過；未推送、未實機驗證。GitHub issue #112（開著，等驗證）。另一份 3HNRD3（v2.2.18，續播未記憶位置）本次未處理 |
