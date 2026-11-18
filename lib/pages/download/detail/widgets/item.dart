@@ -77,14 +77,14 @@ class DetailItem extends StatelessWidget {
   );
 
   /// 在彈出播放器播放已快取的影片
-  void openPopup(BuildContext context) {
+  Future<void> openPopup(BuildContext context) async {
     final typeTag = entry.typeTag;
     if (typeTag == null) {
       openVideoPage(context);
       return;
     }
     final dir = entry.entryDirPath;
-    showVideoPopup(
+    await showVideoPopup(
       context,
       videoPath: path.join(
         dir,
@@ -97,7 +97,12 @@ class DetailItem extends StatelessWidget {
           ? path.join(dir, typeTag, PathUtils.audioNameType2)
           : null,
       title: entry.title,
+      // 和影片頁共用 watchProgress（以 cid 為 key），兩邊進度互通。
+      progressKey: entry.cid,
     );
+    // 更新卡片上的觀看進度
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    if (context.mounted) progress?.notifyListeners();
   }
 
   /// 在影片頁開啟已快取的影片

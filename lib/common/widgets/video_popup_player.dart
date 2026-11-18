@@ -9,6 +9,7 @@ import 'package:PiliPlus/plugin/pl_player/mini_player.dart';
 import 'package:PiliPlus/plugin/pl_player/models/duration.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/services.dart' show HapticFeedback;
@@ -18,11 +19,15 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 /// 以彈窗播放本機影片（可附帶外部音訊檔）。
+///
+/// [progressKey]（通常是 cid）不為 null 時，觀看進度存在
+/// [GStorage.watchProgress]，下次開啟從上次的位置繼續播放。
 Future<void> showVideoPopup(
   BuildContext context, {
   required String videoPath,
   String? audioPath,
   required String title,
+  int? progressKey,
 }) async {
   // 先暫停 App 主播放器
   PlPlayerController.pauseIfExists();
@@ -40,6 +45,7 @@ Future<void> showVideoPopup(
         videoPath: videoPath,
         audioPath: audioPath,
         title: title,
+        progressKey: progressKey,
       ),
     );
   } finally {
@@ -55,11 +61,13 @@ class _VideoPopup extends StatefulWidget {
     required this.videoPath,
     required this.audioPath,
     required this.title,
+    this.progressKey,
   });
 
   final String videoPath;
   final String? audioPath;
   final String title;
+  final int? progressKey;
 
   @override
   State<_VideoPopup> createState() => _VideoPopupState();
@@ -109,6 +117,12 @@ class _VideoPopupState extends State<_VideoPopup> {
   /// Speed while a long press is active, and the speed to go back to.
   double? _longPressRate;
   double _rateBeforeLongPress = 1.0;
+
+  /// Speed chosen with the speed button (starts at the default speed).
+  double _rate = Pref.playSpeedDefault;
+
+  /// Last time the progress was saved while playing.
+  DateTime _lastProgressSave = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
@@ -167,6 +181,14 @@ class _VideoPopupState extends State<_VideoPopup> {
               if (e > Duration.zero) _error = false;
             });
           }
+          final now = DateTime.now();
+          if (now.difference(_lastProgressSave).inSeconds >= 5) {
+            _lastProgressSave = now;
+            _saveProgress();
+          }
+        }),
+        player.stream.completed.listen((e) {
+          if (e) _saveProgress();
         }),
         player.stream.duration.listen((e) {
           if (mounted) {
@@ -178,6 +200,7 @@ class _VideoPopupState extends State<_VideoPopup> {
         }),
         player.stream.playing.listen((e) {
           if (mounted) setState(() => _playing = e);
+          if (!e) _saveProgress();
         }),
         // mpv also reports errors it recovers from (for example a failed
         // hardware decoder): only a file that never opened is an error.
@@ -198,15 +221,86 @@ class _VideoPopupState extends State<_VideoPopup> {
         null => widget.videoPath,
       };
       await player.open(Media(media), play: false);
+      if (!mounted || _disposed) return;
+      await _restoreProgress(player);
+      if (!mounted || _disposed) return;
+      if (_rate != 1.0) await player.setRate(_rate);
       if (mounted && !_disposed) await player.play();
     } catch (_) {
       if (mounted) setState(() => _error = true);
     }
   }
 
+  String? get _progressKey => widget.progressKey?.toString();
+
+  /// Seeks to the saved position, unless the video was watched to the end
+  /// (same 400 ms rule as the video page).
+  Future<void> _restoreProgress(Player player) async {
+    final key = _progressKey;
+    if (key == null) return;
+    final saved = GStorage.watchProgress.get(key);
+    if (saved == null || saved <= 0) return;
+    var duration = player.state.duration;
+    if (duration <= Duration.zero) {
+      try {
+        duration = await player.stream.duration
+            .firstWhere((d) => d > Duration.zero)
+            .timeout(const Duration(seconds: 5));
+      } catch (_) {
+        return;
+      }
+    }
+    if (saved >= duration.inMilliseconds - 400) return;
+    final to = Duration(milliseconds: saved);
+    await player.seek(to);
+    if (mounted) setState(() => _position = to);
+  }
+
+  /// Saves the position; a finished video saves its full length, so the
+  /// card shows 「已看完」 and the next open starts from the beginning.
+  void _saveProgress() {
+    final key = _progressKey;
+    final player = _player;
+    if (key == null || player == null) return;
+    final state = player.state;
+    if (state.duration <= Duration.zero) return;
+    final ms = state.completed
+        ? state.duration.inMilliseconds
+        : state.position.inMilliseconds;
+    if (ms <= 0) return;
+    GStorage.watchProgress.put(key, ms);
+  }
+
+  Future<void> _setRate(double rate) async {
+    _endLongPress();
+    setState(() => _rate = rate);
+    await _player?.setRate(rate);
+  }
+
+  Widget _buildSpeedButton() {
+    return PopupMenuButton<double>(
+      tooltip: '倍速',
+      enabled: !_error && _player != null,
+      initialValue: _rate,
+      onSelected: _setRate,
+      itemBuilder: (_) => [
+        for (final speed in {...Pref.speedList, _rate}.toList()..sort())
+          PopupMenuItem(value: speed, child: Text('${_fmtRate(speed)}x')),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Text(
+          _rate == 1.0 ? '倍速' : '${_fmtRate(_rate)}x',
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    _saveProgress();
     for (final s in _subs) {
       s.cancel();
     }
@@ -723,6 +817,7 @@ class _VideoPopupState extends State<_VideoPopup> {
             fontFeatures: [FontFeature.tabularFigures()],
           ),
         ),
+        _buildSpeedButton(),
         IconButton(
           tooltip: _fullscreen ? '結束全螢幕' : '全螢幕',
           color: Colors.white,

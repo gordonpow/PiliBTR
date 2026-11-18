@@ -140,6 +140,7 @@ class _ExportTabState extends State<ExportTab> {
                     context,
                     videoPath: r.path,
                     title: r.title,
+                    progressKey: r.cid > 0 ? r.cid : null,
                   ),
                   onLongPress: () => _showMenu(r),
                   onSecondaryTap: () => _showMenu(r),
