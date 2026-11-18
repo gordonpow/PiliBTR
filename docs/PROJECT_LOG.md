@@ -159,6 +159,7 @@
 - 音調：播放器設定選單 -12～+12 半音，不改速度，換影片回到原調。mpv `af`＝`format=srate=48000:out-srate=N`＋`scaletempo=scale`（這版 libmpv 沒有 asetrate／atempo／rubberband）（`controller.dart` `setPitch`）
 - `f4967cb3d`（v2.2.20 已發布）預設音訊輸出改為 `opensles,audiotrack,aaudio`（舊預設值視為未自訂），設定說明加註 AAudio 問題，回報內容加上 `current-ao`／`hwdec-current`（回報 LJHE6A，issue #112）
 - 小視窗點回去開目前播放的影片：清單接續播放到下一部後縮小，展開時不再跳回第一部（`VideoDetailController.currentArgs`，回報 TTWRU4，issue #113）`1a94d47a3`（v2.2.21）
+- 快取／下載影片彈出播放器：控制列加倍速按鈕（選項為 設定 → 倍速 的清單）、開啟時套用預設倍速、觀看進度記憶（存 `GStorage.watchProgress`，以 cid 為 key，和影片頁互通；每 5 秒、暫停、播完、關閉時保存，看完的從頭播）（`video_popup_player.dart`、`download/detail/widgets/item.dart`、`download/export/view.dart`，issue #114）`d7a4ed2f1`（v2.2.22）
 
 ### 待辦
 
@@ -374,3 +375,5 @@
 | 2026-11-17 | 發布並回覆回報者 | `767b827cf` 版本 v2.2.20（2.2.20+21），`report_status.json` LJHE6A 標為已解決；推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #112 已關閉。未實機驗證 |
 | 2026-11-17 | 修回報 TTWRU4（v2.2.19、SM-M346B2、Android 16）：清單播 A 接續到 B，在 B 縮小成小視窗再點回去會跳回 A | 原因：`MiniPlayer.show` 存的是頁面路由參數 `videoDetailController.args`（開頁時 A 的 bvid／cid），切換分 P、選集、清單項目只改 controller 欄位不改 args，`MiniPlayer.expand` 用舊 args 開頁。新增 `VideoDetailController.currentArgs()`：以目前的 bvid、aid、cid、epId、seasonId（番劇取 `pgcIntroController.seasonId`）、cover、isVertical、本地檔案 entry 覆寫，接續播放清單的 `oid` 改為目前 aid；`video/view.dart` 縮小時改傳它。日誌中的 `Invalid NAL unit size` 與本問題無關。analyze 通過；未做獨立審查（低風險）；`1a94d47a3`，未實機驗證 |
 | 2026-11-17 | 發布 | `ebeaa4ab1` 版本 v2.2.21（2.2.21+22），推送並發布 Release（Latest，3 APK＋SHA256SUMS），issue #113 已關閉，`report_status.json` TTWRU4 標為已解決。未實機驗證 |
+| 2026-11-18 | 回報（v2.2.21）：快取與下載的影片沒有倍速按鈕、預設 2.0 倍速無效、沒有進度記憶 | 原因：快取與 MP4 下載都用 `showVideoPopup` 彈出播放器，它沒有倍速功能，也不讀預設倍速與 `watchProgress`。加倍速選單、套用 `Pref.playSpeedDefault`、以 cid 存取 `watchProgress`（和影片頁的快取進度相同格式，卡片進度標籤會更新）。analyze 通過；未做獨立審查；`d7a4ed2f1`，未實機驗證 |
+| 2026-11-18 | commit 並發布 v2.2.22 | `f450b544c` 版本 v2.2.22（2.2.22+23），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #114 已關閉。未實機驗證 |
