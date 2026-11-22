@@ -160,6 +160,7 @@
 - `f4967cb3d`（v2.2.20 已發布）預設音訊輸出改為 `opensles,audiotrack,aaudio`（舊預設值視為未自訂），設定說明加註 AAudio 問題，回報內容加上 `current-ao`／`hwdec-current`（回報 LJHE6A，issue #112）
 - 小視窗點回去開目前播放的影片：清單接續播放到下一部後縮小，展開時不再跳回第一部（`VideoDetailController.currentArgs`，回報 TTWRU4，issue #113）`1a94d47a3`（v2.2.21）
 - 快取／下載影片彈出播放器：控制列加倍速按鈕（選項為 設定 → 倍速 的清單）、開啟時套用預設倍速、觀看進度記憶（存 `GStorage.watchProgress`，以 cid 為 key，和影片頁互通；每 5 秒、暫停、播完、關閉時保存，看完的從頭播）（`video_popup_player.dart`、`download/detail/widgets/item.dart`、`download/export/view.dart`，issue #114）`d7a4ed2f1`（v2.2.22）
+- 快取／下載影片彈出播放器：播放時保持螢幕常亮（`WakelockPlus`，暫停與關閉時解除），修正全螢幕看一陣子後螢幕自動變暗（`video_popup_player.dart`，issue #115）`3a7d85ce9`（v2.2.23）
 
 ### 待辦
 
@@ -377,3 +378,5 @@
 | 2026-11-17 | 發布 | `ebeaa4ab1` 版本 v2.2.21（2.2.21+22），推送並發布 Release（Latest，3 APK＋SHA256SUMS），issue #113 已關閉，`report_status.json` TTWRU4 標為已解決。未實機驗證 |
 | 2026-11-18 | 回報（v2.2.21）：快取與下載的影片沒有倍速按鈕、預設 2.0 倍速無效、沒有進度記憶 | 原因：快取與 MP4 下載都用 `showVideoPopup` 彈出播放器，它沒有倍速功能，也不讀預設倍速與 `watchProgress`。加倍速選單、套用 `Pref.playSpeedDefault`、以 cid 存取 `watchProgress`（和影片頁的快取進度相同格式，卡片進度標籤會更新）。analyze 通過；未做獨立審查；`d7a4ed2f1`，未實機驗證 |
 | 2026-11-18 | commit 並發布 v2.2.22 | `f450b544c` 版本 v2.2.22（2.2.22+23），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #114 已關閉。未實機驗證 |
+| 2026-11-22 | 回報（v2.2.22）：快取／下載影片全螢幕看一陣子後亮度自動大降 | 原因：彈出播放器 `video_popup_player.dart` 沒有啟用 wakelock（主播放器在 `controller.dart` 有），系統依螢幕逾時先調暗再關螢幕。播放時 `WakelockPlus.enable()`，暫停與 dispose 時 `disable()`（開啟彈出播放器時主播放器已暫停，不會互相影響）。analyze 通過；未做獨立審查（低風險）；`3a7d85ce9`，未實機驗證 |
+| 2026-11-22 | 發布 | `09d1c071e` 版本 v2.2.23（2.2.23+24），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #115 已關閉。未實機驗證 |
