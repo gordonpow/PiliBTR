@@ -17,6 +17,7 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// 以彈窗播放本機影片（可附帶外部音訊檔）。
 ///
@@ -200,7 +201,14 @@ class _VideoPopupState extends State<_VideoPopup> {
         }),
         player.stream.playing.listen((e) {
           if (mounted) setState(() => _playing = e);
-          if (!e) _saveProgress();
+          // Keep the screen on while playing, like the main player:
+          // without it the system dims the screen and then turns it off.
+          if (e) {
+            WakelockPlus.enable();
+          } else {
+            WakelockPlus.disable();
+            _saveProgress();
+          }
         }),
         // mpv also reports errors it recovers from (for example a failed
         // hardware decoder): only a file that never opened is an error.
@@ -307,6 +315,7 @@ class _VideoPopupState extends State<_VideoPopup> {
     _osdTimer?.cancel();
     _seekHintTimer?.cancel();
     _player?.dispose();
+    WakelockPlus.disable();
     _resetBrightness();
     if (_fullscreen) _restoreScreen();
     super.dispose();
