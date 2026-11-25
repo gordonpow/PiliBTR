@@ -28,17 +28,29 @@ abstract final class BtrProxy {
 
   static final Map<String, _BtrSource> _sources = {};
   static final Map<String, String> _idByUrl = {};
+
+  /// Id → media URL. Kept after a source is dropped from [_sources], so a
+  /// player that still holds an old proxy URL (seek, reconnect) gets a new
+  /// source instead of 404. Before this, card warm/preload created more than
+  /// [_maxSources] sources while a video played, the playing source was
+  /// dropped, and every later seek failed (mpv `Seek failed (to …, size 0)`;
+  /// reports 9RMK5Y, KS4RCQ).
+  static final Map<String, String> _urlById = {};
   static int _seq = 0;
 
   /// Clears cached sources so a changed CDN mode applies to the same video.
-  /// The server stays up and in-flight requests are not affected.
+  /// The server stays up and in-flight requests are not affected. Ids stay
+  /// valid: the next request for an id creates a new source.
   static void reset() {
     _sources.clear();
-    _idByUrl.clear();
   }
 
-  /// Max number of media URLs kept. Older ones are removed first.
+  /// Max number of sources (CDN state, warm bytes) kept. The least recently
+  /// used one is removed first.
   static const int _maxSources = 32;
+
+  /// Max number of id ↔ URL pairs kept (strings only).
+  static const int _maxIds = 2048;
 
   static final _mediaHost = RegExp(
     r'(?:^|\.)(?:bilivideo\.(?:com|cn|net)|akamaized\.net)$',
@@ -76,13 +88,36 @@ abstract final class BtrProxy {
     if (id == null) {
       id = (++_seq).toString();
       _idByUrl[src] = id;
-      _sources[id] = _BtrSource(src);
-      while (_sources.length > _maxSources) {
-        final oldest = _sources.keys.first;
-        _idByUrl.remove(_sources.remove(oldest)!.url);
+      _urlById[id] = src;
+      while (_urlById.length > _maxIds) {
+        final oldest = _urlById.keys.first;
+        _idByUrl.remove(_urlById.remove(oldest));
       }
     }
+    _sourceFor(id);
     return id;
+  }
+
+  /// Source for [id], marked as most recently used. Creates it again when it
+  /// was dropped. Null when the id is unknown.
+  static _BtrSource? _sourceFor(String id) {
+    final url = _urlById.remove(id);
+    if (url == null) return null;
+    // Mark the id as recently used, so a URL in use is not dropped first.
+    _urlById[id] = url;
+    final source = _sources.remove(id) ?? _BtrSource(url);
+    _sources[id] = source;
+    while (_sources.length > _maxSources) {
+      // A source that serves the player now is never dropped: its open
+      // connection could outlive many newer warm/preload sources.
+      final oldest = _sources.keys.firstWhere(
+        (k) => k != id && _sources[k]!.serving == 0,
+        orElse: () => id,
+      );
+      if (oldest == id) break;
+      _sources.remove(oldest);
+    }
+    return source;
   }
 
   /// Sources that hold warm bytes, oldest first.
@@ -225,17 +260,19 @@ abstract final class BtrProxy {
     final id = segments.length == 2 && segments[0] == 'btr'
         ? segments[1].split('.').first
         : null;
-    final source = id == null ? null : _sources[id];
+    final source = id == null ? null : _sourceFor(id);
     if (source == null) {
       req.response.statusCode = HttpStatus.notFound;
       await req.response.close().catchError((_) {});
       return;
     }
+    source.serving++;
     try {
       await source.serve(req);
     } catch (e) {
       if (kDebugMode) debugPrint('BTR: serve error: $e');
     } finally {
+      source.serving--;
       // Every path ends with a closed response (closing twice is harmless).
       try {
         await req.response.close();
@@ -327,6 +364,9 @@ class _BtrSource {
 
   /// Bytes written to the player's responses.
   int served = 0;
+
+  /// Player requests this source is serving now.
+  int serving = 0;
 
   static const _firstPiece = 128 * 1024;
   static const _maxWindowBytes = 64 * 1024 * 1024;
