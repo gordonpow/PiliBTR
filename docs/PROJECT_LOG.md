@@ -161,6 +161,7 @@
 - 小視窗點回去開目前播放的影片：清單接續播放到下一部後縮小，展開時不再跳回第一部（`VideoDetailController.currentArgs`，回報 TTWRU4，issue #113）`1a94d47a3`（v2.2.21）
 - 快取／下載影片彈出播放器：控制列加倍速按鈕（選項為 設定 → 倍速 的清單）、開啟時套用預設倍速、觀看進度記憶（存 `GStorage.watchProgress`，以 cid 為 key，和影片頁互通；每 5 秒、暫停、播完、關閉時保存，看完的從頭播）（`video_popup_player.dart`、`download/detail/widgets/item.dart`、`download/export/view.dart`，issue #114）`d7a4ed2f1`（v2.2.22）
 - 快取／下載影片彈出播放器：播放時保持螢幕常亮（`WakelockPlus`，暫停與關閉時解除），修正全螢幕看一陣子後螢幕自動變暗（`video_popup_player.dart`，issue #115）`3a7d85ce9`（v2.2.23）
+- BTR proxy 播放中的 source 不再被擠掉：source 改為最近最少使用淘汰、正在服務播放器的不淘汰；id↔URL 另存（上限 2048），source 被移除或 `reset()` 後舊 proxy URL 仍會重建 source，不再回 404（修拖動後畫面停住、看到一半載入不出來，回報 9RMK5Y、KS4RCQ，issue #116）（`btr_proxy.dart`）`4d1ea86b4`（v2.2.24）
 
 ### 待辦
 
@@ -380,3 +381,5 @@
 | 2026-11-18 | commit 並發布 v2.2.22 | `f450b544c` 版本 v2.2.22（2.2.22+23），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #114 已關閉。未實機驗證 |
 | 2026-11-22 | 回報（v2.2.22）：快取／下載影片全螢幕看一陣子後亮度自動大降 | 原因：彈出播放器 `video_popup_player.dart` 沒有啟用 wakelock（主播放器在 `controller.dart` 有），系統依螢幕逾時先調暗再關螢幕。播放時 `WakelockPlus.enable()`，暫停與 dispose 時 `disable()`（開啟彈出播放器時主播放器已暫停，不會互相影響）。analyze 通過；未做獨立審查（低風險）；`3a7d85ce9`，未實機驗證 |
 | 2026-11-22 | 發布 | `09d1c071e` 版本 v2.2.23（2.2.23+24），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #115 已關閉。未實機驗證 |
+| 2026-11-25 | 分析回報 9RMK5Y、KS4RCQ（v2.2.22／v2.2.23、SM-S9380、Android 17）、JRFCPH（TV 版 v1.2.2-btr.28）並修正 | 原因：`btr_proxy.dart` 的 `_sources` 上限 32、依建立順序淘汰，卡片預熱／預載不斷建立新 source，播放中影片的 source 被移除，之後 seek／重連都拿到 404，mpv 記錄 `Seek failed (to …, size 0)`。改為 LRU、服務中不淘汰、id↔URL 另存可重建。Sonnet 獨立審查無高風險，採用「id 順序也要刷新」「服務中不淘汰」兩項。analyze 通過；`4d1ea86b4`，未實機驗證。CastSheet null check 為 v2.2.18 前的舊紀錄；TabBar RangeError 無 app 堆疊未處理；JRFCPH 無錯誤，只有換片時 UI 卡頓，屬 TV 專案 |
+| 2026-11-25 | 發布 | `01ccbd505` 版本 v2.2.24（2.2.24+25），推到 pilibtr main，先建草稿、上傳 3 APK＋SHA256SUMS 後公開（Latest），issue #116 已關閉，`report_status.json` 9RMK5Y、KS4RCQ 標為已解決（`e514c2d0d`）。未實機驗證 |
